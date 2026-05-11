@@ -30,6 +30,7 @@
         .col-fixed-cnpj { width: 130px; min-width: 130px; max-width: 130px; font-family: monospace; font-weight: bold; }
         .col-fixed-contato { width: 120px; min-width: 120px; max-width: 120px; text-align: left; overflow: hidden; text-overflow: ellipsis; }
         .col-fixed-regime { width: 50px; min-width: 50px; max-width: 50px; }
+        .col-fixed-conta { width: 80px; min-width: 80px; max-width: 80px; }
 
         /* Colunas dos meses dinâmicos */
         .col-month-data { min-width: 85px; }
@@ -114,9 +115,9 @@
         </div>
     </div>
 
-    <!-- POPUP DE RESUMO DA IMPORTAÇÃO (Alterações e >50k) -->
+    <!-- POPUP DE RESUMO DA IMPORTAÇÃO -->
     <div id="modalResumoImportacao" class="fixed inset-0 bg-slate-900 bg-opacity-80 flex justify-center items-center z-[110] hidden px-4">
-        <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col border-t-4 border-amber-500 relative">
+        <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-3xl max-h-[85vh] flex flex-col border-t-4 border-amber-500 relative">
             <button onclick="document.getElementById('modalResumoImportacao').classList.add('hidden')" class="absolute top-3 right-4 text-slate-400 hover:text-slate-700 text-2xl font-bold leading-none">&times;</button>
             <h2 class="text-xl font-black mb-2 text-slate-800 uppercase tracking-tight">Relatório da Importação</h2>
             <p class="text-xs text-slate-500 mb-4 font-medium">Verifique abaixo as divergências e alertas de valores detetados na última leitura de dados:</p>
@@ -132,13 +133,30 @@
                     <h3 class="text-[11px] font-black text-red-600 uppercase border-b border-red-200 pb-1 mb-2 tracking-widest">🚨 Distribuição > 50 Mil (Atenção IR)</h3>
                     <ul id="listaAlertas50kModal" class="text-[11px] font-mono text-slate-700 space-y-1.5 list-disc pl-4"></ul>
                 </div>
+                <!-- Bloco de Faltantes -->
+                <div id="blocoFaltantesModal" class="hidden">
+                    <h3 class="text-[11px] font-black text-slate-600 uppercase border-b border-slate-200 pb-1 mb-2 tracking-widest flex items-center justify-between">
+                        <span>🕵️ Clientes Faltantes (Sem Movimento neste Mês)</span>
+                        <span id="badgeCountFaltantes" class="bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full text-[9px]">0</span>
+                    </h3>
+                    <p class="text-[9px] text-slate-400 mb-2 italic">Estes clientes estão no seu Cadastro, mas não vieram na planilha que você acabou de colar para este mês.</p>
+                    <ul id="listaFaltantesModal" class="text-[10px] font-mono text-slate-600 space-y-1 list-disc pl-4 max-h-40 overflow-y-auto"></ul>
+                </div>
+                <!-- NOVO: Bloco de Clientes Novos/Não Cadastrados -->
+                <div id="blocoNovosModal" class="hidden">
+                    <h3 class="text-[11px] font-black text-blue-600 uppercase border-b border-blue-200 pb-1 mb-2 tracking-widest mt-2">
+                        ✨ Novos Clientes na Planilha (Sem Cadastro Prévio)
+                    </h3>
+                    <p class="text-[9px] text-slate-400 mb-2 italic">Estes clientes vieram na importação mas não estavam no seu Cadastro. Avise o responsável para atualizar a planilha de integração.</p>
+                    <ul id="listaNovosModal" class="text-[10px] font-mono text-slate-600 space-y-1 list-disc pl-4 max-h-40 overflow-y-auto"></ul>
+                </div>
             </div>
             
             <button onclick="document.getElementById('modalResumoImportacao').classList.add('hidden')" class="mt-4 bg-slate-800 hover:bg-slate-900 text-white font-black px-6 py-3 rounded-lg w-full shadow-lg transition-all uppercase tracking-widest">Ciente, Fechar Aviso</button>
         </div>
     </div>
 
-    <!-- MODAL DE VISUALIZAÇÃO DE PLANILHA SALVA (O OLHO) -->
+    <!-- MODAL DE VISUALIZAÇÃO DE PLANILHA SALVA -->
     <div id="modalVisualizarPlanilha" class="fixed inset-0 bg-slate-900 bg-opacity-95 flex justify-center items-center z-[120] hidden p-4">
         <div class="bg-white rounded-xl shadow-2xl w-full h-full max-w-[95vw] max-h-full flex flex-col border-t-4 border-blue-600 relative overflow-hidden">
             <div class="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50 flex-shrink-0">
@@ -175,8 +193,12 @@
                     </button>
                 </div>
                 
+                <button onclick="togglePainel('painelCadastro')" class="bg-indigo-100 hover:bg-indigo-200 text-indigo-900 px-4 py-1.5 rounded-full text-[10px] font-black border border-indigo-300 transition-all leading-none flex items-center gap-2 shadow-sm">
+                    👥 CADASTRO
+                </button>
+
                 <button onclick="togglePainel('painelClassificacao')" class="bg-blue-100 hover:bg-blue-200 text-blue-900 px-4 py-1.5 rounded-full text-[10px] font-black border border-blue-300 transition-all leading-none flex items-center gap-2 shadow-sm">
-                    📊 REINF: MENSAL/TRIMESTRAL
+                    📊 REINF
                 </button>
 
                 <button onclick="togglePainel('painelHistorico')" class="bg-amber-100 hover:bg-amber-200 text-amber-900 px-4 py-1.5 rounded-full text-[10px] font-black border border-amber-300 transition-all leading-none flex items-center gap-2 shadow-sm">
@@ -186,7 +208,7 @@
             </div>
         </div>
 
-        <!-- Importação -->
+        <!-- Importação (Valores Mensais) -->
         <div class="p-3 bg-blue-50 border-b border-blue-100 flex-shrink-0 relative z-10">
             <div class="flex gap-4 items-center">
                 <div class="flex items-center gap-3 flex-shrink-0">
@@ -194,7 +216,7 @@
                     <input type="text" id="mesRefInput" placeholder="01/2026" class="w-24 border-2 border-blue-200 rounded-md px-3 py-2 text-xs font-black outline-none focus:border-blue-500 bg-white shadow-inner">
                 </div>
                 <div class="flex-grow">
-                    <textarea id="rawData" rows="1" class="w-full border-2 border-blue-100 rounded-md px-4 py-2 text-xs outline-none focus:border-blue-400 resize-none font-medium h-10 leading-tight shadow-inner" placeholder="Cole aqui os dados copiados do seu sistema/Excel..."></textarea>
+                    <textarea id="rawData" rows="1" class="w-full border-2 border-blue-100 rounded-md px-4 py-2 text-xs outline-none focus:border-blue-400 resize-none font-medium h-10 leading-tight shadow-inner" placeholder="Cole aqui os dados copiados do seu sistema/Excel para integrar os valores..."></textarea>
                 </div>
                 <div class="flex gap-2 flex-shrink-0">
                     <button onclick="adicionarDados()" class="bg-blue-600 text-white text-xs font-black py-2.5 px-6 rounded-md shadow-md hover:bg-blue-700 transition-all uppercase tracking-tighter">Processar</button>
@@ -219,6 +241,41 @@
             </table>
         </div>
 
+        <!-- Painel de Cadastro de Clientes -->
+        <div id="painelCadastro" class="painel-lateral painel-oculto absolute top-0 right-0 h-full w-96 bg-white shadow-2xl border-l border-slate-200 z-50 flex flex-col">
+            <div class="p-4 bg-indigo-50 border-b border-indigo-200 flex justify-between items-center">
+                <h2 class="text-sm font-black text-indigo-900 uppercase tracking-tighter">Cadastro de Clientes</h2>
+                <button onclick="togglePainel('painelCadastro')" class="text-slate-400 hover:text-black text-2xl font-light leading-none">&times;</button>
+            </div>
+            <div class="p-4 bg-slate-50 flex-shrink-0 border-b">
+                <p class="text-[9px] font-bold text-slate-500 uppercase mb-2">Cole dados da planilha (Nome, CNPJ, etc.):</p>
+                <textarea id="rawDataCadastro" rows="3" class="w-full border p-2 text-xs font-mono rounded outline-none focus:ring-1 focus:ring-indigo-500 mb-2" placeholder="Ex: NOME [TAB] CNPJ [TAB] CONTATO [TAB] REGIME [TAB] CONTA"></textarea>
+                <button onclick="window.importarCadastro()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-black py-2 px-4 rounded shadow w-full uppercase tracking-widest">Importar Cadastro</button>
+            </div>
+            
+            <!-- Gerenciador de Contas -->
+            <div class="p-4 bg-white flex-shrink-0 border-b border-slate-200">
+                <p class="text-[9px] font-bold text-slate-500 uppercase mb-2 flex justify-between">
+                    <span>Tipos de Conta Disponíveis:</span>
+                </p>
+                <div class="flex gap-2 mb-2">
+                    <input type="text" id="novaContaInput" class="w-full border border-slate-300 p-1.5 text-xs font-mono rounded outline-none focus:ring-1 focus:ring-indigo-500 uppercase" placeholder="Nova conta...">
+                    <button onclick="window.adicionarOpcaoConta()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1 rounded text-xs font-black transition-colors">+</button>
+                </div>
+                <div id="listaOpcoesConta" class="flex flex-wrap gap-1">
+                </div>
+            </div>
+
+            <div class="p-3 overflow-y-auto flex-grow bg-slate-50">
+                <h3 class="text-[10px] font-black text-slate-700 uppercase border-b border-slate-200 pb-1 mb-2">Clientes Registrados (<span id="countCadastro">0</span>)</h3>
+                <div id="listaCadastro" class="space-y-1.5">
+                </div>
+            </div>
+            <div class="p-3 border-t border-slate-200 text-center bg-white flex-shrink-0">
+                <button onclick="window.limparCadastro()" class="text-[10px] text-red-600 uppercase font-black hover:underline tracking-widest">Apagar Todos os Clientes</button>
+            </div>
+        </div>
+
         <!-- Painel Historico -->
         <div id="painelHistorico" class="painel-lateral painel-oculto absolute top-0 right-0 h-full w-80 bg-white shadow-2xl border-l border-slate-200 z-50 flex flex-col">
             <div class="p-4 bg-amber-50 border-b border-amber-200 flex justify-between items-center flex-shrink-0">
@@ -236,34 +293,76 @@
             </div>
         </div>
 
-        <!-- Painel Classificacao -->
-        <div id="painelClassificacao" class="painel-lateral painel-oculto absolute top-0 right-0 h-full w-80 bg-white shadow-2xl border-l border-slate-200 z-50 flex flex-col">
+        <!-- Painel Classificacao Reinf -->
+        <div id="painelClassificacao" class="painel-lateral painel-oculto absolute top-0 right-0 h-full w-[600px] max-w-full bg-white shadow-2xl border-l border-slate-200 z-50 flex flex-col">
             <div class="p-4 bg-blue-50 border-b border-blue-200 flex justify-between items-center">
-                <h2 class="text-sm font-black text-blue-900 uppercase tracking-tighter">Classificação Reinf</h2>
+                <h2 class="text-sm font-black text-blue-900 uppercase tracking-tighter">Classificação Reinf e Previsão</h2>
                 <button onclick="togglePainel('painelClassificacao')" class="text-slate-400 hover:text-black text-2xl font-light leading-none">&times;</button>
             </div>
             <div class="p-4 bg-slate-50 flex-shrink-0 border-b">
                 <label class="text-[9px] font-bold text-slate-500 uppercase">Selecione os Meses para Análise:</label>
                 <div id="containerMesesReinf" class="flex flex-wrap gap-2 mt-2">
-                    <!-- Checkboxes inseridos dinamicamente -->
                 </div>
             </div>
             <div class="p-3 overflow-y-auto flex-grow bg-slate-50" id="conteudoClassificacao">
-                <p class="text-[9px] text-slate-400 text-center mt-10 uppercase italic">Selecione os meses acima para ver a classificação mensal/trimestral combinada.</p>
+                <p class="text-[9px] text-slate-400 text-center mt-10 uppercase italic">Selecione os meses acima para ver a classificação mensal/trimestral em grelha.</p>
             </div>
         </div>
     </div>
 
     <script>
+        // ==========================================
+        // FUNÇÕES GLOBAIS DE LIMPEZA E MATCHING INTELIGENTE
+        // ==========================================
+        window.getNumbers = function(str) {
+            return (str || '').replace(/\D/g, '');
+        };
+
+        window.formatCNPJ = function(str) {
+            let num = window.getNumbers(str);
+            if (num.length === 14) return num.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5");
+            return str && str.trim() !== '' ? str.trim() : "S/ CNPJ";
+        };
+
+        window.normalizeStr = function(str) {
+            if (!str) return '';
+            return str.toUpperCase()
+                .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Remove acentos
+                .replace(/[^\w\s]/g, ' ') // Pontuação vira espaço
+                .replace(/\b(LTDA|ME|EPP|SA|S A|S\/A|SS|MEI)\b/g, '') // Remove sufixos comuns
+                .replace(/\s+/g, ' ') // Espaços múltiplos viram um
+                .trim();
+        };
+
+        window.isSameCompanyByName = function(name1, name2) {
+            let n1 = window.normalizeStr(name1);
+            let n2 = window.normalizeStr(name2);
+            if (!n1 || !n2) return false;
+            if (n1 === n2) return true;
+            
+            // Fuzzy match parcial (verifica se um contém o outro se as strings forem grandes)
+            if (n1.length > 8 && n2.length > 8) {
+                if (n1.includes(n2) || n2.includes(n1)) return true;
+                
+                // Pega as primeiras 3 palavras e compara (Ex: GRUMP PREPARACAO DE DOCUMENTOS vs GRUMP PREPARACAO DE DOCUMENTOS E PROD FOT)
+                let w1 = n1.split(' ').slice(0, 3).join(' ');
+                let w2 = n2.split(' ').slice(0, 3).join(' ');
+                if (w1 === w2 && w1.length > 5) return true;
+            }
+            return false;
+        };
+
+
         // Variáveis de Estado da Aplicação
         window.appState = {
             meses: [], 
             mesesConfig: {},
             clientes: [],
             historicoGeral: [],
-            historicoPlanilhas: [], // Armazena o RAW das planilhas importadas
+            historicoPlanilhas: [], 
             filtros: {},
-            currentUser: '' // Inicia vazio para pedir o nome
+            opcoesConta: ['BANCO', 'CAIXA', 'PRESUNÇÃO'], 
+            currentUser: '' 
         };
 
         // ==========================================
@@ -314,6 +413,15 @@
             if (data) {
                 window.appState = Object.assign(window.appState, data);
                 if(!window.appState.historicoPlanilhas) window.appState.historicoPlanilhas = [];
+                if(!window.appState.opcoesConta || window.appState.opcoesConta.length === 0) window.appState.opcoesConta = ['BANCO', 'CAIXA', 'PRESUNÇÃO'];
+                
+                if (window.appState.clientes) {
+                    window.appState.clientes = window.appState.clientes.filter(c => {
+                        if(!c.razao) return false;
+                        let r = c.razao.toUpperCase();
+                        return !['RAZÃO SOCIAL', 'RAZAO SOCIAL', 'NOME', 'CLIENTE', 'EMPRESA', 'NOME DA EMPRESA', 'TITULO', 'CNPJ'].includes(r);
+                    });
+                }
             }
             window.syncUI();
         };
@@ -449,9 +557,11 @@
                 document.getElementById('displayUserName').innerText = window.appState.currentUser;
                 document.getElementById('modalUser').classList.add('hidden');
             }
+            window.renderOpcoesConta();
             window.renderTable();
             window.renderHistorico();
             window.renderFiltroReinf(); 
+            window.renderListaCadastro(); 
         };
 
         window.abrirLogin = function() {
@@ -480,12 +590,241 @@
         });
 
         window.togglePainel = function(id) { 
-            ['painelHistorico', 'painelClassificacao'].forEach(p => {
+            ['painelHistorico', 'painelClassificacao', 'painelCadastro'].forEach(p => {
                 if(p !== id) document.getElementById(p).classList.add('painel-oculto');
             });
             document.getElementById(id).classList.toggle('painel-oculto');
             if(id === 'painelClassificacao') window.renderClassificacao();
+            if(id === 'painelCadastro') {
+                window.renderOpcoesConta();
+                window.renderListaCadastro();
+            }
         };
+
+        // ==========================================
+        // GESTÃO DE OPÇÕES DE CONTA
+        // ==========================================
+        window.renderOpcoesConta = function() {
+            const container = document.getElementById('listaOpcoesConta');
+            if(!window.appState.opcoesConta) window.appState.opcoesConta = ['BANCO', 'CAIXA', 'PRESUNÇÃO'];
+            
+            container.innerHTML = window.appState.opcoesConta.map((c, i) => `
+                <span class="bg-indigo-100 text-indigo-800 text-[9px] px-2 py-1 rounded font-bold flex items-center gap-1 uppercase">
+                    ${c} <span onclick="window.removerOpcaoConta(${i})" class="cursor-pointer text-red-500 hover:text-red-700 ml-1 text-xs leading-none">&times;</span>
+                </span>
+            `).join('');
+        };
+
+        window.adicionarOpcaoConta = async function() {
+            const val = document.getElementById('novaContaInput').value.trim().toUpperCase();
+            if(val && !window.appState.opcoesConta.includes(val)) {
+                window.appState.opcoesConta.push(val);
+                await window.saveState();
+                document.getElementById('novaContaInput').value = '';
+                window.renderOpcoesConta();
+                window.renderTable();
+                window.renderListaCadastro();
+            }
+        };
+
+        window.removerOpcaoConta = async function(idx) {
+            window.appState.opcoesConta.splice(idx, 1);
+            await window.saveState();
+            window.renderOpcoesConta();
+            window.renderTable();
+            window.renderListaCadastro();
+        };
+
+        document.getElementById('novaContaInput').addEventListener('keypress', function(e){
+            if(e.key === 'Enter') window.adicionarOpcaoConta();
+        });
+
+
+        // ==========================================
+        // CADASTRO DE CLIENTES (Inteligente)
+        // ==========================================
+        window.importarCadastro = async function() {
+            const input = document.getElementById('rawDataCadastro').value;
+            if (!input.trim()) return alert("Cole os dados para importar.");
+
+            const linhas = input.trim().split('\n');
+            let novos = 0;
+            let atualizados = 0;
+
+            linhas.forEach(linha => {
+                const colunas = linha.split('\t').map(c => c.trim());
+                if(colunas.length === 0 || colunas[0] === '') return;
+
+                const regexCNPJ = /(?:\d{2}\.?\d{3}\.?\d{3}\/?\d{4}-?\d{2}|\d{14})/g;
+                let cnpjMatch = linha.match(regexCNPJ);
+                let cnpjRaw = cnpjMatch ? cnpjMatch[0] : "";
+                
+                let cnpjNum = window.getNumbers(cnpjRaw);
+                let cnpj = window.formatCNPJ(cnpjRaw);
+
+                let nome = colunas[0].toUpperCase();
+                if(colunas[0] === cnpjRaw && colunas.length > 1) {
+                    nome = colunas[1].toUpperCase();
+                }
+
+                if (['NOME', 'RAZÃO SOCIAL', 'RAZAO SOCIAL', 'CLIENTE', 'EMPRESA', 'NOME DA EMPRESA', 'TITULO', 'CNPJ'].includes(nome)) return;
+
+                let contato = colunas.length > 2 ? colunas[2].toUpperCase() : '';
+                let regime = colunas.length > 3 ? colunas[3].toUpperCase() : '';
+                let conta = colunas.length > 4 ? colunas[4].toUpperCase() : '';
+
+                if (conta && !window.appState.opcoesConta.includes(conta)) {
+                    window.appState.opcoesConta.push(conta);
+                }
+
+                let cliExistente = null;
+
+                // 1. Busca por CNPJ exato
+                if (cnpjNum.length === 14) {
+                    cliExistente = window.appState.clientes.find(c => window.getNumbers(c.cnpj) === cnpjNum && (c.contato || '').toUpperCase() === contato);
+                    
+                    // Se não encontrou por CNPJ+Contato, mas foi importado sem contato, atualiza os que têm esse CNPJ
+                    if (!cliExistente && contato === '') {
+                        let clientesVinculados = window.appState.clientes.filter(c => window.getNumbers(c.cnpj) === cnpjNum);
+                        if(clientesVinculados.length > 0) {
+                            clientesVinculados.forEach(v => {
+                                if(regime && !v.regime) v.regime = regime;
+                                if(conta && !v.conta) v.conta = conta;
+                            });
+                            atualizados++;
+                            return; // Avança pra próxima linha
+                        }
+                    }
+                }
+
+                // 2. Busca Inteligente por Nome (se CNPJ for vazio ou não achou)
+                if (!cliExistente && nome) {
+                    cliExistente = window.appState.clientes.find(c => 
+                        window.isSameCompanyByName(c.razao, nome) && 
+                        (c.contato || '').toUpperCase() === contato
+                    );
+                }
+
+                if (cliExistente) {
+                    if(contato && !cliExistente.contato) cliExistente.contato = contato;
+                    if(regime && !cliExistente.regime) cliExistente.regime = regime;
+                    if(conta && !cliExistente.conta) cliExistente.conta = conta;
+                    if(cnpj !== "S/ CNPJ" && window.getNumbers(cliExistente.cnpj).length !== 14) cliExistente.cnpj = cnpj;
+                    atualizados++;
+                } else {
+                    window.appState.clientes.push({
+                        n: '-', ano: new Date().getFullYear().toString(),
+                        razao: nome, cnpj: cnpj, contato: contato, regime: regime,
+                        conta: conta, mensal: {}
+                    });
+                    novos++;
+                }
+            });
+
+            window.appState.historicoGeral.push({
+                tipo: 'importacao',
+                data: new Date().toLocaleString('pt-BR'),
+                usuario: window.appState.currentUser,
+                mes: 'CADASTRO',
+                alteracoes: [`<span class="text-indigo-600 font-bold">CADASTRO DE CLIENTES:</span> ${novos} novos, ${atualizados} atualizados.`]
+            });
+
+            await window.saveState();
+            document.getElementById('rawDataCadastro').value = '';
+            window.renderOpcoesConta();
+            window.renderListaCadastro();
+            window.renderTable();
+            window.renderHistorico();
+            alert(`Importação de Cadastro concluída!\nNovos: ${novos}\nAtualizados: ${atualizados}`);
+        };
+
+        window.renderListaCadastro = function() {
+            const container = document.getElementById('listaCadastro');
+            const count = document.getElementById('countCadastro');
+            
+            let list = [...window.appState.clientes].sort((a, b) => a.razao.localeCompare(b.razao));
+            count.innerText = list.length;
+
+            if (list.length === 0) {
+                container.innerHTML = `<p class="text-[9px] text-slate-400 text-center mt-5 uppercase italic">Nenhum cliente cadastrado.</p>`;
+                return;
+            }
+
+            container.innerHTML = list.map(cli => {
+                const safeContato = btoa(unescape(encodeURIComponent(cli.contato || '')));
+                
+                let optionsHtml = `<option value="" ${!cli.conta ? 'selected' : ''}>-</option>`;
+                let optionsArray = window.appState.opcoesConta || ['BANCO', 'CAIXA', 'PRESUNÇÃO'];
+                if (cli.conta && !optionsArray.includes(cli.conta)) {
+                     optionsHtml += `<option value="${cli.conta}" selected>${cli.conta}</option>`;
+                }
+                optionsArray.forEach(opt => {
+                    optionsHtml += `<option value="${opt}" ${cli.conta === opt ? 'selected' : ''}>${opt}</option>`;
+                });
+
+                return `
+                <div class="bg-white p-2 rounded border border-slate-200 shadow-sm flex flex-col gap-1.5 relative">
+                    <div class="flex justify-between items-start gap-2">
+                        <span class="text-[10px] font-black text-slate-800 uppercase leading-tight truncate flex-grow" title="${cli.razao}">${cli.razao}</span>
+                        <div class="flex items-center gap-1.5 flex-shrink-0">
+                            <select class="border border-slate-300 rounded text-[8px] px-1 py-0.5 outline-none focus:border-indigo-500 cursor-pointer ${cli.conta ? 'text-indigo-700 font-bold bg-indigo-50' : 'text-slate-500 bg-slate-50'}" onchange="window.atualizarContaManual('${cli.cnpj}', '${safeContato}', this.value, '${cli.conta || ''}')">
+                                ${optionsHtml}
+                            </select>
+                            <button onclick="window.excluirCliente('${cli.cnpj}', '${safeContato}')" class="text-red-500 hover:text-red-700 text-base leading-none" title="Excluir Cliente">&times;</button>
+                        </div>
+                    </div>
+                    <div class="text-[9px] text-slate-500 flex justify-between items-center">
+                        <span class="font-mono text-indigo-600 font-bold">${cli.cnpj}</span>
+                        <span class="truncate ml-2" title="${cli.contato || 'S/ Contato'}">${cli.contato || 'S/ Contato'}</span>
+                    </div>
+                </div>
+            `}).join('');
+        };
+
+        window.excluirCliente = async function(cnpj, contatoB64) {
+            if(!confirm("Tem certeza que deseja remover este cliente de toda a planilha? Todos os dados dos meses também serão perdidos para ele.")) return;
+            
+            let contato = decodeURIComponent(escape(atob(contatoB64)));
+            let idx = window.appState.clientes.findIndex(c => c.cnpj === cnpj && c.contato === contato);
+            if(idx !== -1) {
+                let nome = window.appState.clientes[idx].razao;
+                window.appState.clientes.splice(idx, 1);
+                
+                window.appState.historicoGeral.push({
+                    tipo: 'edicao',
+                    data: new Date().toLocaleString('pt-BR'),
+                    usuario: window.appState.currentUser,
+                    mes: 'CADASTRO',
+                    alteracoes: [`<span class="text-red-600 font-bold">CLIENTE EXCLUÍDO:</span> ${nome}`]
+                });
+
+                await window.saveState();
+                window.renderListaCadastro();
+                window.renderTable();
+                window.renderHistorico();
+                window.renderClassificacao();
+            }
+        };
+
+        window.limparCadastro = async function() {
+            if(!confirm("CUIDADO: Isto apagará TODOS os clientes e TODOS os dados de antecipação registados. Tem certeza absoluta?")) return;
+            window.appState.clientes = [];
+            
+            window.appState.historicoGeral.push({
+                tipo: 'edicao',
+                data: new Date().toLocaleString('pt-BR'),
+                usuario: window.appState.currentUser,
+                mes: 'CADASTRO',
+                alteracoes: [`<span class="text-red-600 font-bold">BASE DE CLIENTES ZERADA TOTALMENTE</span>`]
+            });
+
+            await window.saveState();
+            window.renderListaCadastro();
+            window.renderTable();
+            window.renderHistorico();
+            window.renderClassificacao();
+        };
+
 
         // ==========================================
         // SISTEMA DE LOGS E PLANILHAS SALVAS
@@ -510,7 +849,6 @@
             const container = document.getElementById('conteudoHistorico');
             document.getElementById('badgeHistorico').innerText = window.appState.historicoGeral.length;
             
-            // Tab "Planilhas"
             if(window.currentLogTab === 'planilhas') {
                 if (!window.appState.historicoPlanilhas || window.appState.historicoPlanilhas.length === 0) {
                     container.innerHTML = `<p class="text-[9px] text-slate-400 text-center mt-10 uppercase font-bold tracking-widest">Nenhuma planilha armazenada</p>`;
@@ -534,7 +872,6 @@
                 return;
             }
 
-            // Tabs "Importacao" e "Edicao"
             const logsFiltrados = window.appState.historicoGeral.filter(reg => {
                 let isImport = reg.tipo === 'importacao' || (reg.alteracoes[0] && reg.alteracoes[0].includes('IMPORTAÇÃO'));
                 return window.currentLogTab === 'importacao' ? isImport : !isImport;
@@ -572,11 +909,14 @@
                 if (cols.length < 5) return;
                 let offset = cols[2] && /^\d{4}$/.test(cols[2].trim()) ? 1 : 0;
                 let cnpj = cols[offset+3]?.trim();
-                if (!cnpj || cnpj === 'CNPJ') return;
+                let razao = cols[offset+2]?.trim().toUpperCase();
+                if (!cnpj && !razao) return;
+
+                if (['RAZÃO SOCIAL', 'RAZAO SOCIAL', 'NOME', 'CLIENTE', 'EMPRESA', 'NOME DA EMPRESA', 'CNPJ'].includes(razao)) return;
                 
                 tempCli.push({
                     n: cols[offset+0]?.trim(), ano: cols[offset+1]?.trim(),
-                    razao: cols[offset+2]?.trim(), cnpj: cnpj,
+                    razao: razao, cnpj: cnpj || 'S/ CNPJ',
                     contato: cols[offset+4]?.trim(), regime: cols[offset+5]?.trim(),
                     antec: cols[offset+11]?.trim() || '-'
                 });
@@ -613,7 +953,7 @@
         };
 
         // ==========================================
-        // CÁLCULO DE IR E CLASSIFICAÇÃO MULTI-MÊS COM IMPRESSÃO
+        // CÁLCULO DE IR E CLASSIFICAÇÃO MULTI-MÊS COM IMPRESSÃO (TABELA DINÂMICA)
         // ==========================================
         window.renderFiltroReinf = function() {
             const container = document.getElementById('containerMesesReinf');
@@ -645,70 +985,126 @@
                 return;
             }
 
-            let mensal = [];
-            let trimestral = [];
+            let dadosAgrupadosMensal = {};
+            let dadosAgrupadosTrimestral = {};
+            let mesesMensal = new Set();
+            let mesesTrimestral = new Set();
+            let contMensal = 0;
+            let contTrimestral = 0;
 
             window.appState.clientes.forEach(cli => {
+                let chave = cli.cnpj + "|||" + cli.contato;
+                
                 mesesSelecionados.forEach(mes => {
                     if (cli.mensal[mes]) {
                         let vlr = window.parseCurrency(cli.mensal[mes].antec);
                         
+                        // Lógica Mensal (> 50k)
                         if (vlr > 50000) {
-                            let ir = vlr * 0.10; // IR de 10%
-                            mensal.push({
-                                razao: cli.razao,
-                                contato: cli.contato,
-                                mes: mes,
+                            if (!dadosAgrupadosMensal[chave]) dadosAgrupadosMensal[chave] = { razao: cli.razao, contato: cli.contato, meses: {} };
+                            let ir = vlr * 0.10;
+                            dadosAgrupadosMensal[chave].meses[mes] = {
                                 antec: cli.mensal[mes].antec,
                                 ir: ir.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'})
-                            });
-                        }
+                            };
+                            mesesMensal.add(mes);
+                            contMensal++;
+                        } 
+                        // Lógica Trimestral (até 50k)
                         else if (vlr > 0 || cli.mensal[mes].antec === 'S/M') {
-                            trimestral.push({ razao: cli.razao, contato: cli.contato, mes: mes });
+                            if (!dadosAgrupadosTrimestral[chave]) dadosAgrupadosTrimestral[chave] = { razao: cli.razao, contato: cli.contato, meses: {} };
+                            dadosAgrupadosTrimestral[chave].meses[mes] = {
+                                antec: cli.mensal[mes].antec
+                            };
+                            mesesTrimestral.add(mes);
+                            contTrimestral++;
                         }
                     }
                 });
             });
 
+            let listaEmpresasMensal = Object.values(dadosAgrupadosMensal).sort((a, b) => a.razao.localeCompare(b.razao));
+            let listaEmpresasTrimestral = Object.values(dadosAgrupadosTrimestral).sort((a, b) => a.razao.localeCompare(b.razao));
+            
+            let sortedMesesMensal = Array.from(mesesMensal).sort((a, b) => {
+                let [ma, ya] = a.split('/'); let [mb, yb] = b.split('/');
+                return new Date(ya, ma-1) - new Date(yb, mb-1);
+            });
+            let sortedMesesTrimestral = Array.from(mesesTrimestral).sort((a, b) => {
+                let [ma, ya] = a.split('/'); let [mb, yb] = b.split('/');
+                return new Date(ya, ma-1) - new Date(yb, mb-1);
+            });
+
+            // UI do Painel Classificação em formato de Tabela Dinâmica
             container.innerHTML = `
                 <div class="mb-6">
                     <div class="bg-red-600 text-white text-[10px] font-black p-2 rounded shadow-md uppercase mb-2 flex justify-between items-center">
-                        <span>Envio Mensal (>50k): ${mensal.length} ocorrências</span>
+                        <span>Envio Mensal (>50k): ${contMensal} ocorrências</span>
                         <button onclick="window.imprimirClassificacao('mensal')" class="bg-white text-red-600 px-2 py-0.5 rounded hover:bg-red-50 flex items-center gap-1 shadow-sm font-bold tracking-widest text-[9px] transition-colors" title="Imprimir Relatório Mensal">
                             🖨️ IMPRIMIR
                         </button>
                     </div>
-                    <div class="space-y-2">
-                        ${mensal.map(m => `
-                            <div class="bg-white border-l-4 border-red-500 p-2 text-[9px] font-bold text-slate-700 shadow-sm uppercase flex flex-col gap-1">
-                                <div class="flex justify-between border-b border-slate-100 pb-1">
-                                    <div class="truncate w-3/4">
-                                        <span class="text-red-600 bg-red-50 px-1 py-0.5 rounded mr-1">${m.mes}</span>
-                                        <span title="${m.razao}">${m.razao} <span class="text-slate-500 font-normal">(${m.contato})</span></span>
-                                    </div>
-                                    <span class="text-slate-900">${m.antec}</span>
-                                </div>
-                                <div class="text-right text-red-600 font-black tracking-tight">PREVISÃO IR (10%): ${m.ir}</div>
-                            </div>
-                        `).join('')}
-                        ${mensal.length === 0 ? '<p class="text-[9px] text-slate-400 italic">Nenhum cliente nestes períodos.</p>' : ''}
+                    <div class="overflow-x-auto bg-white rounded shadow-sm border border-red-100">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-red-50 text-red-900 text-[9px] uppercase border-b border-red-200">
+                                    <th class="p-2 border-r border-red-100">Razão Social</th>
+                                    <th class="p-2 border-r border-red-100">Contato</th>
+                                    ${sortedMesesMensal.map(m => `<th class="p-2 border-r border-red-100 text-center">${m}</th>`).join('')}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${listaEmpresasMensal.map(emp => `
+                                    <tr class="border-b border-slate-100 hover:bg-slate-50">
+                                        <td class="p-2 border-r border-slate-100 text-[9px] font-bold text-slate-800">${emp.razao}</td>
+                                        <td class="p-2 border-r border-slate-100 text-[9px] text-slate-500">${emp.contato || '-'}</td>
+                                        ${sortedMesesMensal.map(m => {
+                                            let d = emp.meses[m];
+                                            if(d) return `<td class="p-2 border-r border-slate-100 text-center align-top">
+                                                <div class="font-bold text-slate-900 mb-0.5">${d.antec}</div>
+                                                <div class="text-[8px] bg-red-100 text-red-800 font-bold px-1 rounded inline-block">IR: ${d.ir}</div>
+                                            </td>`;
+                                            return `<td class="p-2 border-r border-slate-100 text-center text-slate-300">-</td>`;
+                                        }).join('')}
+                                    </tr>
+                                `).join('')}
+                                ${listaEmpresasMensal.length === 0 ? `<tr><td colspan="10" class="p-4 text-center text-[9px] text-slate-400 italic">Nenhum dado mensal.</td></tr>` : ''}
+                            </tbody>
+                        </table>
                     </div>
                 </div>
+
                 <div>
                     <div class="bg-emerald-600 text-white text-[10px] font-black p-2 rounded shadow-md uppercase mb-2 flex justify-between items-center">
-                        <span>Envio Trimestral (até 50k/SM): ${trimestral.length} ocorrências</span>
+                        <span>Envio Trimestral (até 50k/SM): ${contTrimestral} ocorrências</span>
                         <button onclick="window.imprimirClassificacao('trimestral')" class="bg-white text-emerald-700 px-2 py-0.5 rounded hover:bg-emerald-50 flex items-center gap-1 shadow-sm font-bold tracking-widest text-[9px] transition-colors" title="Imprimir Relatório Trimestral">
                             🖨️ IMPRIMIR
                         </button>
                     </div>
-                    <div class="space-y-1">
-                        ${trimestral.map(m => `
-                            <div class="bg-white border-l-4 border-emerald-500 p-1.5 text-[9px] font-bold text-slate-700 shadow-sm uppercase flex items-center">
-                                <span class="text-emerald-700 bg-emerald-50 px-1 py-0.5 rounded mr-2">${m.mes}</span>
-                                <span class="truncate">${m.razao} <span class="text-slate-500 font-normal">(${m.contato})</span></span>
-                            </div>
-                        `).join('')}
-                        ${trimestral.length === 0 ? '<p class="text-[9px] text-slate-400 italic">Nenhum cliente nestes períodos.</p>' : ''}
+                    <div class="overflow-x-auto bg-white rounded shadow-sm border border-emerald-100">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-emerald-50 text-emerald-900 text-[9px] uppercase border-b border-emerald-200">
+                                    <th class="p-2 border-r border-emerald-100">Razão Social</th>
+                                    <th class="p-2 border-r border-emerald-100">Contato</th>
+                                    ${sortedMesesTrimestral.map(m => `<th class="p-2 border-r border-emerald-100 text-center">${m}</th>`).join('')}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${listaEmpresasTrimestral.map(emp => `
+                                    <tr class="border-b border-slate-100 hover:bg-slate-50">
+                                        <td class="p-2 border-r border-slate-100 text-[9px] font-bold text-slate-800">${emp.razao}</td>
+                                        <td class="p-2 border-r border-slate-100 text-[9px] text-slate-500">${emp.contato || '-'}</td>
+                                        ${sortedMesesTrimestral.map(m => {
+                                            let d = emp.meses[m];
+                                            if(d) return `<td class="p-2 border-r border-slate-100 text-center font-bold text-emerald-800 align-middle">${d.antec}</td>`;
+                                            return `<td class="p-2 border-r border-slate-100 text-center text-slate-300">-</td>`;
+                                        }).join('')}
+                                    </tr>
+                                `).join('')}
+                                ${listaEmpresasTrimestral.length === 0 ? `<tr><td colspan="10" class="p-4 text-center text-[9px] text-slate-400 italic">Nenhum dado trimestral.</td></tr>` : ''}
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             `;
@@ -733,7 +1129,6 @@
                     if (cli.mensal[mes]) {
                         let vlr = window.parseCurrency(cli.mensal[mes].antec);
                         
-                        // Lógica Mensal (> 50k)
                         if (tipo === 'mensal' && vlr > 50000) {
                             if (!dadosAgrupados[chave]) dadosAgrupados[chave] = { razao: cli.razao, contato: cli.contato, meses: {} };
                             let ir = vlr * 0.10;
@@ -743,7 +1138,6 @@
                             };
                             mesesPresentes.add(mes);
                         } 
-                        // Lógica Trimestral (até 50k)
                         else if (tipo === 'trimestral' && (vlr > 0 || cli.mensal[mes].antec === 'S/M') && vlr <= 50000) {
                             if (!dadosAgrupados[chave]) dadosAgrupados[chave] = { razao: cli.razao, contato: cli.contato, meses: {} };
                             dadosAgrupados[chave].meses[mes] = {
@@ -784,10 +1178,8 @@
                     }).join('');
                     
                     return `<tr>
-                        <td style="padding: 8px; border: 1px solid #fca5a5;">
-                            <strong style="font-size: 13px;">${emp.razao}</strong><br>
-                            <span style="color:#666; font-size: 11px;">Contato: ${emp.contato || 'N/A'}</span>
-                        </td>
+                        <td style="padding: 8px; border: 1px solid #fca5a5; font-weight: bold; font-size: 13px;">${emp.razao}</td>
+                        <td style="padding: 8px; border: 1px solid #fca5a5; font-size: 11px; color: #444;">${emp.contato || '-'}</td>
                         ${tdMeses}
                     </tr>`;
                 }).join('');
@@ -796,7 +1188,8 @@
                     <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
                         <thead>
                             <tr style="background-color: #fee2e2; color: #991b1b; text-align: left;">
-                                <th style="padding: 8px; border: 1px solid #fca5a5;">Razão Social (Contato)</th>
+                                <th style="padding: 8px; border: 1px solid #fca5a5;">Razão Social</th>
+                                <th style="padding: 8px; border: 1px solid #fca5a5;">Contato</th>
                                 ${thMeses}
                             </tr>
                         </thead>
@@ -822,10 +1215,8 @@
                     }).join('');
                     
                     return `<tr>
-                        <td style="padding: 8px; border: 1px solid #6ee7b7;">
-                            <strong style="font-size: 13px;">${emp.razao}</strong><br>
-                            <span style="color:#666; font-size: 11px;">Contato: ${emp.contato || 'N/A'}</span>
-                        </td>
+                        <td style="padding: 8px; border: 1px solid #6ee7b7; font-weight: bold; font-size: 13px;">${emp.razao}</td>
+                        <td style="padding: 8px; border: 1px solid #6ee7b7; font-size: 11px; color: #444;">${emp.contato || '-'}</td>
                         ${tdMeses}
                     </tr>`;
                 }).join('');
@@ -834,7 +1225,8 @@
                     <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
                         <thead>
                             <tr style="background-color: #d1fae5; color: #166534; text-align: left;">
-                                <th style="padding: 8px; border: 1px solid #6ee7b7;">Razão Social (Contato)</th>
+                                <th style="padding: 8px; border: 1px solid #6ee7b7;">Razão Social</th>
+                                <th style="padding: 8px; border: 1px solid #6ee7b7;">Contato</th>
                                 ${thMeses}
                             </tr>
                         </thead>
@@ -922,7 +1314,8 @@
                 <th rowspan="2" class="col-fixed-razao text-slate-500">RAZÃO SOCIAL</th>
                 <th rowspan="2" class="col-fixed-cnpj text-slate-500">CNPJ</th>
                 <th rowspan="2" class="col-fixed-contato text-slate-500">CONTATO</th>
-                <th rowspan="2" class="col-fixed-regime text-slate-500">REG.</th>`;
+                <th rowspan="2" class="col-fixed-regime text-slate-500">REG.</th>
+                <th rowspan="2" class="col-fixed-conta text-slate-500">CONTA</th>`;
             
             let tr2 = `<tr>`;
             let hasVisible = false;
@@ -990,13 +1383,28 @@
             tbody.innerHTML = list.length === 0 ? `<tr><td colspan="100" class="text-center py-20 text-slate-300 uppercase font-black italic tracking-widest">Nenhum dado</td></tr>` : 
             list.map(cli => {
                 const safeContato = btoa(unescape(encodeURIComponent(cli.contato || '')));
+                
+                let optionsHtml = `<option value="" ${!cli.conta ? 'selected' : ''}>-</option>`;
+                let optionsArray = window.appState.opcoesConta || ['BANCO', 'CAIXA', 'PRESUNÇÃO'];
+                if (cli.conta && !optionsArray.includes(cli.conta)) {
+                     optionsHtml += `<option value="${cli.conta}" selected>${cli.conta} (Inativa)</option>`;
+                }
+                optionsArray.forEach(opt => {
+                    optionsHtml += `<option value="${opt}" ${cli.conta === opt ? 'selected' : ''}>${opt}</option>`;
+                });
+
                 let row = `<tr class="hover:bg-blue-50 border-b border-slate-100 transition-colors">
                     <td class="col-fixed-n font-mono text-slate-400 font-bold">${cli.n}</td>
                     <td class="col-fixed-ano text-slate-400 font-medium">${cli.ano}</td>
                     <td class="col-fixed-razao font-black text-slate-800 uppercase tracking-tighter" title="${cli.razao}">${cli.razao}</td>
                     <td class="col-fixed-cnpj font-mono text-blue-700 tracking-tighter">${cli.cnpj}</td>
                     <td class="col-fixed-contato text-slate-500 uppercase" title="${cli.contato}">${cli.contato}</td>
-                    <td class="col-fixed-regime font-black text-slate-600 uppercase">${cli.regime}</td>`;
+                    <td class="col-fixed-regime font-black text-slate-600 uppercase">${cli.regime}</td>
+                    <td class="col-fixed-conta align-middle">
+                        <select class="cell-input ${cli.conta ? 'text-indigo-600' : 'text-slate-400'} text-[9px] uppercase cursor-pointer" onchange="window.atualizarContaManual('${cli.cnpj}', '${safeContato}', this.value, '${cli.conta || ''}')">
+                            ${optionsHtml}
+                        </select>
+                    </td>`;
                 
                 window.appState.meses.forEach(m => {
                     if (window.appState.mesesConfig[m]?.visible) {
@@ -1088,8 +1496,27 @@
             }
         };
 
+        window.atualizarContaManual = async function(cnpj, contatoB64, val, old) {
+            let contato = decodeURIComponent(escape(atob(contatoB64)));
+            let cli = window.appState.clientes.find(c => c.cnpj === cnpj && c.contato === contato);
+            if (cli && val !== old) {
+                cli.conta = val;
+                window.appState.historicoGeral.push({
+                    tipo: 'edicao',
+                    data: new Date().toLocaleString('pt-BR'),
+                    usuario: window.appState.currentUser, mes: 'CADASTRO',
+                    alteracoes: [`<span class="text-blue-600 font-bold">EDIÇÃO MANUAL:</span> <b>${cli.razao} (${cli.contato})</b> - TIPO DE CONTA mudou para '${val || '-'}'`]
+                });
+                
+                await window.saveState(); 
+                window.renderHistorico();
+                window.renderTable();
+                window.renderListaCadastro();
+            }
+        };
+
         // ==========================================
-        // IMPORTAÇÃO DE DADOS & GERAÇÃO DE POPUP
+        // IMPORTAÇÃO DE DADOS & GERAÇÃO DE POPUP (COM VERIFICAÇÃO DE FALTANTES)
         // ==========================================
         window.adicionarDados = async function() {
             const input = document.getElementById('rawData').value;
@@ -1119,8 +1546,11 @@
             
             let htmlAlteracoesPopup = '';
             let htmlAlertas50kPopup = '';
+            let htmlNovosPopup = '';
             let houveAlteracaoNoPopup = false;
             let logAlteracoesHistorico = [];
+            
+            let chavesImportadasNoMes = new Set();
 
             linhas.forEach(linha => {
                 if (linha.toUpperCase().includes('INTEGRAÇOES')) return;
@@ -1128,23 +1558,74 @@
                 if (cols.length < 5) return;
                 
                 let offset = cols[2] && /^\d{4}$/.test(cols[2].trim()) ? 1 : 0;
-                let cnpj = cols[offset+3]?.trim();
-                if (!cnpj || cnpj === 'CNPJ') return;
+                let cnpjRaw = cols[offset+3]?.trim() || '';
+                let razao = cols[offset+2]?.trim().toUpperCase();
+                let contato = cols[offset+4]?.trim().toUpperCase() || '';
+
+                let cnpjNum = window.getNumbers(cnpjRaw);
+                let cnpj = window.formatCNPJ(cnpjRaw);
+
+                if (!cnpjNum && !razao) return;
                 
-                let contato = cols[offset+4]?.trim() || '';
+                // IGNORA CABEÇALHOS ACIDENTALMENTE COPIADOS NO IMPORT
+                if (['RAZÃO SOCIAL', 'RAZAO SOCIAL', 'NOME', 'CLIENTE', 'EMPRESA', 'NOME DA EMPRESA'].includes(razao)) return;
+
                 qtdImportadas++;
 
-                let cli = window.appState.clientes.find(c => c.cnpj === cnpj && c.contato === contato);
+                let cli = null;
+
+                // 1. Busca por CNPJ Exato + Contato
+                if (cnpjNum.length === 14) {
+                    cli = window.appState.clientes.find(c => window.getNumbers(c.cnpj) === cnpjNum && (c.contato || '').toUpperCase() === contato);
+                    
+                    // 2. Busca por CNPJ Exato onde Contato no BD está vazio
+                    if (!cli) {
+                        let cliSemContato = window.appState.clientes.find(c => window.getNumbers(c.cnpj) === cnpjNum && (!c.contato || c.contato.trim() === ''));
+                        if (cliSemContato) {
+                            if (contato) cliSemContato.contato = contato;
+                            cli = cliSemContato;
+                        }
+                    }
+                }
+
+                // 3. Busca Inteligente por Nome (Fuzzy Matching)
+                if (!cli && razao) {
+                    let cliByName = window.appState.clientes.find(c => 
+                        window.isSameCompanyByName(c.razao, razao) && 
+                        ((c.contato || '').toUpperCase() === contato || (!c.contato || c.contato.trim() === ''))
+                    );
+                    
+                    if (cliByName) {
+                        if (cnpjNum.length === 14 && window.getNumbers(cliByName.cnpj).length !== 14) {
+                            cliByName.cnpj = cnpj; 
+                        }
+                        if (!cliByName.contato && contato) {
+                            cliByName.contato = contato;
+                        }
+                        cli = cliByName;
+                    }
+                }
+
+                // 4. Cria Novo Cliente se não encontrou em nenhuma das regras
                 if (!cli) {
                     cli = { 
                         n: cols[offset+0]?.trim(), ano: cols[offset+1]?.trim(), 
-                        razao: cols[offset+2]?.trim(), cnpj: cnpj, 
+                        razao: razao, cnpj: cnpj || "S/ CNPJ", 
                         contato: contato, regime: cols[offset+5]?.trim(), 
+                        conta: '',
                         mensal: {} 
                     };
                     window.appState.clientes.push(cli);
+
+                    houveAlteracaoNoPopup = true;
+                    htmlNovosPopup += `<li><b>${razao}</b> ${contato ? `(${contato})` : ''} - <i class="text-slate-400">CNPJ: ${cnpj}</i></li>`;
+                    
+                    // NOVO: Adiciona no log de Ajustes
+                    logAlteracoesHistorico.push(`<span class="text-indigo-600 font-bold">NOVO CLIENTE AUTOMÁTICO:</span> <b>${razao}</b> ${contato ? `(${contato})` : ''} <span class="text-slate-400 text-[8px]">(CNPJ: ${cnpj})</span>`);
                 }
                 
+                chavesImportadasNoMes.add(cli.cnpj + "|||" + cli.contato);
+
                 let ant = cols[offset+11]?.trim() || '-';
                 let old = cli.mensal[mesRef];
                 let oldAntec = old?.antec || '-';
@@ -1168,6 +1649,20 @@
                 };
             });
             
+            let htmlFaltantesPopup = '';
+            let countFaltantes = 0;
+            
+            window.appState.clientes.forEach(cli => {
+                let chave = cli.cnpj + "|||" + cli.contato;
+                if (!chavesImportadasNoMes.has(chave)) {
+                    let dMes = cli.mensal[mesRef];
+                    if (!dMes || (dMes.antec === '-' && dMes.lancado === '-' && dMes.reinf === '-')) {
+                        countFaltantes++;
+                        htmlFaltantesPopup += `<li><b>${cli.razao}</b> ${cli.contato ? `(${cli.contato})` : ''}</li>`;
+                    }
+                }
+            });
+
             if (logAlteracoesHistorico.length > 0) {
                 window.appState.historicoGeral.push({
                     tipo: 'edicao',
@@ -1189,37 +1684,59 @@
             await window.saveState(); 
 
             document.getElementById('rawData').value = '';
+            window.renderListaCadastro();
             window.renderTable();
             window.renderHistorico();
             window.renderClassificacao();
 
-            if (houveAlteracaoNoPopup) {
-                const listaAlt = document.getElementById('listaAlteracoesModal');
-                const lista50k = document.getElementById('listaAlertas50kModal');
-                const blocoAlt = document.getElementById('blocoAlteracoesModal');
-                const bloco50k = document.getElementById('blocoAlertas50kModal');
+            const listaAlt = document.getElementById('listaAlteracoesModal');
+            const lista50k = document.getElementById('listaAlertas50kModal');
+            const listaFalt = document.getElementById('listaFaltantesModal');
+            const listaNovos = document.getElementById('listaNovosModal');
+            
+            const blocoAlt = document.getElementById('blocoAlteracoesModal');
+            const bloco50k = document.getElementById('blocoAlertas50kModal');
+            const blocoFalt = document.getElementById('blocoFaltantesModal');
+            const blocoNovos = document.getElementById('blocoNovosModal');
+            const badgeFalt = document.getElementById('badgeCountFaltantes');
 
-                if (htmlAlteracoesPopup !== '') {
-                    listaAlt.innerHTML = htmlAlteracoesPopup;
-                    blocoAlt.classList.remove('hidden');
-                } else {
-                    blocoAlt.classList.add('hidden');
-                }
+            let abrirModal = false;
 
-                if (htmlAlertas50kPopup !== '') {
-                    lista50k.innerHTML = htmlAlertas50kPopup;
-                    bloco50k.classList.remove('hidden');
-                } else {
-                    bloco50k.classList.add('hidden');
-                }
+            if (htmlAlteracoesPopup !== '') {
+                listaAlt.innerHTML = htmlAlteracoesPopup;
+                blocoAlt.classList.remove('hidden');
+                abrirModal = true;
+            } else { blocoAlt.classList.add('hidden'); }
 
+            if (htmlAlertas50kPopup !== '') {
+                lista50k.innerHTML = htmlAlertas50kPopup;
+                bloco50k.classList.remove('hidden');
+                abrirModal = true;
+            } else { bloco50k.classList.add('hidden'); }
+
+            if (htmlFaltantesPopup !== '') {
+                listaFalt.innerHTML = htmlFaltantesPopup;
+                badgeFalt.innerText = countFaltantes;
+                blocoFalt.classList.remove('hidden');
+                abrirModal = true;
+            } else { blocoFalt.classList.add('hidden'); }
+
+            if (htmlNovosPopup !== '') {
+                listaNovos.innerHTML = htmlNovosPopup;
+                blocoNovos.classList.remove('hidden');
+                abrirModal = true;
+            } else { blocoNovos.classList.add('hidden'); }
+
+            if (abrirModal) {
                 document.getElementById('modalResumoImportacao').classList.remove('hidden');
             }
         };
 
         window.limparTabela = async function() { 
-            if(confirm("Apagar tudo? Isto não apagará as planilhas do histórico de log.")) { 
-                window.appState.meses = []; window.appState.clientes = []; window.appState.historicoGeral = []; 
+            if(confirm("Apagar tudo? Isto não apagará as planilhas do histórico de log. Nem removerá os cadastros de clientes.")) { 
+                window.appState.meses = []; 
+                window.appState.clientes.forEach(c => c.mensal = {}); 
+                window.appState.historicoGeral = []; 
                 window.appState.mesesConfig = {}; window.appState.filtros = {}; 
                 
                 await window.saveState(); 
