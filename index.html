@@ -112,6 +112,46 @@
         </div>
     </div>
 
+    <!-- POPUP DE RESUMO DA IMPORTAÇÃO (Alterações e >50k) -->
+    <div id="modalResumoImportacao" class="fixed inset-0 bg-slate-900 bg-opacity-80 flex justify-center items-center z-[110] hidden px-4">
+        <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col border-t-4 border-amber-500 relative">
+            <button onclick="document.getElementById('modalResumoImportacao').classList.add('hidden')" class="absolute top-3 right-4 text-slate-400 hover:text-slate-700 text-2xl font-bold leading-none">&times;</button>
+            <h2 class="text-xl font-black mb-2 text-slate-800 uppercase tracking-tight">Relatório da Importação</h2>
+            <p class="text-xs text-slate-500 mb-4 font-medium">Verifique abaixo as divergências e alertas de valores detectados na última leitura de dados:</p>
+            
+            <div class="overflow-y-auto flex-grow space-y-5 pr-2">
+                <!-- Bloco de Alterações -->
+                <div id="blocoAlteracoesModal" class="hidden">
+                    <h3 class="text-[11px] font-black text-amber-600 uppercase border-b border-amber-200 pb-1 mb-2 tracking-widest">⚠️ Valores Alterados (Divergência)</h3>
+                    <ul id="listaAlteracoesModal" class="text-[11px] font-mono text-slate-700 space-y-1.5 list-disc pl-4"></ul>
+                </div>
+                <!-- Bloco de Alertas 50k -->
+                <div id="blocoAlertas50kModal" class="hidden">
+                    <h3 class="text-[11px] font-black text-red-600 uppercase border-b border-red-200 pb-1 mb-2 tracking-widest">🚨 Distribuição > 50 Mil (Atenção IR)</h3>
+                    <ul id="listaAlertas50kModal" class="text-[11px] font-mono text-slate-700 space-y-1.5 list-disc pl-4"></ul>
+                </div>
+            </div>
+            
+            <button onclick="document.getElementById('modalResumoImportacao').classList.add('hidden')" class="mt-4 bg-slate-800 hover:bg-slate-900 text-white font-black px-6 py-3 rounded-lg w-full shadow-lg transition-all uppercase tracking-widest">Ciente, Fechar Aviso</button>
+        </div>
+    </div>
+
+    <!-- MODAL DE VISUALIZAÇÃO DE PLANILHA SALVA (O OLHO) -->
+    <div id="modalVisualizarPlanilha" class="fixed inset-0 bg-slate-900 bg-opacity-95 flex justify-center items-center z-[120] hidden p-4">
+        <div class="bg-white rounded-xl shadow-2xl w-full h-full max-w-[95vw] max-h-full flex flex-col border-t-4 border-blue-600 relative overflow-hidden">
+            <div class="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50 flex-shrink-0">
+                <h2 id="tituloVisualizarPlanilha" class="text-lg font-black text-slate-800 uppercase tracking-tight">Visualização da Planilha Histórica</h2>
+                <button onclick="document.getElementById('modalVisualizarPlanilha').classList.add('hidden')" class="text-slate-400 hover:text-red-600 text-3xl font-bold leading-none">&times;</button>
+            </div>
+            <div class="overflow-auto flex-grow bg-white relative">
+                <table id="tabelaVisualizacao" class="w-full">
+                    <thead id="tabelaVisualizacaoHead" class="text-slate-700 uppercase bg-slate-100 border-b-2 border-slate-300 shadow-sm sticky top-0 z-10"></thead>
+                    <tbody id="tabelaVisualizacaoCorpo" class="divide-y divide-slate-100"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
     <div class="h-screen flex flex-col relative bg-white">
         
         <div class="p-3 border-b border-slate-200 flex justify-between items-center bg-slate-50 flex-shrink-0 shadow-sm z-30">
@@ -178,9 +218,10 @@
                 <h2 class="text-sm font-black text-amber-900 uppercase tracking-tighter">Registro (Log)</h2>
                 <button onclick="togglePainel('painelHistorico')" class="text-slate-400 hover:text-black text-2xl font-light leading-none">&times;</button>
             </div>
-            <div class="flex border-b border-slate-200 text-[10px] font-black uppercase text-center bg-white cursor-pointer flex-shrink-0">
-                <div id="tabLogImportacao" onclick="window.setLogTab('importacao')" class="flex-1 py-2.5 text-blue-600 border-b-2 border-blue-600 bg-blue-50 transition-colors">Importações</div>
-                <div id="tabLogEdicao" onclick="window.setLogTab('edicao')" class="flex-1 py-2.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors">Alterações</div>
+            <div class="flex border-b border-slate-200 text-[9px] font-black uppercase text-center bg-white cursor-pointer flex-shrink-0">
+                <div id="tabLogImportacao" onclick="window.setLogTab('importacao')" class="flex-1 py-3 text-blue-600 border-b-2 border-blue-600 bg-blue-50 transition-colors">Import</div>
+                <div id="tabLogEdicao" onclick="window.setLogTab('edicao')" class="flex-1 py-3 text-slate-400 hover:text-slate-600 hover:bg-slate-50 border-b-2 border-transparent transition-colors">Ajustes</div>
+                <div id="tabLogPlanilhas" onclick="window.setLogTab('planilhas')" class="flex-1 py-3 text-slate-400 hover:text-slate-600 hover:bg-slate-50 border-b-2 border-transparent transition-colors">Planilhas</div>
             </div>
             <div class="p-3 overflow-y-auto flex-grow bg-slate-50 font-mono" id="conteudoHistorico"></div>
             <div class="p-3 border-t border-slate-200 text-center bg-white flex-shrink-0">
@@ -194,13 +235,13 @@
                 <button onclick="togglePainel('painelClassificacao')" class="text-slate-400 hover:text-black text-2xl font-light leading-none">&times;</button>
             </div>
             <div class="p-4 bg-slate-50 flex-shrink-0 border-b">
-                <label class="text-[9px] font-bold text-slate-500 uppercase">Selecione o Mês para Análise:</label>
-                <select id="selectMesClassificacao" class="w-full border p-2 text-xs font-bold rounded mt-1 outline-none focus:ring-1 focus:ring-blue-500" onchange="window.renderClassificacao()">
-                    <option value="">Selecione...</option>
-                </select>
+                <label class="text-[9px] font-bold text-slate-500 uppercase">Selecione os Meses para Análise:</label>
+                <div id="containerMesesReinf" class="flex flex-wrap gap-2 mt-2">
+                    <!-- Checkboxes inseridos dinamicamente -->
+                </div>
             </div>
             <div class="p-3 overflow-y-auto flex-grow bg-slate-50" id="conteudoClassificacao">
-                <p class="text-[9px] text-slate-400 text-center mt-10 uppercase italic">Selecione um mês para ver a classificação mensal/trimestral.</p>
+                <p class="text-[9px] text-slate-400 text-center mt-10 uppercase italic">Selecione os meses acima para ver a classificação mensal/trimestral combinada.</p>
             </div>
         </div>
     </div>
@@ -212,6 +253,7 @@
             mesesConfig: {},
             clientes: [],
             historicoGeral: [],
+            historicoPlanilhas: [], // Novo: Armazena o RAW das planilhas importadas
             filtros: {},
             currentUser: '' // Inicia vazio para pedir o nome
         };
@@ -251,7 +293,7 @@
                     if(req.result) {
                         window.aplicarDados(req.result);
                     } else {
-                        window.syncUI(); // Força render inicial
+                        window.syncUI();
                     }
                 };
             } catch(e) { 
@@ -263,28 +305,25 @@
         window.aplicarDados = function(data) {
             if (data) {
                 window.appState = Object.assign(window.appState, data);
+                if(!window.appState.historicoPlanilhas) window.appState.historicoPlanilhas = []; // compatibilidade
             }
             window.syncUI();
         };
 
         window.sincronizarDoGist = async function() {
             if (!window.gistConfig.token || !window.gistConfig.id) return false;
-            
             try {
                 const response = await fetch(`https://api.github.com/gists/${window.gistConfig.id}`, {
                     headers: { 'Authorization': `Bearer ${window.gistConfig.token}` }
                 });
-                
                 if (!response.ok) throw new Error("Erro de autorização ou ID não encontrado.");
-                
                 const data = await response.json();
                 const files = data.files;
                 const firstFileName = Object.keys(files)[0];
-                
                 if (firstFileName && files[firstFileName].content && files[firstFileName].content !== "{}") {
                     const nuvemState = JSON.parse(files[firstFileName].content);
                     window.aplicarDados(nuvemState);
-                    await window.salvarDadosLocais(nuvemState); // Faz backup local da nuvem
+                    await window.salvarDadosLocais(nuvemState); 
                 }
                 window.atualizarBotaoNuvem(true);
                 return true;
@@ -297,7 +336,6 @@
 
         window.salvarNoGist = async function(dados) {
             if (!window.gistConfig.token || !window.gistConfig.id) return;
-            
             try {
                 const response = await fetch(`https://api.github.com/gists/${window.gistConfig.id}`, {
                     headers: { 'Authorization': `Bearer ${window.gistConfig.token}` }
@@ -305,12 +343,7 @@
                 if (!response.ok) return;
                 const data = await response.json();
                 const fileName = Object.keys(data.files)[0] || "planilha_reinf.json";
-
-                const payload = {
-                    files: {
-                        [fileName]: { content: JSON.stringify(dados) }
-                    }
-                };
+                const payload = { files: { [fileName]: { content: JSON.stringify(dados) } } };
 
                 await fetch(`https://api.github.com/gists/${window.gistConfig.id}`, {
                     method: 'PATCH',
@@ -320,7 +353,6 @@
                     },
                     body: JSON.stringify(payload)
                 });
-                
                 window.atualizarBotaoNuvem(true);
             } catch(e) {
                 console.error("Erro ao salvar no Gist:", e);
@@ -337,48 +369,33 @@
         };
 
         // ==========================================
-        // INICIALIZAÇÃO
+        // INICIALIZAÇÃO E UI BÁSICA
         // ==========================================
         window.onload = async () => {
             if (window.gistConfig.token && window.gistConfig.id) {
                 const sucessoNuvem = await window.sincronizarDoGist();
-                if (!sucessoNuvem) {
-                    await window.carregarDadosLocais();
-                }
+                if (!sucessoNuvem) await window.carregarDadosLocais();
             } else {
                 window.atualizarBotaoNuvem(false);
                 await window.carregarDadosLocais();
             }
         };
 
-
-        // ==========================================
-        // UI - MODAIS GIST E LOGIN
-        // ==========================================
         window.abrirModalGist = function() {
             document.getElementById('modalGist').classList.remove('hidden');
             document.getElementById('gistTokenInput').value = window.gistConfig.token;
             document.getElementById('gistIdInput').value = window.gistConfig.id;
-            
-            if (window.gistConfig.token && window.gistConfig.id) {
-                document.getElementById('btnDesconectarGist').classList.remove('hidden');
-            } else {
-                document.getElementById('btnDesconectarGist').classList.add('hidden');
-            }
+            if (window.gistConfig.token && window.gistConfig.id) document.getElementById('btnDesconectarGist').classList.remove('hidden');
+            else document.getElementById('btnDesconectarGist').classList.add('hidden');
         };
 
-        window.fecharModalGist = function() {
-            document.getElementById('modalGist').classList.add('hidden');
-        };
+        window.fecharModalGist = function() { document.getElementById('modalGist').classList.add('hidden'); };
 
         window.salvarConfigGist = async function() {
             const token = document.getElementById('gistTokenInput').value.trim();
             const id = document.getElementById('gistIdInput').value.trim();
-            
             if (!token || !id) return alert("Preencha ambos os campos.");
-            
             document.getElementById('gistBtnText').innerText = "Testando...";
-            
             window.gistConfig = { token, id };
             const sucesso = await window.sincronizarDoGist();
             
@@ -386,9 +403,9 @@
                 localStorage.setItem('reinfGistToken', token);
                 localStorage.setItem('reinfGistId', id);
                 window.fecharModalGist();
-                alert("Conectado com sucesso! Seus dados estão sincronizados com a nuvem.");
+                alert("Conectado com sucesso! Seus dados estão sincronizados.");
             } else {
-                alert("Erro na conexão. Verifique se o Token tem permissão 'gist' e se o ID está correto.");
+                alert("Erro na conexão. Verifique o Token e o ID.");
                 window.gistConfig = { token: localStorage.getItem('reinfGistToken') || '', id: localStorage.getItem('reinfGistId') || '' };
             }
             document.getElementById('gistBtnText').innerText = "Conectar e Sincronizar";
@@ -408,15 +425,12 @@
             const btn = document.getElementById('btnStatusNuvem');
             const icone = document.getElementById('iconeNuvem');
             const texto = document.getElementById('textoNuvem');
-
             if (conectado) {
                 btn.className = "bg-emerald-100 hover:bg-emerald-200 text-emerald-800 px-3 py-1.5 rounded-full text-[10px] font-black border border-emerald-300 transition-all leading-none flex items-center gap-1 shadow-sm";
-                icone.innerText = "☁️";
-                texto.innerText = "NUVEM CONECTADA";
+                icone.innerText = "☁️"; texto.innerText = "NUVEM CONECTADA";
             } else {
                 btn.className = "bg-slate-100 hover:bg-slate-200 text-slate-500 px-3 py-1.5 rounded-full text-[10px] font-black border border-slate-300 transition-all leading-none flex items-center gap-1 shadow-sm";
-                icone.innerText = "⚠️";
-                texto.innerText = "CONFIGURAR NUVEM";
+                icone.innerText = "⚠️"; texto.innerText = "CONFIGURAR NUVEM";
             }
         }
 
@@ -429,7 +443,7 @@
             }
             window.renderTable();
             window.renderHistorico();
-            window.renderClassificacao();
+            window.renderFiltroReinf(); // Atualiza os checkboxes de meses
         };
 
         window.abrirLogin = function() {
@@ -444,7 +458,7 @@
             let n = document.getElementById('userNameInput').value.trim();
             if (!n) return alert("Por favor, identifique-se.");
             window.appState.currentUser = n;
-            await window.saveState(); // Salva estado
+            await window.saveState();
             window.syncUI();
         };
 
@@ -454,9 +468,7 @@
 
         document.getElementById('mesRefInput').addEventListener('blur', function(e) {
             let val = e.target.value.replace(/\D/g, '');
-            if (val.length === 6) {
-                e.target.value = val.substring(0,2) + '/' + val.substring(2);
-            }
+            if (val.length === 6) { e.target.value = val.substring(0,2) + '/' + val.substring(2); }
         });
 
         window.togglePainel = function(id) { 
@@ -467,17 +479,22 @@
             if(id === 'painelClassificacao') window.renderClassificacao();
         };
 
+        // ==========================================
+        // SISTEMA DE LOGS E PLANILHAS SALVAS
+        // ==========================================
         window.currentLogTab = 'importacao';
 
         window.setLogTab = function(tab) {
             window.currentLogTab = tab;
-            if(tab === 'importacao') {
-                document.getElementById('tabLogImportacao').className = "flex-1 py-2.5 text-blue-600 border-b-2 border-blue-600 bg-blue-50 transition-colors";
-                document.getElementById('tabLogEdicao').className = "flex-1 py-2.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors";
-            } else {
-                document.getElementById('tabLogEdicao').className = "flex-1 py-2.5 text-blue-600 border-b-2 border-blue-600 bg-blue-50 transition-colors";
-                document.getElementById('tabLogImportacao').className = "flex-1 py-2.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors";
-            }
+            const tabs = ['importacao', 'edicao', 'planilhas'];
+            tabs.forEach(t => {
+                const el = document.getElementById('tabLog' + t.charAt(0).toUpperCase() + t.slice(1));
+                if(t === tab) {
+                    el.className = "flex-1 py-3 text-blue-600 border-b-2 border-blue-600 bg-blue-50 transition-colors";
+                } else {
+                    el.className = "flex-1 py-3 text-slate-400 hover:text-slate-600 hover:bg-slate-50 border-b-2 border-transparent transition-colors";
+                }
+            });
             window.renderHistorico();
         };
 
@@ -485,6 +502,31 @@
             const container = document.getElementById('conteudoHistorico');
             document.getElementById('badgeHistorico').innerText = window.appState.historicoGeral.length;
             
+            // Renderiza Tab "Planilhas"
+            if(window.currentLogTab === 'planilhas') {
+                if (!window.appState.historicoPlanilhas || window.appState.historicoPlanilhas.length === 0) {
+                    container.innerHTML = `<p class="text-[9px] text-slate-400 text-center mt-10 uppercase font-bold tracking-widest">Nenhuma planilha armazenada</p>`;
+                    return;
+                }
+                container.innerHTML = [...window.appState.historicoPlanilhas].reverse().map((p, indexRev) => {
+                    let realIdx = window.appState.historicoPlanilhas.length - 1 - indexRev;
+                    return `
+                        <div class="mb-3 bg-white p-2.5 rounded-lg border border-slate-200 shadow-sm flex justify-between items-center transition-all hover:border-blue-300">
+                            <div>
+                                <span class="text-blue-600 font-black uppercase tracking-tight text-xs">MÊS: ${p.mes}</span><br>
+                                <span class="text-slate-500 font-bold block text-[9px] mt-0.5">Imp: ${p.data}</span>
+                                <span class="text-slate-400 font-medium block text-[9px]">Por: ${p.usuario}</span>
+                            </div>
+                            <button onclick="window.visualizarPlanilhaSalva(${realIdx})" class="text-xl p-2 bg-slate-50 hover:bg-blue-100 rounded-full transition-transform hover:scale-110 shadow-sm border border-slate-200" title="Visualizar Planilha">
+                                👁️
+                            </button>
+                        </div>
+                    `;
+                }).join('');
+                return;
+            }
+
+            // Renderiza Tabs "Importacao" e "Edicao"
             const logsFiltrados = window.appState.historicoGeral.filter(reg => {
                 let isImport = reg.tipo === 'importacao' || (reg.alteracoes[0] && reg.alteracoes[0].includes('IMPORTAÇÃO'));
                 return window.currentLogTab === 'importacao' ? isImport : !isImport;
@@ -508,81 +550,165 @@
             `).join('');
         };
 
-        // ==========================================
-        // CÁLCULO DE IR E CLASSIFICAÇÃO
-        // ==========================================
-        window.renderClassificacao = function() {
-            const container = document.getElementById('conteudoClassificacao');
-            const selMes = document.getElementById('selectMesClassificacao');
-            const mes = selMes.value;
-
-            const currentOptions = Array.from(selMes.options).map(o => o.value);
-            window.appState.meses.forEach(m => {
-                if(!currentOptions.includes(m)) {
-                    let opt = document.createElement('option');
-                    opt.value = m; opt.text = m;
-                    selMes.add(opt);
-                }
+        window.visualizarPlanilhaSalva = function(idx) {
+            const p = window.appState.historicoPlanilhas[idx];
+            if(!p) return;
+            
+            document.getElementById('tituloVisualizarPlanilha').innerText = `VISUALIZAÇÃO DA IMPORTAÇÃO: ${p.mes} (Salva em ${p.data})`;
+            
+            let tempCli = [];
+            const linhas = p.raw.trim().split('\n');
+            linhas.forEach(linha => {
+                if (linha.toUpperCase().includes('INTEGRAÇOES')) return;
+                const cols = linha.split('\t');
+                if (cols.length < 5) return;
+                let offset = cols[2] && /^\d{4}$/.test(cols[2].trim()) ? 1 : 0;
+                let cnpj = cols[offset+3]?.trim();
+                if (!cnpj || cnpj === 'CNPJ') return;
+                
+                tempCli.push({
+                    n: cols[offset+0]?.trim(), ano: cols[offset+1]?.trim(),
+                    razao: cols[offset+2]?.trim(), cnpj: cnpj,
+                    contato: cols[offset+4]?.trim(), regime: cols[offset+5]?.trim(),
+                    antec: cols[offset+11]?.trim() || '-'
+                });
             });
 
-            if (!mes) return;
+            document.getElementById('tabelaVisualizacaoHead').innerHTML = `
+                <tr>
+                    <th class="col-fixed-n text-slate-500 py-3">Nº</th>
+                    <th class="col-fixed-ano text-slate-500 py-3">ANO</th>
+                    <th class="col-fixed-razao text-slate-500 py-3">RAZÃO SOCIAL</th>
+                    <th class="col-fixed-cnpj text-slate-500 py-3">CNPJ</th>
+                    <th class="col-fixed-contato text-slate-500 py-3">CONTATO</th>
+                    <th class="col-fixed-regime text-slate-500 py-3">REG.</th>
+                    <th class="bg-blue-100 text-blue-900 font-black py-3">ANTECIPAÇÃO LANÇADA (${p.mes})</th>
+                </tr>
+            `;
+
+            let tbody = tempCli.map(cli => `
+                <tr class="hover:bg-blue-50 border-b border-slate-100 transition-colors">
+                    <td class="col-fixed-n font-mono text-slate-400 font-bold">${cli.n}</td>
+                    <td class="col-fixed-ano text-slate-400 font-medium">${cli.ano}</td>
+                    <td class="col-fixed-razao font-black text-slate-800 uppercase" title="${cli.razao}">${cli.razao}</td>
+                    <td class="col-fixed-cnpj font-mono text-blue-700">${cli.cnpj}</td>
+                    <td class="col-fixed-contato text-slate-500 uppercase" title="${cli.contato}">${cli.contato}</td>
+                    <td class="col-fixed-regime font-black text-slate-600 uppercase">${cli.regime}</td>
+                    <td class="bg-blue-50/20 font-black text-slate-900 align-middle">${cli.antec}</td>
+                </tr>
+            `).join('');
+
+            if(tempCli.length === 0) tbody = `<tr><td colspan="7" class="text-center py-20 text-slate-400 font-black tracking-widest uppercase">Nenhum dado válido processado</td></tr>`;
+
+            document.getElementById('tabelaVisualizacaoCorpo').innerHTML = tbody;
+            document.getElementById('modalVisualizarPlanilha').classList.remove('hidden');
+        };
+
+        // ==========================================
+        // CÁLCULO DE IR E CLASSIFICAÇÃO MULTI-MÊS
+        // ==========================================
+        window.renderFiltroReinf = function() {
+            const container = document.getElementById('containerMesesReinf');
+            if(!container) return;
+            // Preserva seleções atuais
+            let checkedValues = Array.from(container.querySelectorAll('input:checked')).map(cb => cb.value);
+            
+            container.innerHTML = window.appState.meses.map(m => `
+                <label class="flex items-center gap-1.5 bg-white border border-slate-200 px-2.5 py-1.5 rounded-md shadow-sm cursor-pointer hover:bg-slate-50 transition-colors hover:border-blue-300">
+                    <input type="checkbox" value="${m}" class="mes-checkbox w-3.5 h-3.5 accent-blue-600 cursor-pointer" ${checkedValues.includes(m) ? 'checked' : ''} onchange="window.renderClassificacao()">
+                    <span class="text-[10px] font-bold text-slate-700">${m}</span>
+                </label>
+            `).join('');
+            
+            if(window.appState.meses.length > 0 && checkedValues.length === 0) {
+                // Se nenhum tiver marcado, marca o mais recente por padrão
+                const ultCheckbox = container.querySelector(`input[value="${window.appState.meses[window.appState.meses.length-1]}"]`);
+                if(ultCheckbox) ultCheckbox.checked = true;
+            }
+            window.renderClassificacao();
+        };
+
+        window.renderClassificacao = function() {
+            const container = document.getElementById('conteudoClassificacao');
+            const containerCheckboxes = document.getElementById('containerMesesReinf');
+            
+            let mesesSelecionados = Array.from(containerCheckboxes.querySelectorAll('input:checked')).map(cb => cb.value);
+
+            if (mesesSelecionados.length === 0) {
+                container.innerHTML = `<p class="text-[9px] text-slate-400 text-center mt-10 uppercase italic font-bold">Nenhum mês selecionado para análise.</p>`;
+                return;
+            }
 
             let mensal = [];
             let trimestral = [];
 
             window.appState.clientes.forEach(cli => {
-                if (cli.mensal[mes]) {
-                    let vlr = window.parseCurrency(cli.mensal[mes].antec);
-                    
-                    if (vlr > 50000) {
-                        // Calcula IR de 10% sobre o valor distribuído
-                        let ir = vlr * 0.10;
-                        mensal.push({
-                            razao: cli.razao,
-                            antec: cli.mensal[mes].antec,
-                            ir: ir.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'})
-                        });
+                mesesSelecionados.forEach(mes => {
+                    if (cli.mensal[mes]) {
+                        let vlr = window.parseCurrency(cli.mensal[mes].antec);
+                        
+                        if (vlr > 50000) {
+                            let ir = vlr * 0.10; // IR de 10%
+                            mensal.push({
+                                razao: cli.razao,
+                                mes: mes,
+                                antec: cli.mensal[mes].antec,
+                                ir: ir.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'})
+                            });
+                        }
+                        else if (vlr > 0 || cli.mensal[mes].antec === 'S/M') {
+                            trimestral.push({ razao: cli.razao, mes: mes });
+                        }
                     }
-                    else if (vlr > 0 || cli.mensal[mes].antec === 'S/M') {
-                        trimestral.push({ razao: cli.razao });
-                    }
-                }
+                });
             });
 
             container.innerHTML = `
                 <div class="mb-6">
-                    <div class="bg-red-600 text-white text-[10px] font-black p-2 rounded shadow-md uppercase mb-2">Envio Mensal (>50k): ${mensal.length}</div>
+                    <div class="bg-red-600 text-white text-[10px] font-black p-2 rounded shadow-md uppercase mb-2">Envio Mensal (>50k): ${mensal.length} ocorrências</div>
                     <div class="space-y-2">
                         ${mensal.map(m => `
                             <div class="bg-white border-l-4 border-red-500 p-2 text-[9px] font-bold text-slate-700 shadow-sm uppercase flex flex-col gap-1">
                                 <div class="flex justify-between border-b border-slate-100 pb-1">
-                                    <span class="truncate w-3/4" title="${m.razao}">${m.razao}</span> 
+                                    <div class="truncate w-3/4">
+                                        <span class="text-red-600 bg-red-50 px-1 py-0.5 rounded mr-1">${m.mes}</span>
+                                        <span title="${m.razao}">${m.razao}</span>
+                                    </div>
                                     <span class="text-slate-900">${m.antec}</span>
                                 </div>
                                 <div class="text-right text-red-600 font-black tracking-tight">PREVISÃO IR (10%): ${m.ir}</div>
                             </div>
                         `).join('')}
-                        ${mensal.length === 0 ? '<p class="text-[9px] text-slate-400 italic">Nenhum cliente para este período.</p>' : ''}
+                        ${mensal.length === 0 ? '<p class="text-[9px] text-slate-400 italic">Nenhum cliente nestes períodos.</p>' : ''}
                     </div>
                 </div>
                 <div>
-                    <div class="bg-emerald-600 text-white text-[10px] font-black p-2 rounded shadow-md uppercase mb-2">Envio Trimestral (até 50k/SM): ${trimestral.length}</div>
+                    <div class="bg-emerald-600 text-white text-[10px] font-black p-2 rounded shadow-md uppercase mb-2">Envio Trimestral (até 50k/SM): ${trimestral.length} ocorrências</div>
                     <div class="space-y-1">
-                        ${trimestral.map(m => `<div class="bg-white border-l-4 border-emerald-500 p-1.5 text-[9px] font-bold text-slate-700 shadow-sm uppercase">${m.razao}</div>`).join('')}
-                        ${trimestral.length === 0 ? '<p class="text-[9px] text-slate-400 italic">Nenhum cliente para este período.</p>' : ''}
+                        ${trimestral.map(m => `
+                            <div class="bg-white border-l-4 border-emerald-500 p-1.5 text-[9px] font-bold text-slate-700 shadow-sm uppercase flex items-center">
+                                <span class="text-emerald-700 bg-emerald-50 px-1 py-0.5 rounded mr-2">${m.mes}</span>
+                                <span class="truncate">${m.razao}</span>
+                            </div>
+                        `).join('')}
+                        ${trimestral.length === 0 ? '<p class="text-[9px] text-slate-400 italic">Nenhum cliente nestes períodos.</p>' : ''}
                     </div>
                 </div>
             `;
         };
 
         window.limparHistorico = async function() { 
-            if(confirm("Zerar log?")) { 
+            if(confirm("Zerar log? As planilhas salvas também serão apagadas!")) { 
                 window.appState.historicoGeral = []; 
+                window.appState.historicoPlanilhas = [];
                 await window.saveState(); 
                 window.renderHistorico(); 
             } 
         };
 
+        // ==========================================
+        // RENDERIZAÇÃO DA TABELA PRINCIPAL
+        // ==========================================
         window.setFiltro = async function(mes, campo, status) {
             if (!window.appState.filtros[mes]) window.appState.filtros[mes] = {};
             window.appState.filtros[mes][campo] = status;
@@ -778,7 +904,7 @@
         };
 
         // ==========================================
-        // IMPORTAÇÃO DE DADOS (COM VERIFICAÇÃO DE DIVERGÊNCIA)
+        // IMPORTAÇÃO DE DADOS & GERAÇÃO DE POPUP E ALERTA 50K
         // ==========================================
         window.adicionarDados = async function() {
             const input = document.getElementById('rawData').value;
@@ -792,13 +918,25 @@
                     let [ma, ya] = a.split('/'); let [mb, yb] = b.split('/');
                     return new Date(ya, ma-1) - new Date(yb, mb-1);
                 });
+                window.renderFiltroReinf(); // Atualiza checkboxes de meses no painel
             }
             
             const dataAtual = new Date().toLocaleString('pt-BR');
             window.appState.mesesConfig[mesRef] = { visible: true, data: dataAtual, usuario: window.appState.currentUser };
 
+            // Salva a Planilha RAW Inteira no Histórico
+            if(!window.appState.historicoPlanilhas) window.appState.historicoPlanilhas = [];
+            window.appState.historicoPlanilhas.push({
+                data: dataAtual, mes: mesRef, usuario: window.appState.currentUser, raw: input
+            });
+
             const linhas = input.trim().split('\n');
             let qtdImportadas = 0;
+            
+            let htmlAlteracoesPopup = '';
+            let htmlAlertas50kPopup = '';
+            let houveAlteracaoNoPopup = false;
+            let logAlteracoesHistorico = [];
 
             linhas.forEach(linha => {
                 if (linha.toUpperCase().includes('INTEGRAÇOES')) return;
@@ -826,15 +964,19 @@
                 let old = cli.mensal[mesRef];
                 let oldAntec = old?.antec || '-';
 
-                // VERIFICA SE HOUVE MUDANÇA NA IMPORTAÇÃO (E AVISA NA ABA "ALTERAÇÕES")
+                // Verifica Alerta > 50k
+                let valorAntFormatado = window.parseCurrency(ant);
+                if (valorAntFormatado > 50000) {
+                    houveAlteracaoNoPopup = true;
+                    htmlAlertas50kPopup += `<li><b>${cli.razao}</b> - R$ ${ant}</li>`;
+                }
+
+                // Verifica Alteração de valores que já existiam
                 if (old && oldAntec !== '-' && oldAntec !== ant && ant !== '-') {
-                    window.appState.historicoGeral.push({
-                        tipo: 'edicao',
-                        data: dataAtual,
-                        usuario: window.appState.currentUser + " (Via Importação)",
-                        mes: mesRef,
-                        alteracoes: [`<span class="text-amber-500 font-bold">ATUALIZADO VIA IMPORTAÇÃO:</span> <b>${cli.razao}</b> - ANT mudou de '${oldAntec}' para '${ant}'`]
-                    });
+                    houveAlteracaoNoPopup = true;
+                    htmlAlteracoesPopup += `<li><b>${cli.razao}</b> - ANT mudou de '${oldAntec}' para '${ant}'</li>`;
+                    
+                    logAlteracoesHistorico.push(`<span class="text-amber-500 font-bold">ATUALIZADO VIA IMPORTAÇÃO:</span> <b>${cli.razao}</b> - ANT mudou de '${oldAntec}' para '${ant}'`);
                 }
                 
                 cli.mensal[mesRef] = { 
@@ -844,7 +986,18 @@
                 };
             });
             
-            // LOG RESUMIDO DE IMPORTAÇÃO
+            // Grava Log na aba de Alterações (apenas os divergentes)
+            if (logAlteracoesHistorico.length > 0) {
+                window.appState.historicoGeral.push({
+                    tipo: 'edicao',
+                    data: dataAtual,
+                    usuario: window.appState.currentUser + " (Via Importação)",
+                    mes: mesRef,
+                    alteracoes: logAlteracoesHistorico
+                });
+            }
+
+            // Grava Log Resumido de Importação
             window.appState.historicoGeral.push({ 
                 tipo: 'importacao',
                 data: dataAtual, 
@@ -859,16 +1012,40 @@
             window.renderTable();
             window.renderHistorico();
             window.renderClassificacao();
+
+            // Dispara Modal de Resumo (se houver Alterações na importação ou +50k)
+            if (houveAlteracaoNoPopup) {
+                const listaAlt = document.getElementById('listaAlteracoesModal');
+                const lista50k = document.getElementById('listaAlertas50kModal');
+                const blocoAlt = document.getElementById('blocoAlteracoesModal');
+                const bloco50k = document.getElementById('blocoAlertas50kModal');
+
+                if (htmlAlteracoesPopup !== '') {
+                    listaAlt.innerHTML = htmlAlteracoesPopup;
+                    blocoAlt.classList.remove('hidden');
+                } else {
+                    blocoAlt.classList.add('hidden');
+                }
+
+                if (htmlAlertas50kPopup !== '') {
+                    lista50k.innerHTML = htmlAlertas50kPopup;
+                    bloco50k.classList.remove('hidden');
+                } else {
+                    bloco50k.classList.add('hidden');
+                }
+
+                document.getElementById('modalResumoImportacao').classList.remove('hidden');
+            }
         };
 
         window.limparTabela = async function() { 
-            if(confirm("Apagar tudo?")) { 
+            if(confirm("Apagar tudo? Isso não apagará as planilhas do histórico de log.")) { 
                 window.appState.meses = []; window.appState.clientes = []; window.appState.historicoGeral = []; 
                 window.appState.mesesConfig = {}; window.appState.filtros = {}; 
                 
                 await window.saveState(); 
                 
-                window.renderTable(); window.renderHistorico(); 
+                window.renderTable(); window.renderHistorico(); window.renderFiltroReinf();
             } 
         };
     </script>
