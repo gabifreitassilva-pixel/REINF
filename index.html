@@ -199,7 +199,7 @@
                 <div class="text-[10px] bg-white px-3 py-1.5 rounded-full border border-slate-200 shadow-sm font-bold flex items-center gap-2">
                     <span class="text-slate-400">USUÁRIO:</span> <span id="displayUserName" class="text-blue-600 uppercase"></span>
                     <button onclick="window.abrirLogin()" class="text-slate-300 hover:text-red-500 transition-colors" title="Alterar Usuário">
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
                     </button>
                     <!-- BOTAO ADMIN -->
                     <button onclick="window.toggleAdmin()" id="btnAdmin" class="bg-slate-100 hover:bg-red-100 text-slate-500 hover:text-red-700 transition-colors px-2 py-0.5 rounded font-black text-[8px] uppercase flex items-center gap-1" title="Ativar Modo Admin">
@@ -302,15 +302,16 @@
         </div>
 
         <!-- Painel Historico -->
-        <div id="painelHistorico" class="painel-lateral painel-oculto absolute top-0 right-0 h-full w-80 bg-white shadow-2xl border-l border-slate-200 z-50 flex flex-col">
+        <div id="painelHistorico" class="painel-lateral painel-oculto absolute top-0 right-0 h-full w-[380px] bg-white shadow-2xl border-l border-slate-200 z-50 flex flex-col">
             <div class="p-4 bg-amber-50 border-b border-amber-200 flex justify-between items-center flex-shrink-0">
                 <h2 class="text-sm font-black text-amber-900 uppercase tracking-tighter">Registo (Log)</h2>
                 <button onclick="togglePainel('painelHistorico')" class="text-slate-400 hover:text-black text-2xl font-light leading-none">&times;</button>
             </div>
-            <div class="flex border-b border-slate-200 text-[9px] font-black uppercase text-center bg-white cursor-pointer flex-shrink-0">
+            <div class="flex border-b border-slate-200 text-[8px] font-black uppercase text-center bg-white cursor-pointer flex-shrink-0">
                 <div id="tabLogImportacao" onclick="window.setLogTab('importacao')" class="flex-1 py-3 text-blue-600 border-b-2 border-blue-600 bg-blue-50 transition-colors">Import</div>
                 <div id="tabLogEdicao" onclick="window.setLogTab('edicao')" class="flex-1 py-3 text-slate-400 hover:text-slate-600 hover:bg-slate-50 border-b-2 border-transparent transition-colors">Ajustes</div>
                 <div id="tabLogPlanilhas" onclick="window.setLogTab('planilhas')" class="flex-1 py-3 text-slate-400 hover:text-slate-600 hover:bg-slate-50 border-b-2 border-transparent transition-colors">Planilhas</div>
+                <div id="tabLogExtratos" onclick="window.setLogTab('extratos')" class="flex-1 py-3 text-slate-400 hover:text-slate-600 hover:bg-slate-50 border-b-2 border-transparent transition-colors">Extratos</div>
             </div>
             <div class="p-3 overflow-y-auto flex-grow bg-slate-50 font-mono" id="conteudoHistorico"></div>
             <div class="p-3 border-t border-slate-200 text-center bg-white flex-shrink-0">
@@ -472,11 +473,13 @@
                         return !['RAZÃO SOCIAL', 'RAZAO SOCIAL', 'NOME', 'CLIENTE', 'EMPRESA', 'NOME DA EMPRESA', 'TITULO', 'CNPJ'].includes(r);
                     });
 
-                    // MIGRAÇÃO SEGURA PARA ID ÚNICO, OBSERVAÇÕES E WHATSAPP
+                    // MIGRAÇÃO SEGURA PARA ID ÚNICO, OBSERVAÇÕES, WHATSAPP E DATAS DE EXTRATO
                     window.appState.clientes.forEach(c => {
                         if (c.atividade === undefined) c.atividade = '';
                         if (c.obs === undefined) c.obs = '';
                         if (c.whatsapp === undefined) c.whatsapp = '';
+                        if (c.dataCobranca === undefined) c.dataCobranca = '';
+                        if (c.dataRecebimento === undefined) c.dataRecebimento = '';
                         if (!c.id) c.id = window.generateId();
                     });
                 }
@@ -660,7 +663,7 @@
         };
 
         // ==========================================
-        // COBRANÇA AUTOMATIZADA WHATSAPP
+        // COBRANÇA AUTOMATIZADA WHATSAPP E EXTRATOS
         // ==========================================
         window.cobrarWhatsApp = async function(id) {
             let cli = window.appState.clientes.find(c => c.id === id);
@@ -744,15 +747,17 @@
 
             let dataAtual = new Date().toLocaleDateString('pt-BR');
             
-            // Se possuir CNPJ, atualiza todos os sócios com a data da cobrança para manter sincronizado
+            // Atualiza todos os sócios com a data da cobrança
             if (cnpjNum.length === 14) {
                 window.appState.clientes.forEach(c => {
                     if (window.getNumbers(c.cnpj) === cnpjNum) {
                         c.obs = `COBRADO EM ${dataAtual}`;
+                        c.dataCobranca = dataAtual;
                     }
                 });
             } else {
                 targetCli.obs = `COBRADO EM ${dataAtual}`;
+                targetCli.dataCobranca = dataAtual;
             }
             
             window.appState.historicoGeral.push({
@@ -770,9 +775,6 @@
             alert(`A mensagem de cobrança para ${firstName} foi copiada!\n(Pressione Ctrl+V no WhatsApp para colar e enviar)`);
         };
 
-        // ==========================================
-        // MARCAR EXTRATO COMO RECEBIDO
-        // ==========================================
         window.marcarExtratoRecebido = async function(id) {
             let cli = window.appState.clientes.find(c => c.id === id);
             if(!cli) return;
@@ -780,12 +782,14 @@
             let dataAtual = new Date().toLocaleDateString('pt-BR');
             let cnpjNum = window.getNumbers(cli.cnpj);
 
-            // Atualiza a OBS de TODOS os sócios dessa empresa
+            // Atualiza a OBS e dataRecebimento de TODOS os sócios dessa empresa
             window.appState.clientes.forEach(c => {
                 if (window.getNumbers(c.cnpj) === cnpjNum && cnpjNum.length === 14) {
                     c.obs = `RECEBIDO EM ${dataAtual}`;
+                    c.dataRecebimento = dataAtual;
                 } else if (c.id === id) {
                     c.obs = `RECEBIDO EM ${dataAtual}`;
+                    c.dataRecebimento = dataAtual;
                 }
             });
 
@@ -800,6 +804,80 @@
             await window.saveState();
             window.renderTable();
             window.renderHistorico();
+        };
+
+        window.imprimirControleExtratos = function() {
+            if (window.appState.clientes.length === 0) {
+                alert('Nenhum cliente cadastrado.');
+                return;
+            }
+
+            // Agrupa por CNPJ ou nome para não imprimir a mesma empresa múltiplas vezes (devido a múltiplos sócios)
+            let vistos = new Set();
+            let listaUnica = window.appState.clientes.filter(cli => {
+                let num = window.getNumbers(cli.cnpj);
+                let key = num.length === 14 ? num : window.normalizeStr(cli.razao);
+                if (vistos.has(key)) return false;
+                vistos.add(key);
+                return true;
+            }).sort((a, b) => a.razao.localeCompare(b.razao));
+
+            let trClientes = listaUnica.map((cli, index) => {
+                return `<tr>
+                    <td style="padding: 6px; border: 1px solid #ccc; text-align: center;">${index + 1}</td>
+                    <td style="padding: 6px; border: 1px solid #ccc; font-weight: bold;">${cli.razao}</td>
+                    <td style="padding: 6px; border: 1px solid #ccc; text-align: center; font-family: monospace;">${cli.cnpj}</td>
+                    <td style="padding: 6px; border: 1px solid #ccc; text-align: center; color: ${cli.dataCobranca ? '#d97706' : '#94a3b8'}; font-weight: bold;">${cli.dataCobranca || '-'}</td>
+                    <td style="padding: 6px; border: 1px solid #ccc; text-align: center; color: ${cli.dataRecebimento ? '#059669' : '#94a3b8'}; font-weight: bold;">${cli.dataRecebimento || '-'}</td>
+                </tr>`;
+            }).join('');
+
+            let htmlConteudo = `
+                <table style="width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px;">
+                    <thead>
+                        <tr style="background-color: #f1f5f9; text-align: left;">
+                            <th style="padding: 6px; border: 1px solid #ccc; text-align: center;">Nº</th>
+                            <th style="padding: 6px; border: 1px solid #ccc;">Razão Social</th>
+                            <th style="padding: 6px; border: 1px solid #ccc; text-align: center;">CNPJ</th>
+                            <th style="padding: 6px; border: 1px solid #ccc; text-align: center;">Data Cobrança</th>
+                            <th style="padding: 6px; border: 1px solid #ccc; text-align: center;">Data Recebimento</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${trClientes}
+                    </tbody>
+                </table>
+            `;
+
+            const janelaImpressao = window.open('', '_blank');
+            janelaImpressao.document.write(`
+                <html>
+                <head>
+                    <title>Controle de Extratos</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; padding: 20px; }
+                        h1 { font-size: 18px; color: #333; text-transform: uppercase; margin-bottom: 5px; }
+                        .header { border-bottom: 2px solid #ccc; padding-bottom: 10px; margin-bottom: 20px; }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <h1>Controle de Extratos Bancários</h1>
+                        <p style="font-size: 11px; color: #666; margin: 0;">Total de Empresas: ${listaUnica.length} | Gerado em: ${new Date().toLocaleString('pt-BR')} | <strong>Planilha de Integrações</strong></p>
+                    </div>
+                    ${htmlConteudo}
+                    <script>
+                        window.onload = function() { 
+                            setTimeout(function() {
+                                window.print(); 
+                                window.close();
+                            }, 500);
+                        };
+                    <\/script>
+                </body>
+                </html>
+            `);
+            janelaImpressao.document.close();
         };
 
         // ==========================================
@@ -980,7 +1058,7 @@
                 id: window.generateId(),
                 n: '-', ano: new Date().getFullYear().toString(),
                 razao: 'NOVA EMPRESA', cnpj: 'S/ CNPJ', contato: '', atividade: '', regime: '',
-                conta: '', obs: '', whatsapp: '', mensal: {}
+                conta: '', obs: '', whatsapp: '', dataCobranca: '', dataRecebimento: '', mensal: {}
             });
             window.appState.historicoGeral.push({
                 tipo: 'edicao',
@@ -1003,7 +1081,7 @@
                     n: cliBase.n, ano: cliBase.ano,
                     razao: cliBase.razao, cnpj: cliBase.cnpj,
                     contato: 'NOVO SÓCIO', regime: cliBase.regime, atividade: cliBase.atividade,
-                    conta: cliBase.conta, obs: '', whatsapp: cliBase.whatsapp, mensal: {}
+                    conta: cliBase.conta, obs: '', whatsapp: cliBase.whatsapp, dataCobranca: '', dataRecebimento: '', mensal: {}
                 });
                 window.appState.historicoGeral.push({
                     tipo: 'edicao',
@@ -1179,7 +1257,7 @@
                         id: window.generateId(),
                         n: '-', ano: new Date().getFullYear().toString(),
                         razao: nome, cnpj: cnpj, contato: contato, atividade: atividade, regime: regime,
-                        conta: conta, obs: '', whatsapp: whatsapp, mensal: {} 
+                        conta: conta, obs: '', whatsapp: whatsapp, dataCobranca: '', dataRecebimento: '', mensal: {} 
                     });
                     novos++;
                 }
@@ -1308,7 +1386,7 @@
 
         window.setLogTab = function(tab) {
             window.currentLogTab = tab;
-            const tabs = ['importacao', 'edicao', 'planilhas'];
+            const tabs = ['importacao', 'edicao', 'planilhas', 'extratos'];
             tabs.forEach(t => {
                 const el = document.getElementById('tabLog' + t.charAt(0).toUpperCase() + t.slice(1));
                 if(t === tab) {
@@ -1344,6 +1422,38 @@
                         </div>
                     `;
                 }).join('');
+                return;
+            }
+
+            if(window.currentLogTab === 'extratos') {
+                let cnpjsVistos = new Set();
+                let listaExtratos = [...window.appState.clientes].sort((a, b) => a.razao.localeCompare(b.razao)).filter(cli => {
+                    let num = window.getNumbers(cli.cnpj);
+                    if(num.length === 14) {
+                        if(cnpjsVistos.has(num)) return false;
+                        cnpjsVistos.add(num);
+                    }
+                    return true;
+                });
+
+                if (listaExtratos.length === 0) {
+                    container.innerHTML = `<p class="text-[9px] text-slate-400 text-center mt-10 uppercase font-bold tracking-widest">Nenhum cliente cadastrado</p>`;
+                    return;
+                }
+
+                let htmlExtratos = listaExtratos.map(cli => {
+                    return `
+                        <div class="mb-2 bg-white p-2 rounded border border-slate-200 shadow-sm flex flex-col gap-1 text-[9px]">
+                            <span class="font-black text-slate-800 uppercase tracking-tight">${cli.razao}</span>
+                            <div class="flex justify-between items-center text-slate-500 mt-1 pt-1 border-t border-slate-50">
+                                <span>📱 Cobrado: <b class="${cli.dataCobranca ? 'text-amber-600' : 'text-slate-400'}">${cli.dataCobranca || '-'}</b></span>
+                                <span>✅ Recebido: <b class="${cli.dataRecebimento ? 'text-emerald-600' : 'text-slate-400'}">${cli.dataRecebimento || '-'}</b></span>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                container.innerHTML = `<div class="mb-3 flex justify-between items-center"><h3 class="text-[10px] font-black text-slate-700 uppercase">Controle de Extratos</h3><button onclick="window.imprimirControleExtratos()" class="bg-white text-indigo-700 px-2 py-1 rounded border border-indigo-200 hover:bg-indigo-50 flex items-center gap-1 shadow-sm font-bold tracking-widest text-[8px] transition-colors" title="Imprimir Relatório">🖨️ IMPRIMIR</button></div>` + htmlExtratos;
                 return;
             }
 
@@ -1879,8 +1989,8 @@
                         <div class="flex items-center justify-between px-1 h-full gap-1">
                             <input type="text" class="cell-input text-slate-600 text-[8px] uppercase text-left border border-transparent hover:border-slate-300 w-full" value="${(cli.obs || '').replace(/"/g, '&quot;')}" onchange="window.atualizarObs('${cli.id}', this, '${(cli.obs || '').replace(/"/g, '\\"')}')" placeholder="Obs...">
                             <div class="flex gap-1">
-                                <button onclick="window.marcarExtratoRecebido('${cli.id}')" class="text-blue-500 hover:text-blue-600 transition-transform hover:scale-110 text-[10px] bg-blue-50 rounded px-1" title="Marcar como Recebido">✅</button>
-                                <button onclick="window.cobrarWhatsApp('${cli.id}')" class="text-emerald-500 hover:text-emerald-600 transition-transform hover:scale-110 text-[10px] bg-emerald-50 rounded px-1" title="Cobrar Extratos via WhatsApp">📱</button>
+                                <button onclick="window.marcarExtratoRecebido('${cli.id}')" class="transition-transform hover:scale-110 text-[10px] rounded px-1 flex-shrink-0 ${cli.dataRecebimento ? 'bg-emerald-100 text-emerald-600 shadow-sm' : 'bg-slate-100 grayscale opacity-40 hover:grayscale-0 hover:opacity-100'}" title="Marcar como Recebido">✅</button>
+                                <button onclick="window.cobrarWhatsApp('${cli.id}')" class="text-emerald-500 hover:text-emerald-600 transition-transform hover:scale-110 text-[10px] bg-emerald-50 rounded px-1 flex-shrink-0" title="Cobrar Extratos via WhatsApp">📱</button>
                             </div>
                         </div>
                     </td>`;
@@ -2087,6 +2197,7 @@
             let htmlAlteracoesPopup = '';
             let htmlAlertas50kPopup = '';
             let htmlNovosPopup = '';
+            let htmlDivergenciasCadPopup = '';
             let houveAlteracaoNoPopup = false;
             let logAlteracoesHistorico = [];
             
@@ -2160,6 +2271,14 @@
                     }
                 }
 
+                // Divergências Cadastrais (Regime)
+                if (cli) {
+                    if (importRegime && cli.regime && importRegime !== cli.regime) {
+                        houveAlteracaoNoPopup = true;
+                        htmlDivergenciasCadPopup += `<li><b>${cli.razao} (${cli.contato})</b> - <i class="text-slate-400">Regime na planilha: ${importRegime} | No Cadastro: ${cli.regime}</i></li>`;
+                    }
+                }
+
                 // 4. Cria Novo Cliente se não encontrou em nenhuma das regras
                 if (!cli) {
                     let inheritedAtividade = importAtividade;
@@ -2180,7 +2299,7 @@
                         n: cols[offset+0]?.trim(), ano: cols[offset+1]?.trim(), 
                         razao: razao, cnpj: cnpj || "S/ CNPJ", 
                         contato: contato, regime: inheritedRegime, atividade: inheritedAtividade,
-                        conta: inheritedConta, obs: '', whatsapp: '',
+                        conta: inheritedConta, obs: '', whatsapp: '', dataCobranca: '', dataRecebimento: '',
                         mensal: {} 
                     };
                     window.appState.clientes.push(cli);
@@ -2262,11 +2381,13 @@
             const lista50k = document.getElementById('listaAlertas50kModal');
             const listaFalt = document.getElementById('listaFaltantesModal');
             const listaNovos = document.getElementById('listaNovosModal');
+            const listaDivCad = document.getElementById('listaDivergenciasCadModal');
             
             const blocoAlt = document.getElementById('blocoAlteracoesModal');
             const bloco50k = document.getElementById('blocoAlertas50kModal');
             const blocoFalt = document.getElementById('blocoFaltantesModal');
             const blocoNovos = document.getElementById('blocoNovosModal');
+            const blocoDivCad = document.getElementById('blocoDivergenciasCadModal');
             const badgeFalt = document.getElementById('badgeCountFaltantes');
 
             let abrirModal = false;
@@ -2276,6 +2397,12 @@
                 blocoAlt.classList.remove('hidden');
                 abrirModal = true;
             } else { blocoAlt.classList.add('hidden'); }
+
+            if (htmlDivergenciasCadPopup !== '') {
+                listaDivCad.innerHTML = htmlDivergenciasCadPopup;
+                // blocoDivCad.classList.remove('hidden');
+                // Removed display as per request
+            } else { blocoDivCad.classList.add('hidden'); }
 
             if (htmlAlertas50kPopup !== '') {
                 lista50k.innerHTML = htmlAlertas50kPopup;
