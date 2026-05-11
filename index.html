@@ -29,6 +29,7 @@
         .col-fixed-razao { width: 250px; min-width: 250px; max-width: 250px; text-align: left; overflow: hidden; text-overflow: ellipsis; }
         .col-fixed-cnpj { width: 130px; min-width: 130px; max-width: 130px; font-family: monospace; font-weight: bold; }
         .col-fixed-contato { width: 120px; min-width: 120px; max-width: 120px; text-align: left; overflow: hidden; text-overflow: ellipsis; }
+        .col-fixed-atividade { width: 90px; min-width: 90px; max-width: 90px; text-align: left; overflow: hidden; text-overflow: ellipsis; }
         .col-fixed-regime { width: 50px; min-width: 50px; max-width: 50px; }
         .col-fixed-conta { width: 80px; min-width: 80px; max-width: 80px; }
 
@@ -123,13 +124,22 @@
             <p class="text-xs text-slate-500 mb-4 font-medium">Verifique abaixo as divergências e alertas de valores detetados na última leitura de dados:</p>
             
             <div class="overflow-y-auto flex-grow space-y-5 pr-2">
-                <!-- Bloco de Alterações -->
+                <!-- Bloco de Alterações de Valores -->
                 <div id="blocoAlteracoesModal" class="hidden">
                     <h3 class="text-[11px] font-black text-amber-600 uppercase border-b border-amber-200 pb-1 mb-2 tracking-widest flex justify-between items-center">
                         <span>⚠️ Valores Alterados (Divergência)</span>
                         <button onclick="window.imprimirRelatorioImportacao('alteracoes')" class="bg-white text-amber-700 px-2 py-0.5 rounded border border-amber-200 hover:bg-amber-50 flex items-center gap-1 shadow-sm font-bold tracking-widest text-[9px] transition-colors" title="Imprimir Relatório">🖨️ IMPRIMIR</button>
                     </h3>
                     <ul id="listaAlteracoesModal" class="text-[11px] font-mono text-slate-700 space-y-1.5 list-disc pl-4"></ul>
+                </div>
+                <!-- NOVO: Bloco de Divergências de Cadastro (Regime/Atividade) -->
+                <div id="blocoDivergenciasCadModal" class="hidden">
+                    <h3 class="text-[11px] font-black text-purple-600 uppercase border-b border-purple-200 pb-1 mb-2 tracking-widest flex justify-between items-center">
+                        <span>📋 Divergências de Cadastro (Regime/Atividade)</span>
+                        <button onclick="window.imprimirRelatorioImportacao('divergenciasCad')" class="bg-white text-purple-700 px-2 py-0.5 rounded border border-purple-200 hover:bg-purple-50 flex items-center gap-1 shadow-sm font-bold tracking-widest text-[9px] transition-colors" title="Imprimir Relatório">🖨️ IMPRIMIR</button>
+                    </h3>
+                    <p class="text-[9px] text-slate-400 mb-2 italic">A planilha importada possui dados de regime diferentes dos que estão no Cadastro.</p>
+                    <ul id="listaDivergenciasCadModal" class="text-[11px] font-mono text-slate-700 space-y-1.5 list-disc pl-4"></ul>
                 </div>
                 <!-- Bloco de Alertas 50k -->
                 <div id="blocoAlertas50kModal" class="hidden">
@@ -148,7 +158,7 @@
                     <p class="text-[9px] text-slate-400 mb-2 italic">Estes clientes estão no seu Cadastro, mas não vieram na planilha que você acabou de colar para este mês.</p>
                     <ul id="listaFaltantesModal" class="text-[10px] font-mono text-slate-600 space-y-1 list-disc pl-4 max-h-40 overflow-y-auto"></ul>
                 </div>
-                <!-- NOVO: Bloco de Clientes Novos/Não Cadastrados -->
+                <!-- Bloco de Clientes Novos/Não Cadastrados -->
                 <div id="blocoNovosModal" class="hidden">
                     <h3 class="text-[11px] font-black text-blue-600 uppercase border-b border-blue-200 pb-1 mb-2 tracking-widest mt-2 flex justify-between items-center">
                         <span>✨ Novos Clientes na Planilha (Sem Cadastro Prévio)</span>
@@ -238,7 +248,7 @@
             <div id="listaMesesOcultos" class="flex gap-2 flex-wrap"></div>
         </div>
 
-        <!-- Tabela -->
+        <!-- Tabela Principal -->
         <div class="overflow-auto flex-grow relative bg-white">
             <table id="mainTable">
                 <thead id="tabelaHead" class="text-slate-700 uppercase bg-slate-100 border-b-2 border-slate-300 shadow-sm">
@@ -255,9 +265,9 @@
                 <button onclick="togglePainel('painelCadastro')" class="text-slate-400 hover:text-black text-2xl font-light leading-none">&times;</button>
             </div>
             <div class="p-4 bg-slate-50 flex-shrink-0 border-b">
-                <p class="text-[9px] font-bold text-slate-500 uppercase mb-2">Cole dados da planilha (Nome, CNPJ, etc.):</p>
-                <textarea id="rawDataCadastro" rows="3" class="w-full border p-2 text-xs font-mono rounded outline-none focus:ring-1 focus:ring-indigo-500 mb-2" placeholder="Ex: NOME [TAB] CNPJ [TAB] CONTATO [TAB] REGIME [TAB] CONTA"></textarea>
-                <button onclick="window.importarCadastro()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-black py-2 px-4 rounded shadow w-full uppercase tracking-widest">Importar Cadastro</button>
+                <p class="text-[9px] font-bold text-slate-500 uppercase mb-2">Cole dados da planilha para importar (Nome, CNPJ, etc.):</p>
+                <textarea id="rawDataCadastro" rows="3" class="w-full border p-2 text-xs font-mono rounded outline-none focus:ring-1 focus:ring-indigo-500 mb-2" placeholder="Ex: NOME [TAB] CNPJ [TAB] CONTATO [TAB] ATIVIDADE [TAB] REGIME [TAB] CONTA"></textarea>
+                <button onclick="window.importarCadastro()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-black py-2 px-4 rounded shadow w-full uppercase tracking-widest">Importar Cadastro Base</button>
             </div>
             
             <!-- Gerenciador de Contas -->
@@ -274,12 +284,18 @@
             </div>
 
             <div class="p-3 overflow-y-auto flex-grow bg-slate-50">
-                <h3 class="text-[10px] font-black text-slate-700 uppercase border-b border-slate-200 pb-1 mb-2">Clientes Registrados (<span id="countCadastro">0</span>)</h3>
-                <div id="listaCadastro" class="space-y-1.5">
+                <div class="flex justify-between items-center border-b border-slate-200 pb-1 mb-2">
+                    <h3 class="text-[10px] font-black text-slate-700 uppercase">Clientes Registrados (<span id="countCadastro">0</span>)</h3>
+                    <button onclick="window.adicionarClienteManual()" class="bg-indigo-100 text-indigo-700 hover:bg-indigo-200 px-3 py-1 rounded text-[9px] font-bold shadow-sm flex items-center gap-1 transition-colors">
+                        ➕ NOVO
+                    </button>
+                </div>
+                <div id="listaCadastro" class="space-y-2 pb-6">
+                    <!-- Lista de clientes (Gerado via JS) -->
                 </div>
             </div>
             <div class="p-3 border-t border-slate-200 text-center bg-white flex-shrink-0">
-                <button onclick="window.limparCadastro()" class="text-[10px] text-red-600 uppercase font-black hover:underline tracking-widest">Apagar Todos os Clientes</button>
+                <button onclick="window.limparCadastro()" class="text-[10px] text-red-600 uppercase font-black hover:underline tracking-widest">Apagar Todos os Cadastros</button>
             </div>
         </div>
 
@@ -334,10 +350,10 @@
         window.normalizeStr = function(str) {
             if (!str) return '';
             return str.toUpperCase()
-                .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Remove acentos
-                .replace(/[^\w\s]/g, ' ') // Pontuação vira espaço
-                .replace(/\b(LTDA|ME|EPP|SA|S A|S\/A|SS|MEI)\b/g, '') // Remove sufixos comuns
-                .replace(/\s+/g, ' ') // Espaços múltiplos viram um
+                .normalize("NFD").replace(/[\u0300-\u036f]/g, "") 
+                .replace(/[^\w\s]/g, ' ') 
+                .replace(/\b(LTDA|ME|EPP|SA|S A|S\/A|SS|MEI)\b/g, '') 
+                .replace(/\s+/g, ' ') 
                 .trim();
         };
 
@@ -347,11 +363,9 @@
             if (!n1 || !n2) return false;
             if (n1 === n2) return true;
             
-            // Fuzzy match parcial (verifica se um contém o outro se as strings forem grandes)
             if (n1.length > 8 && n2.length > 8) {
                 if (n1.includes(n2) || n2.includes(n1)) return true;
                 
-                // Pega as primeiras 3 palavras e compara (Ex: GRUMP PREPARACAO DE DOCUMENTOS vs GRUMP PREPARACAO DE DOCUMENTOS E PROD FOT)
                 let w1 = n1.split(' ').slice(0, 3).join(' ');
                 let w2 = n2.split(' ').slice(0, 3).join(' ');
                 if (w1 === w2 && w1.length > 5) return true;
@@ -364,7 +378,7 @@
         window.appState = {
             meses: [], 
             mesesConfig: {},
-            clientes: [],
+            clientes: [], // Estrutura agora tem 'atividade'
             historicoGeral: [],
             historicoPlanilhas: [], 
             filtros: {},
@@ -422,12 +436,16 @@
                 if(!window.appState.historicoPlanilhas) window.appState.historicoPlanilhas = [];
                 if(!window.appState.opcoesConta || window.appState.opcoesConta.length === 0) window.appState.opcoesConta = ['BANCO', 'CAIXA', 'PRESUNÇÃO'];
                 
-                // Limpeza de Cabeçalhos (Títulos acidentalmente importados)
                 if (window.appState.clientes) {
                     window.appState.clientes = window.appState.clientes.filter(c => {
                         if(!c.razao) return false;
                         let r = c.razao.toUpperCase();
                         return !['RAZÃO SOCIAL', 'RAZAO SOCIAL', 'NOME', 'CLIENTE', 'EMPRESA', 'NOME DA EMPRESA', 'TITULO', 'CNPJ'].includes(r);
+                    });
+
+                    // Garantir que clientes antigos tenham a propriedade atividade
+                    window.appState.clientes.forEach(c => {
+                        if (c.atividade === undefined) c.atividade = '';
                     });
                 }
             }
@@ -619,6 +637,9 @@
             if (tipo === 'alteracoes') {
                 titulo = 'Relatório de Valores Alterados (Divergência)';
                 listaId = 'listaAlteracoesModal';
+            } else if (tipo === 'divergenciasCad') {
+                titulo = 'Relatório de Divergências Cadastrais (Regime/Atividade)';
+                listaId = 'listaDivergenciasCadModal';
             } else if (tipo === '50k') {
                 titulo = 'Relatório de Distribuição > 50 Mil (Atenção IR)';
                 listaId = 'listaAlertas50kModal';
@@ -710,8 +731,81 @@
 
 
         // ==========================================
-        // CADASTRO DE CLIENTES (Inteligente - Apenas armazena)
+        // CADASTRO DE CLIENTES (Inteligente e Editável)
         // ==========================================
+        window.adicionarClienteManual = async function() {
+            window.appState.clientes.push({
+                n: '-', ano: new Date().getFullYear().toString(),
+                razao: 'NOVA EMPRESA', cnpj: 'S/ CNPJ', contato: '', atividade: '', regime: '',
+                conta: '', mensal: {}
+            });
+            window.appState.historicoGeral.push({
+                tipo: 'edicao',
+                data: new Date().toLocaleString('pt-BR'),
+                usuario: window.appState.currentUser,
+                mes: 'CADASTRO',
+                alteracoes: [`<span class="text-indigo-600 font-bold">NOVA EMPRESA:</span> Adicionada manualmente.`]
+            });
+            await window.saveState();
+            window.renderListaCadastro();
+            const container = document.getElementById('listaCadastro').parentElement;
+            setTimeout(() => container.scrollTop = container.scrollHeight, 100);
+        };
+
+        window.adicionarSocio = async function(cnpj, contatoB64) {
+            let contato = decodeURIComponent(escape(atob(contatoB64)));
+            let cliBase = window.appState.clientes.find(c => c.cnpj === cnpj && c.contato === contato);
+            if (cliBase) {
+                window.appState.clientes.push({
+                    n: cliBase.n, ano: cliBase.ano,
+                    razao: cliBase.razao, cnpj: cliBase.cnpj,
+                    contato: 'NOVO SÓCIO', regime: cliBase.regime, atividade: cliBase.atividade,
+                    conta: cliBase.conta, mensal: {}
+                });
+                window.appState.historicoGeral.push({
+                    tipo: 'edicao',
+                    data: new Date().toLocaleString('pt-BR'),
+                    usuario: window.appState.currentUser,
+                    mes: 'CADASTRO',
+                    alteracoes: [`<span class="text-indigo-600 font-bold">NOVO SÓCIO ADICIONADO:</span> Para a empresa <b>${cliBase.razao}</b>`]
+                });
+                await window.saveState();
+                window.renderListaCadastro();
+                window.renderTable();
+            }
+        };
+
+        window.editarClienteCadastro = async function(oldCnpj, oldContatoB64, campo, novoValor) {
+            let oldContato = decodeURIComponent(escape(atob(oldContatoB64)));
+            let idx = window.appState.clientes.findIndex(c => c.cnpj === oldCnpj && c.contato === oldContato);
+            
+            if(idx !== -1) {
+                let cli = window.appState.clientes[idx];
+                let valAntigo = cli[campo];
+                
+                if (campo === 'cnpj') {
+                    novoValor = window.formatCNPJ(novoValor);
+                } else if (campo === 'razao' || campo === 'contato' || campo === 'regime' || campo === 'atividade') {
+                    novoValor = novoValor.toUpperCase();
+                }
+
+                if (valAntigo !== novoValor) {
+                    cli[campo] = novoValor;
+                    window.appState.historicoGeral.push({
+                        tipo: 'edicao',
+                        data: new Date().toLocaleString('pt-BR'),
+                        usuario: window.appState.currentUser,
+                        mes: 'CADASTRO',
+                        alteracoes: [`<span class="text-blue-600 font-bold">EDIÇÃO DE CADASTRO:</span> <b>${cli.razao}</b> - ${campo.toUpperCase()} alterado de '${valAntigo || '-'}' para '${novoValor || '-'}'`]
+                    });
+                    await window.saveState();
+                    window.renderListaCadastro();
+                    window.renderTable();
+                    window.renderClassificacao();
+                }
+            }
+        };
+
         window.importarCadastro = async function() {
             const input = document.getElementById('rawDataCadastro').value;
             if (!input.trim()) return alert("Cole os dados para importar.");
@@ -739,8 +833,9 @@
                 if (['NOME', 'RAZÃO SOCIAL', 'RAZAO SOCIAL', 'CLIENTE', 'EMPRESA', 'NOME DA EMPRESA', 'TITULO', 'CNPJ'].includes(nome)) return;
 
                 let contato = colunas.length > 2 ? colunas[2].toUpperCase() : '';
-                let regime = colunas.length > 3 ? colunas[3].toUpperCase() : '';
-                let conta = colunas.length > 4 ? colunas[4].toUpperCase() : '';
+                let atividade = colunas.length > 3 ? colunas[3].toUpperCase() : '';
+                let regime = colunas.length > 4 ? colunas[4].toUpperCase() : '';
+                let conta = colunas.length > 5 ? colunas[5].toUpperCase() : '';
 
                 if (conta && !window.appState.opcoesConta.includes(conta)) {
                     window.appState.opcoesConta.push(conta);
@@ -756,6 +851,7 @@
                         let clientesVinculados = window.appState.clientes.filter(c => window.getNumbers(c.cnpj) === cnpjNum);
                         if(clientesVinculados.length > 0) {
                             clientesVinculados.forEach(v => {
+                                if(atividade && !v.atividade) v.atividade = atividade;
                                 if(regime && !v.regime) v.regime = regime;
                                 if(conta && !v.conta) v.conta = conta;
                             });
@@ -775,6 +871,7 @@
 
                 if (cliExistente) {
                     if(contato && !cliExistente.contato) cliExistente.contato = contato;
+                    if(atividade && !cliExistente.atividade) cliExistente.atividade = atividade;
                     if(regime && !cliExistente.regime) cliExistente.regime = regime;
                     if(conta && !cliExistente.conta) cliExistente.conta = conta;
                     if(cnpj !== "S/ CNPJ" && window.getNumbers(cliExistente.cnpj).length !== 14) cliExistente.cnpj = cnpj;
@@ -782,8 +879,8 @@
                 } else {
                     window.appState.clientes.push({
                         n: '-', ano: new Date().getFullYear().toString(),
-                        razao: nome, cnpj: cnpj, contato: contato, regime: regime,
-                        conta: conta, mensal: {} // MENSAL VAZIO - NÃO APARECE NA TELA PRINCIPAL
+                        razao: nome, cnpj: cnpj, contato: contato, atividade: atividade, regime: regime,
+                        conta: conta, mensal: {} 
                     });
                     novos++;
                 }
@@ -830,20 +927,31 @@
                     optionsHtml += `<option value="${opt}" ${cli.conta === opt ? 'selected' : ''}>${opt}</option>`;
                 });
 
+                const valRazao = (cli.razao || '').replace(/"/g, '&quot;');
+                const valCnpj = (cli.cnpj || '').replace(/"/g, '&quot;');
+                const valContato = (cli.contato || '').replace(/"/g, '&quot;');
+                const valAtividade = (cli.atividade || '').replace(/"/g, '&quot;');
+                const valRegime = (cli.regime || '').replace(/"/g, '&quot;');
+
                 return `
-                <div class="bg-white p-2 rounded border border-slate-200 shadow-sm flex flex-col gap-1.5 relative">
+                <div class="bg-white p-2.5 rounded border border-slate-200 shadow-sm flex flex-col gap-2 relative group hover:border-indigo-300 transition-colors">
                     <div class="flex justify-between items-start gap-2">
-                        <span class="text-[10px] font-black text-slate-800 uppercase leading-tight truncate flex-grow" title="${cli.razao}">${cli.razao}</span>
-                        <div class="flex items-center gap-1.5 flex-shrink-0">
-                            <select class="border border-slate-300 rounded text-[8px] px-1 py-0.5 outline-none focus:border-indigo-500 cursor-pointer ${cli.conta ? 'text-indigo-700 font-bold bg-indigo-50' : 'text-slate-500 bg-slate-50'}" onchange="window.atualizarContaManual('${cli.cnpj}', '${safeContato}', this.value, '${cli.conta || ''}')">
-                                ${optionsHtml}
-                            </select>
-                            <button onclick="window.excluirCliente('${cli.cnpj}', '${safeContato}')" class="text-red-500 hover:text-red-700 text-base leading-none" title="Excluir Cliente">&times;</button>
+                        <input type="text" value="${valRazao}" class="text-[10px] font-black text-slate-800 uppercase leading-tight flex-grow bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none w-full" placeholder="RAZÃO SOCIAL" title="Razão Social" onchange="window.editarClienteCadastro('${cli.cnpj}', '${safeContato}', 'razao', this.value)">
+                        <div class="flex items-center gap-1 flex-shrink-0">
+                            <button onclick="window.adicionarSocio('${cli.cnpj}', '${safeContato}')" class="text-indigo-400 hover:text-indigo-700 text-[9px] font-bold leading-none transition-colors border border-indigo-200 px-1 py-0.5 rounded" title="Adicionar Novo Sócio para esta Empresa">➕ SÓCIO</button>
+                            <button onclick="window.excluirCliente('${cli.cnpj}', '${safeContato}')" class="text-red-400 hover:text-red-700 text-lg leading-none transition-colors" title="Excluir Cliente">&times;</button>
                         </div>
                     </div>
-                    <div class="text-[9px] text-slate-500 flex justify-between items-center">
-                        <span class="font-mono text-indigo-600 font-bold">${cli.cnpj}</span>
-                        <span class="truncate ml-2" title="${cli.contato || 'S/ Contato'}">${cli.contato || 'S/ Contato'}</span>
+                    <div class="flex gap-2 w-full">
+                        <input type="text" value="${valCnpj}" class="text-[9px] font-mono text-indigo-600 font-bold bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none w-1/3" placeholder="CNPJ" title="CNPJ" onchange="window.editarClienteCadastro('${cli.cnpj}', '${safeContato}', 'cnpj', this.value)">
+                        <input type="text" value="${valContato}" class="text-[9px] text-slate-500 bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none w-2/3" placeholder="Sócio / Contato" title="Contato" onchange="window.editarClienteCadastro('${cli.cnpj}', '${safeContato}', 'contato', this.value)">
+                    </div>
+                    <div class="flex justify-between items-center mt-1 border-t border-slate-50 pt-1.5 gap-2">
+                        <input type="text" value="${valAtividade}" class="text-[8px] text-slate-400 bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none w-1/3 uppercase font-bold" placeholder="ATIVIDADE" title="Atividade" onchange="window.editarClienteCadastro('${cli.cnpj}', '${safeContato}', 'atividade', this.value)">
+                        <input type="text" value="${valRegime}" class="text-[8px] text-slate-400 bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none w-1/3 uppercase font-bold" placeholder="REGIME" title="Regime" onchange="window.editarClienteCadastro('${cli.cnpj}', '${safeContato}', 'regime', this.value)">
+                        <select class="border border-slate-200 rounded text-[8px] px-1 py-0.5 outline-none focus:border-indigo-500 cursor-pointer w-1/3 ${cli.conta ? 'text-indigo-700 font-bold bg-indigo-50' : 'text-slate-500 bg-slate-50'}" onchange="window.atualizarContaManual('${cli.cnpj}', '${safeContato}', this.value, '${cli.conta || ''}')">
+                            ${optionsHtml}
+                        </select>
                     </div>
                 </div>
             `}).join('');
@@ -1021,7 +1129,7 @@
         };
 
         // ==========================================
-        // CÁLCULO DE IR E CLASSIFICAÇÃO MULTI-MÊS COM IMPRESSÃO
+        // CÁLCULO DE IR E CLASSIFICAÇÃO MULTI-MÊS COM IMPRESSÃO (TABELA DINÂMICA)
         // ==========================================
         window.renderFiltroReinf = function() {
             const container = document.getElementById('containerMesesReinf');
@@ -1067,6 +1175,7 @@
                     if (cli.mensal[mes]) {
                         let vlr = window.parseCurrency(cli.mensal[mes].antec);
                         
+                        // Lógica Mensal (> 50k)
                         if (vlr > 50000) {
                             if (!dadosAgrupadosMensal[chave]) dadosAgrupadosMensal[chave] = { razao: cli.razao, contato: cli.contato, meses: {} };
                             let ir = vlr * 0.10;
@@ -1077,6 +1186,7 @@
                             mesesMensal.add(mes);
                             contMensal++;
                         } 
+                        // Lógica Trimestral (até 50k)
                         else if (vlr > 0 || cli.mensal[mes].antec === 'S/M') {
                             if (!dadosAgrupadosTrimestral[chave]) dadosAgrupadosTrimestral[chave] = { razao: cli.razao, contato: cli.contato, meses: {} };
                             dadosAgrupadosTrimestral[chave].meses[mes] = {
@@ -1101,6 +1211,7 @@
                 return new Date(ya, ma-1) - new Date(yb, mb-1);
             });
 
+            // UI do Painel Classificação em formato de Tabela Dinâmica
             container.innerHTML = `
                 <div class="mb-6">
                     <div class="bg-red-600 text-white text-[10px] font-black p-2 rounded shadow-md uppercase mb-2 flex justify-between items-center">
@@ -1379,6 +1490,7 @@
                 <th rowspan="2" class="col-fixed-razao text-slate-500">RAZÃO SOCIAL</th>
                 <th rowspan="2" class="col-fixed-cnpj text-slate-500">CNPJ</th>
                 <th rowspan="2" class="col-fixed-contato text-slate-500">CONTATO</th>
+                <th rowspan="2" class="col-fixed-atividade text-slate-500">ATIVIDADE</th>
                 <th rowspan="2" class="col-fixed-regime text-slate-500">REG.</th>
                 <th rowspan="2" class="col-fixed-conta text-slate-500">CONTA</th>`;
             
@@ -1465,6 +1577,7 @@
                     <td class="col-fixed-razao font-black text-slate-800 uppercase tracking-tighter" title="${cli.razao}">${cli.razao}</td>
                     <td class="col-fixed-cnpj font-mono text-blue-700 tracking-tighter">${cli.cnpj}</td>
                     <td class="col-fixed-contato text-slate-500 uppercase" title="${cli.contato}">${cli.contato}</td>
+                    <td class="col-fixed-atividade text-slate-500 uppercase" title="${cli.atividade || ''}">${cli.atividade || ''}</td>
                     <td class="col-fixed-regime font-black text-slate-600 uppercase">${cli.regime}</td>
                     <td class="col-fixed-conta align-middle">
                         <select class="cell-input ${cli.conta ? 'text-indigo-600' : 'text-slate-400'} text-[9px] uppercase cursor-pointer" onchange="window.atualizarContaManual('${cli.cnpj}', '${safeContato}', this.value, '${cli.conta || ''}')">
@@ -1613,6 +1726,7 @@
             let htmlAlteracoesPopup = '';
             let htmlAlertas50kPopup = '';
             let htmlNovosPopup = '';
+            let htmlDivergenciasCadPopup = '';
             let houveAlteracaoNoPopup = false;
             let logAlteracoesHistorico = [];
             
@@ -1627,6 +1741,7 @@
                 let cnpjRaw = cols[offset+3]?.trim() || '';
                 let razao = cols[offset+2]?.trim().toUpperCase();
                 let contato = cols[offset+4]?.trim().toUpperCase() || '';
+                let importRegime = cols[offset+5]?.trim().toUpperCase() || '';
 
                 let cnpjNum = window.getNumbers(cnpjRaw);
                 let cnpj = window.formatCNPJ(cnpjRaw);
@@ -1672,12 +1787,20 @@
                     }
                 }
 
+                // Divergências Cadastrais (Regime)
+                if (cli) {
+                    if (importRegime && cli.regime && importRegime !== cli.regime) {
+                        houveAlteracaoNoPopup = true;
+                        htmlDivergenciasCadPopup += `<li><b>${cli.razao} (${cli.contato})</b> - <i class="text-slate-400">Regime na planilha: ${importRegime} | No Cadastro: ${cli.regime}</i></li>`;
+                    }
+                }
+
                 // 4. Cria Novo Cliente se não encontrou em nenhuma das regras
                 if (!cli) {
                     cli = { 
                         n: cols[offset+0]?.trim(), ano: cols[offset+1]?.trim(), 
                         razao: razao, cnpj: cnpj || "S/ CNPJ", 
-                        contato: contato, regime: cols[offset+5]?.trim(), 
+                        contato: contato, regime: importRegime, atividade: '',
                         conta: '',
                         mensal: {} 
                     };
@@ -1758,11 +1881,13 @@
             const lista50k = document.getElementById('listaAlertas50kModal');
             const listaFalt = document.getElementById('listaFaltantesModal');
             const listaNovos = document.getElementById('listaNovosModal');
+            const listaDivCad = document.getElementById('listaDivergenciasCadModal');
             
             const blocoAlt = document.getElementById('blocoAlteracoesModal');
             const bloco50k = document.getElementById('blocoAlertas50kModal');
             const blocoFalt = document.getElementById('blocoFaltantesModal');
             const blocoNovos = document.getElementById('blocoNovosModal');
+            const blocoDivCad = document.getElementById('blocoDivergenciasCadModal');
             const badgeFalt = document.getElementById('badgeCountFaltantes');
 
             let abrirModal = false;
@@ -1772,6 +1897,12 @@
                 blocoAlt.classList.remove('hidden');
                 abrirModal = true;
             } else { blocoAlt.classList.add('hidden'); }
+
+            if (htmlDivergenciasCadPopup !== '') {
+                listaDivCad.innerHTML = htmlDivergenciasCadPopup;
+                blocoDivCad.classList.remove('hidden');
+                abrirModal = true;
+            } else { blocoDivCad.classList.add('hidden'); }
 
             if (htmlAlertas50kPopup !== '') {
                 lista50k.innerHTML = htmlAlertas50kPopup;
