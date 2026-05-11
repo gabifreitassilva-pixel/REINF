@@ -80,6 +80,7 @@
 </head>
 <body class="font-sans overflow-hidden">
 
+    <!-- Modal de Identificação -->
     <div id="modalUser" class="fixed inset-0 bg-slate-900 bg-opacity-80 flex justify-center items-center z-[100] hidden px-4">
         <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-sm text-center border-t-4 border-blue-600">
             <h2 class="text-xl font-black mb-2 text-slate-800 uppercase tracking-tight">Acesso ao Sistema</h2>
@@ -89,6 +90,7 @@
         </div>
     </div>
 
+    <!-- Modal de Configuração do Gist -->
     <div id="modalGist" class="fixed inset-0 bg-slate-900 bg-opacity-80 flex justify-center items-center z-[100] hidden px-4">
         <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-md text-center border-t-4 border-emerald-600 relative">
             <button onclick="window.fecharModalGist()" class="absolute top-3 right-4 text-slate-400 hover:text-slate-700 text-xl font-bold">&times;</button>
@@ -117,7 +119,7 @@
         <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col border-t-4 border-amber-500 relative">
             <button onclick="document.getElementById('modalResumoImportacao').classList.add('hidden')" class="absolute top-3 right-4 text-slate-400 hover:text-slate-700 text-2xl font-bold leading-none">&times;</button>
             <h2 class="text-xl font-black mb-2 text-slate-800 uppercase tracking-tight">Relatório da Importação</h2>
-            <p class="text-xs text-slate-500 mb-4 font-medium">Verifique abaixo as divergências e alertas de valores detectados na última leitura de dados:</p>
+            <p class="text-xs text-slate-500 mb-4 font-medium">Verifique abaixo as divergências e alertas de valores detetados na última leitura de dados:</p>
             
             <div class="overflow-y-auto flex-grow space-y-5 pr-2">
                 <!-- Bloco de Alterações -->
@@ -154,6 +156,7 @@
 
     <div class="h-screen flex flex-col relative bg-white">
         
+        <!-- Cabeçalho -->
         <div class="p-3 border-b border-slate-200 flex justify-between items-center bg-slate-50 flex-shrink-0 shadow-sm z-30">
             <h1 class="text-sm font-black text-slate-700 uppercase tracking-tighter flex items-center gap-2 leading-none">
                 <span class="bg-blue-600 text-white p-1 rounded shadow-sm">PI</span>
@@ -183,6 +186,7 @@
             </div>
         </div>
 
+        <!-- Importação -->
         <div class="p-3 bg-blue-50 border-b border-blue-100 flex-shrink-0 relative z-10">
             <div class="flex gap-4 items-center">
                 <div class="flex items-center gap-3 flex-shrink-0">
@@ -199,23 +203,26 @@
             </div>
         </div>
         
+        <!-- Meses Ocultos -->
         <div id="barraMesesOcultos" class="bg-slate-100 border-b border-slate-200 p-2 px-4 flex-shrink-0 hidden items-center gap-3 shadow-inner">
             <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Períodos Ocultos:</span>
             <div id="listaMesesOcultos" class="flex gap-2 flex-wrap"></div>
         </div>
 
+        <!-- Tabela -->
         <div class="overflow-auto flex-grow relative bg-white">
             <table id="mainTable">
                 <thead id="tabelaHead" class="text-slate-700 uppercase bg-slate-100 border-b-2 border-slate-300 shadow-sm">
-                    </thead>
+                </thead>
                 <tbody id="tabelaCorpo" class="divide-y divide-slate-100">
-                    </tbody>
+                </tbody>
             </table>
         </div>
 
+        <!-- Painel Historico -->
         <div id="painelHistorico" class="painel-lateral painel-oculto absolute top-0 right-0 h-full w-80 bg-white shadow-2xl border-l border-slate-200 z-50 flex flex-col">
             <div class="p-4 bg-amber-50 border-b border-amber-200 flex justify-between items-center flex-shrink-0">
-                <h2 class="text-sm font-black text-amber-900 uppercase tracking-tighter">Registro (Log)</h2>
+                <h2 class="text-sm font-black text-amber-900 uppercase tracking-tighter">Registo (Log)</h2>
                 <button onclick="togglePainel('painelHistorico')" class="text-slate-400 hover:text-black text-2xl font-light leading-none">&times;</button>
             </div>
             <div class="flex border-b border-slate-200 text-[9px] font-black uppercase text-center bg-white cursor-pointer flex-shrink-0">
@@ -229,6 +236,7 @@
             </div>
         </div>
 
+        <!-- Painel Classificacao -->
         <div id="painelClassificacao" class="painel-lateral painel-oculto absolute top-0 right-0 h-full w-80 bg-white shadow-2xl border-l border-slate-200 z-50 flex flex-col">
             <div class="p-4 bg-blue-50 border-b border-blue-200 flex justify-between items-center">
                 <h2 class="text-sm font-black text-blue-900 uppercase tracking-tighter">Classificação Reinf</h2>
@@ -253,7 +261,7 @@
             mesesConfig: {},
             clientes: [],
             historicoGeral: [],
-            historicoPlanilhas: [], // Novo: Armazena o RAW das planilhas importadas
+            historicoPlanilhas: [], // Armazena o RAW das planilhas importadas
             filtros: {},
             currentUser: '' // Inicia vazio para pedir o nome
         };
@@ -305,7 +313,7 @@
         window.aplicarDados = function(data) {
             if (data) {
                 window.appState = Object.assign(window.appState, data);
-                if(!window.appState.historicoPlanilhas) window.appState.historicoPlanilhas = []; // compatibilidade
+                if(!window.appState.historicoPlanilhas) window.appState.historicoPlanilhas = [];
             }
             window.syncUI();
         };
@@ -369,7 +377,7 @@
         };
 
         // ==========================================
-        // INICIALIZAÇÃO E UI BÁSICA
+        // INICIALIZAÇÃO
         // ==========================================
         window.onload = async () => {
             if (window.gistConfig.token && window.gistConfig.id) {
@@ -403,7 +411,7 @@
                 localStorage.setItem('reinfGistToken', token);
                 localStorage.setItem('reinfGistId', id);
                 window.fecharModalGist();
-                alert("Conectado com sucesso! Seus dados estão sincronizados.");
+                alert("Conectado com sucesso! Os seus dados estão sincronizados.");
             } else {
                 alert("Erro na conexão. Verifique o Token e o ID.");
                 window.gistConfig = { token: localStorage.getItem('reinfGistToken') || '', id: localStorage.getItem('reinfGistId') || '' };
@@ -443,7 +451,7 @@
             }
             window.renderTable();
             window.renderHistorico();
-            window.renderFiltroReinf(); // Atualiza os checkboxes de meses
+            window.renderFiltroReinf(); 
         };
 
         window.abrirLogin = function() {
@@ -502,7 +510,7 @@
             const container = document.getElementById('conteudoHistorico');
             document.getElementById('badgeHistorico').innerText = window.appState.historicoGeral.length;
             
-            // Renderiza Tab "Planilhas"
+            // Tab "Planilhas"
             if(window.currentLogTab === 'planilhas') {
                 if (!window.appState.historicoPlanilhas || window.appState.historicoPlanilhas.length === 0) {
                     container.innerHTML = `<p class="text-[9px] text-slate-400 text-center mt-10 uppercase font-bold tracking-widest">Nenhuma planilha armazenada</p>`;
@@ -526,14 +534,14 @@
                 return;
             }
 
-            // Renderiza Tabs "Importacao" e "Edicao"
+            // Tabs "Importacao" e "Edicao"
             const logsFiltrados = window.appState.historicoGeral.filter(reg => {
                 let isImport = reg.tipo === 'importacao' || (reg.alteracoes[0] && reg.alteracoes[0].includes('IMPORTAÇÃO'));
                 return window.currentLogTab === 'importacao' ? isImport : !isImport;
             });
 
             if (logsFiltrados.length === 0) {
-                container.innerHTML = `<p class="text-[9px] text-slate-400 text-center mt-10 uppercase font-bold tracking-widest">Nenhum registro</p>`;
+                container.innerHTML = `<p class="text-[9px] text-slate-400 text-center mt-10 uppercase font-bold tracking-widest">Nenhum registo</p>`;
                 return;
             }
             container.innerHTML = [...logsFiltrados].reverse().map(reg => `
@@ -610,7 +618,6 @@
         window.renderFiltroReinf = function() {
             const container = document.getElementById('containerMesesReinf');
             if(!container) return;
-            // Preserva seleções atuais
             let checkedValues = Array.from(container.querySelectorAll('input:checked')).map(cb => cb.value);
             
             container.innerHTML = window.appState.meses.map(m => `
@@ -621,7 +628,6 @@
             `).join('');
             
             if(window.appState.meses.length > 0 && checkedValues.length === 0) {
-                // Se nenhum tiver marcado, marca o mais recente por padrão
                 const ultCheckbox = container.querySelector(`input[value="${window.appState.meses[window.appState.meses.length-1]}"]`);
                 if(ultCheckbox) ultCheckbox.checked = true;
             }
@@ -651,13 +657,14 @@
                             let ir = vlr * 0.10; // IR de 10%
                             mensal.push({
                                 razao: cli.razao,
+                                contato: cli.contato,
                                 mes: mes,
                                 antec: cli.mensal[mes].antec,
                                 ir: ir.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'})
                             });
                         }
                         else if (vlr > 0 || cli.mensal[mes].antec === 'S/M') {
-                            trimestral.push({ razao: cli.razao, mes: mes });
+                            trimestral.push({ razao: cli.razao, contato: cli.contato, mes: mes });
                         }
                     }
                 });
@@ -672,7 +679,7 @@
                                 <div class="flex justify-between border-b border-slate-100 pb-1">
                                     <div class="truncate w-3/4">
                                         <span class="text-red-600 bg-red-50 px-1 py-0.5 rounded mr-1">${m.mes}</span>
-                                        <span title="${m.razao}">${m.razao}</span>
+                                        <span title="${m.razao}">${m.razao} <span class="text-slate-500 font-normal">(${m.contato})</span></span>
                                     </div>
                                     <span class="text-slate-900">${m.antec}</span>
                                 </div>
@@ -688,7 +695,7 @@
                         ${trimestral.map(m => `
                             <div class="bg-white border-l-4 border-emerald-500 p-1.5 text-[9px] font-bold text-slate-700 shadow-sm uppercase flex items-center">
                                 <span class="text-emerald-700 bg-emerald-50 px-1 py-0.5 rounded mr-2">${m.mes}</span>
-                                <span class="truncate">${m.razao}</span>
+                                <span class="truncate">${m.razao} <span class="text-slate-500 font-normal">(${m.contato})</span></span>
                             </div>
                         `).join('')}
                         ${trimestral.length === 0 ? '<p class="text-[9px] text-slate-400 italic">Nenhum cliente nestes períodos.</p>' : ''}
@@ -707,7 +714,7 @@
         };
 
         // ==========================================
-        // RENDERIZAÇÃO DA TABELA PRINCIPAL
+        // RENDERIZAÇÃO DA TABELA PRINCIPAL E AÇÕES
         // ==========================================
         window.setFiltro = async function(mes, campo, status) {
             if (!window.appState.filtros[mes]) window.appState.filtros[mes] = {};
@@ -788,7 +795,11 @@
             }
             thead.innerHTML = tr1 + tr2;
 
-            let list = [...window.appState.clientes].sort((a, b) => a.razao.localeCompare(b.razao));
+            let list = [...window.appState.clientes].sort((a, b) => {
+                let cmp = a.razao.localeCompare(b.razao);
+                if (cmp === 0) return (a.contato || '').localeCompare(b.contato || '');
+                return cmp;
+            });
             
             window.appState.meses.forEach(m => {
                 const f = window.appState.filtros[m];
@@ -805,6 +816,7 @@
 
             tbody.innerHTML = list.length === 0 ? `<tr><td colspan="100" class="text-center py-20 text-slate-300 uppercase font-black italic tracking-widest">Nenhum dado</td></tr>` : 
             list.map(cli => {
+                const safeContato = btoa(unescape(encodeURIComponent(cli.contato || '')));
                 let row = `<tr class="hover:bg-blue-50 border-b border-slate-100 transition-colors">
                     <td class="col-fixed-n font-mono text-slate-400 font-bold">${cli.n}</td>
                     <td class="col-fixed-ano text-slate-400 font-medium">${cli.ano}</td>
@@ -818,7 +830,6 @@
                         let d = cli.mensal[m] || { antec: '-', lancado: '-', reinf: '-' };
                         let cLancado = d.lancado.toUpperCase() === 'OK' ? 'text-blue-600 font-black' : (d.lancado.toUpperCase() === 'NT' ? 'text-emerald-600 font-black' : 'text-slate-400');
                         
-                        // LÓGICA DE ALERTA > 50 MIL
                         let vlr = window.parseCurrency(d.antec);
                         let bgAntec = "bg-blue-50/20";
                         let fontAntec = "text-slate-900";
@@ -838,10 +849,10 @@
                                 ${badgeHtml}
                             </td>
                             <td class="align-middle">
-                                <input type="text" class="cell-input ${cLancado}" value="${d.lancado}" onchange="window.atualizarCelulaManual('${cli.cnpj}', '${m}', 'lancado', this.value, '${d.lancado}')">
+                                <input type="text" class="cell-input ${cLancado}" value="${d.lancado}" onchange="window.atualizarCelulaManual('${cli.cnpj}', '${safeContato}', '${m}', 'lancado', this.value, '${d.lancado}')">
                             </td>
                             <td class="bg-green-50/20 align-middle">
-                                <input type="text" class="cell-input text-emerald-700 uppercase" value="${d.reinf}" onchange="window.atualizarCelulaManual('${cli.cnpj}', '${m}', 'reinf', this.value, '${d.reinf}')">
+                                <input type="text" class="cell-input text-emerald-700 uppercase" value="${d.reinf}" onchange="window.atualizarCelulaManual('${cli.cnpj}', '${safeContato}', '${m}', 'reinf', this.value, '${d.reinf}')">
                             </td>`;
                     }
                 });
@@ -885,15 +896,16 @@
             window.renderTable(); 
         };
 
-        window.atualizarCelulaManual = async function(cnpj, mes, campo, val, old) {
-            let cli = window.appState.clientes.find(c => c.cnpj === cnpj);
+        window.atualizarCelulaManual = async function(cnpj, contatoB64, mes, campo, val, old) {
+            let contato = decodeURIComponent(escape(atob(contatoB64)));
+            let cli = window.appState.clientes.find(c => c.cnpj === cnpj && c.contato === contato);
             if (cli && cli.mensal[mes] && val !== old) {
                 cli.mensal[mes][campo] = val;
                 window.appState.historicoGeral.push({
                     tipo: 'edicao',
                     data: new Date().toLocaleString('pt-BR'),
                     usuario: window.appState.currentUser, mes: mes,
-                    alteracoes: [`<span class="text-blue-600 font-bold">EDIÇÃO MANUAL:</span> <b>${cli.razao}</b> - ${campo.toUpperCase()} mudou para '${val}'`]
+                    alteracoes: [`<span class="text-blue-600 font-bold">EDIÇÃO MANUAL:</span> <b>${cli.razao} (${cli.contato})</b> - ${campo.toUpperCase()} mudou para '${val}'`]
                 });
                 
                 await window.saveState(); 
@@ -904,7 +916,7 @@
         };
 
         // ==========================================
-        // IMPORTAÇÃO DE DADOS & GERAÇÃO DE POPUP E ALERTA 50K
+        // IMPORTAÇÃO DE DADOS & GERAÇÃO DE POPUP
         // ==========================================
         window.adicionarDados = async function() {
             const input = document.getElementById('rawData').value;
@@ -918,13 +930,12 @@
                     let [ma, ya] = a.split('/'); let [mb, yb] = b.split('/');
                     return new Date(ya, ma-1) - new Date(yb, mb-1);
                 });
-                window.renderFiltroReinf(); // Atualiza checkboxes de meses no painel
+                window.renderFiltroReinf(); 
             }
             
             const dataAtual = new Date().toLocaleString('pt-BR');
             window.appState.mesesConfig[mesRef] = { visible: true, data: dataAtual, usuario: window.appState.currentUser };
 
-            // Salva a Planilha RAW Inteira no Histórico
             if(!window.appState.historicoPlanilhas) window.appState.historicoPlanilhas = [];
             window.appState.historicoPlanilhas.push({
                 data: dataAtual, mes: mesRef, usuario: window.appState.currentUser, raw: input
@@ -947,14 +958,15 @@
                 let cnpj = cols[offset+3]?.trim();
                 if (!cnpj || cnpj === 'CNPJ') return;
                 
+                let contato = cols[offset+4]?.trim() || '';
                 qtdImportadas++;
 
-                let cli = window.appState.clientes.find(c => c.cnpj === cnpj);
+                let cli = window.appState.clientes.find(c => c.cnpj === cnpj && c.contato === contato);
                 if (!cli) {
                     cli = { 
                         n: cols[offset+0]?.trim(), ano: cols[offset+1]?.trim(), 
-                        razao: cols[offset+2]?.trim(), cnpj, 
-                        contato: cols[offset+4]?.trim(), regime: cols[offset+5]?.trim(), 
+                        razao: cols[offset+2]?.trim(), cnpj: cnpj, 
+                        contato: contato, regime: cols[offset+5]?.trim(), 
                         mensal: {} 
                     };
                     window.appState.clientes.push(cli);
@@ -964,19 +976,16 @@
                 let old = cli.mensal[mesRef];
                 let oldAntec = old?.antec || '-';
 
-                // Verifica Alerta > 50k
                 let valorAntFormatado = window.parseCurrency(ant);
                 if (valorAntFormatado > 50000) {
                     houveAlteracaoNoPopup = true;
-                    htmlAlertas50kPopup += `<li><b>${cli.razao}</b> - R$ ${ant}</li>`;
+                    htmlAlertas50kPopup += `<li><b>${cli.razao} (${cli.contato})</b> - R$ ${ant}</li>`;
                 }
 
-                // Verifica Alteração de valores que já existiam
                 if (old && oldAntec !== '-' && oldAntec !== ant && ant !== '-') {
                     houveAlteracaoNoPopup = true;
-                    htmlAlteracoesPopup += `<li><b>${cli.razao}</b> - ANT mudou de '${oldAntec}' para '${ant}'</li>`;
-                    
-                    logAlteracoesHistorico.push(`<span class="text-amber-500 font-bold">ATUALIZADO VIA IMPORTAÇÃO:</span> <b>${cli.razao}</b> - ANT mudou de '${oldAntec}' para '${ant}'`);
+                    htmlAlteracoesPopup += `<li><b>${cli.razao} (${cli.contato})</b> - ANT mudou de '${oldAntec}' para '${ant}'</li>`;
+                    logAlteracoesHistorico.push(`<span class="text-amber-500 font-bold">ATUALIZADO VIA IMPORTAÇÃO:</span> <b>${cli.razao} (${cli.contato})</b> - ANT mudou de '${oldAntec}' para '${ant}'`);
                 }
                 
                 cli.mensal[mesRef] = { 
@@ -986,7 +995,6 @@
                 };
             });
             
-            // Grava Log na aba de Alterações (apenas os divergentes)
             if (logAlteracoesHistorico.length > 0) {
                 window.appState.historicoGeral.push({
                     tipo: 'edicao',
@@ -997,7 +1005,6 @@
                 });
             }
 
-            // Grava Log Resumido de Importação
             window.appState.historicoGeral.push({ 
                 tipo: 'importacao',
                 data: dataAtual, 
@@ -1013,7 +1020,6 @@
             window.renderHistorico();
             window.renderClassificacao();
 
-            // Dispara Modal de Resumo (se houver Alterações na importação ou +50k)
             if (houveAlteracaoNoPopup) {
                 const listaAlt = document.getElementById('listaAlteracoesModal');
                 const lista50k = document.getElementById('listaAlertas50kModal');
@@ -1039,7 +1045,7 @@
         };
 
         window.limparTabela = async function() { 
-            if(confirm("Apagar tudo? Isso não apagará as planilhas do histórico de log.")) { 
+            if(confirm("Apagar tudo? Isto não apagará as planilhas do histórico de log.")) { 
                 window.appState.meses = []; window.appState.clientes = []; window.appState.historicoGeral = []; 
                 window.appState.mesesConfig = {}; window.appState.filtros = {}; 
                 
