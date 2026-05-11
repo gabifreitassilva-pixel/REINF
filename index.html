@@ -32,7 +32,7 @@
         .col-fixed-atividade { width: auto; min-width: 60px; max-width: 80px; text-align: left; overflow: hidden; text-overflow: ellipsis; }
         .col-fixed-regime { width: 40px; min-width: 40px; max-width: 40px; }
         .col-fixed-conta { width: 60px; min-width: 60px; max-width: 60px; }
-        .col-fixed-obs { width: 90px; min-width: 90px; max-width: 90px; }
+        .col-fixed-obs { width: 110px; min-width: 110px; max-width: 110px; }
 
         /* Colunas dos meses dinâmicos - Otimizadas */
         .col-month-data { min-width: 65px; }
@@ -140,7 +140,7 @@
                         <span>📋 Divergências de Cadastro (Regime/Atividade)</span>
                         <button onclick="window.imprimirRelatorioImportacao('divergenciasCad')" class="bg-white text-purple-700 px-2 py-0.5 rounded border border-purple-200 hover:bg-purple-50 flex items-center gap-1 shadow-sm font-bold tracking-widest text-[9px] transition-colors" title="Imprimir Relatório">🖨️ IMPRIMIR</button>
                     </h3>
-                    <p class="text-[9px] text-slate-400 mb-2 italic">A planilha importada possui dados de regime diferentes dos que estão no Cadastro.</p>
+                    <p class="text-[9px] text-slate-400 mb-2 italic">A planilha importada possui dados de regime/atividade diferentes dos que estão no Cadastro.</p>
                     <ul id="listaDivergenciasCadModal" class="text-[11px] font-mono text-slate-700 space-y-1.5 list-disc pl-4"></ul>
                 </div>
                 <!-- Bloco de Alertas 50k -->
@@ -272,7 +272,7 @@
             </div>
             <div class="p-4 bg-slate-50 flex-shrink-0 border-b">
                 <p class="text-[9px] font-bold text-slate-500 uppercase mb-2">Cole dados da planilha para importar (Nome, CNPJ, etc.):</p>
-                <textarea id="rawDataCadastro" rows="3" class="w-full border p-2 text-xs font-mono rounded outline-none focus:ring-1 focus:ring-indigo-500 mb-2" placeholder="Ex: NOME [TAB] CNPJ [TAB] CONTATO [TAB] ATIVIDADE [TAB] REGIME [TAB] CONTA"></textarea>
+                <textarea id="rawDataCadastro" rows="3" class="w-full border p-2 text-xs font-mono rounded outline-none focus:ring-1 focus:ring-indigo-500 mb-2" placeholder="Ex: NOME [TAB] CNPJ [TAB] CONTATO [TAB] ATIVIDADE [TAB] REGIME [TAB] CONTA [TAB] WHATSAPP"></textarea>
                 <button onclick="window.importarCadastro()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-black py-2 px-4 rounded shadow w-full uppercase tracking-widest">Importar Cadastro Base</button>
             </div>
             
@@ -481,10 +481,11 @@
                         return !['RAZÃO SOCIAL', 'RAZAO SOCIAL', 'NOME', 'CLIENTE', 'EMPRESA', 'NOME DA EMPRESA', 'TITULO', 'CNPJ'].includes(r);
                     });
 
-                    // MIGRAÇÃO SEGURA PARA ID ÚNICO E OBSERVAÇÕES
+                    // MIGRAÇÃO SEGURA PARA ID ÚNICO, OBSERVAÇÕES E WHATSAPP
                     window.appState.clientes.forEach(c => {
                         if (c.atividade === undefined) c.atividade = '';
                         if (c.obs === undefined) c.obs = '';
+                        if (c.whatsapp === undefined) c.whatsapp = '';
                         if (!c.id) c.id = window.generateId();
                     });
                 }
@@ -668,6 +669,82 @@
         };
 
         // ==========================================
+        // COBRANÇA AUTOMATIZADA WHATSAPP
+        // ==========================================
+        window.cobrarWhatsApp = async function(id) {
+            let cli = window.appState.clientes.find(c => c.id === id);
+            if(!cli) return;
+            
+            if (!cli.whatsapp || cli.whatsapp.trim() === '') {
+                alert("Por favor, preencha o campo 'WhatsApp ou Link' no Cadastro desta empresa primeiro.");
+                window.togglePainel('painelCadastro');
+                return;
+            }
+
+            let mesesFaltantes = [];
+            window.appState.meses.forEach(m => {
+                if (window.appState.mesesConfig[m] && window.appState.mesesConfig[m].visible) {
+                    let d = cli.mensal[m];
+                    if (!d || d.antec === '-' || d.antec.trim() === '') {
+                        mesesFaltantes.push(m);
+                    }
+                }
+            });
+
+            if (mesesFaltantes.length === 0) {
+                alert("Esta empresa não possui meses com valores pendentes na tela no momento.");
+                return;
+            }
+
+            let mesesStr = mesesFaltantes.join(', ');
+            if (mesesFaltantes.length > 1) {
+                let last = mesesFaltantes.pop();
+                mesesStr = mesesFaltantes.join(', ') + ' e ' + last;
+            }
+
+            let msg = `Olá, tudo bem?\nEstamos organizando os arquivos para a contabilidade da empresa *${cli.razao}* e sentimos falta dos extratos bancários de *${mesesStr}*.\n\nSe puder disponibilizar por aqui, já consigo deixar tudo engatilhado para que o pessoal do contábil dê continuidade na contabilização.`;
+
+            // Copiar para área de transferência (Compatível com iFrame Canvas)
+            const el = document.createElement('textarea');
+            el.value = msg;
+            document.body.appendChild(el);
+            el.select();
+            document.execCommand('copy');
+            document.body.removeChild(el);
+
+            // Abrir Link
+            let link = cli.whatsapp.trim();
+            let finalUrl = link;
+            let numOnly = window.getNumbers(link);
+            
+            if (numOnly.length >= 10 && numOnly.length <= 13) {
+                finalUrl = `https://wa.me/55${numOnly}`;
+            } else if (!link.startsWith('http')) {
+                finalUrl = `https://${link}`;
+            }
+
+            window.open(finalUrl, '_blank');
+
+            // Atualizar OBS Automaticamente
+            let dataAtual = new Date().toLocaleDateString('pt-BR');
+            cli.obs = `COBRADO EM ${dataAtual}`;
+            
+            window.appState.historicoGeral.push({
+                tipo: 'edicao',
+                data: new Date().toLocaleString('pt-BR'),
+                usuario: window.appState.currentUser,
+                mes: 'GERAL',
+                alteracoes: [`<span class="text-emerald-600 font-bold">COBRANÇA WHATSAPP:</span> <b>${cli.razao}</b> - Observação atualizada automaticamente.`]
+            });
+
+            await window.saveState();
+            window.renderTable();
+            window.renderHistorico();
+            
+            alert("A mensagem de cobrança foi copiada! (Pressione Ctrl+V no WhatsApp para colar e enviar)");
+        };
+
+        // ==========================================
         // IMPRESSÃO DOS RELATÓRIOS DO POPUP DE IMPORTAÇÃO
         // ==========================================
         window.imprimirRelatorioImportacao = function(tipo) {
@@ -848,7 +925,7 @@
                 id: window.generateId(),
                 n: '-', ano: new Date().getFullYear().toString(),
                 razao: 'NOVA EMPRESA', cnpj: 'S/ CNPJ', contato: '', atividade: '', regime: '',
-                conta: '', obs: '', mensal: {}
+                conta: '', obs: '', whatsapp: '', mensal: {}
             });
             window.appState.historicoGeral.push({
                 tipo: 'edicao',
@@ -871,7 +948,7 @@
                     n: cliBase.n, ano: cliBase.ano,
                     razao: cliBase.razao, cnpj: cliBase.cnpj,
                     contato: 'NOVO SÓCIO', regime: cliBase.regime, atividade: cliBase.atividade,
-                    conta: cliBase.conta, obs: '', mensal: {}
+                    conta: cliBase.conta, obs: '', whatsapp: cliBase.whatsapp, mensal: {}
                 });
                 window.appState.historicoGeral.push({
                     tipo: 'edicao',
@@ -896,11 +973,11 @@
                     novoValor = window.formatCNPJ(novoValor);
                 } else if (['razao', 'contato', 'regime', 'atividade'].includes(campo)) {
                     novoValor = novoValor.toUpperCase();
-                }
+                } // WhatsApp mantem-se como digitado (pode ser minúsculo/link)
 
                 if (valAntigo !== novoValor) {
                     cli[campo] = novoValor;
-                    el.value = novoValor; // Atualiza o visual sem recarregar a lista toda
+                    el.value = novoValor; 
                     
                     window.appState.historicoGeral.push({
                         tipo: 'edicao',
@@ -909,6 +986,15 @@
                         mes: 'CADASTRO',
                         alteracoes: [`<span class="text-blue-600 font-bold">EDIÇÃO DE CADASTRO:</span> <b>${cli.razao}</b> - ${campo.toUpperCase()} alterado de '${valAntigo || '-'}' para '${novoValor || '-'}'`]
                     });
+
+                    let cnpjNum = window.getNumbers(cli.cnpj);
+                    if (['atividade', 'regime', 'conta', 'razao', 'cnpj'].includes(campo) && cnpjNum.length === 14) {
+                         window.appState.clientes.forEach(otherCli => {
+                             if (otherCli.id !== cli.id && window.getNumbers(otherCli.cnpj) === cnpjNum) {
+                                 otherCli[campo] = novoValor;
+                             }
+                         });
+                    }
                     
                     window.saveState();
                     window.renderHistorico();
@@ -925,6 +1011,15 @@
                 cli.conta = val;
                 el.className = `border border-slate-200 rounded text-[8px] px-1 py-0.5 outline-none focus:border-indigo-500 cursor-pointer w-1/3 ${val ? 'text-indigo-700 font-bold bg-indigo-50' : 'text-slate-500 bg-slate-50'}`;
                 el.setAttribute('onchange', `window.atualizarContaCadastro('${id}', this, '${val}')`);
+                
+                let cnpjNum = window.getNumbers(cli.cnpj);
+                if (cnpjNum.length === 14) {
+                    window.appState.clientes.forEach(otherCli => {
+                        if (window.getNumbers(otherCli.cnpj) === cnpjNum) {
+                            otherCli.conta = val;
+                        }
+                    });
+                }
                 
                 window.appState.historicoGeral.push({
                     tipo: 'edicao',
@@ -969,6 +1064,7 @@
                 let atividade = colunas.length > 3 ? colunas[3].toUpperCase() : '';
                 let regime = colunas.length > 4 ? colunas[4].toUpperCase() : '';
                 let conta = colunas.length > 5 ? colunas[5].toUpperCase() : '';
+                let whatsapp = colunas.length > 6 ? colunas[6] : '';
 
                 if (conta && !window.appState.opcoesConta.includes(conta)) {
                     window.appState.opcoesConta.push(conta);
@@ -987,6 +1083,7 @@
                                 if(atividade) v.atividade = atividade;
                                 if(regime) v.regime = regime;
                                 if(conta) v.conta = conta;
+                                if(whatsapp && !v.whatsapp) v.whatsapp = whatsapp;
                             });
                             atualizados++;
                             return; 
@@ -1007,14 +1104,27 @@
                     if(atividade) cliExistente.atividade = atividade;
                     if(regime) cliExistente.regime = regime;
                     if(conta) cliExistente.conta = conta;
+                    if(whatsapp) cliExistente.whatsapp = whatsapp;
                     if(cnpj !== "S/ CNPJ" && window.getNumbers(cliExistente.cnpj).length !== 14) cliExistente.cnpj = cnpj;
+                    
+                    if (cnpjNum.length === 14) {
+                        window.appState.clientes.forEach(v => {
+                            if (window.getNumbers(v.cnpj) === cnpjNum) {
+                                if(atividade) v.atividade = atividade;
+                                if(regime) v.regime = regime;
+                                if(conta) v.conta = conta;
+                                if(whatsapp && !v.whatsapp) v.whatsapp = whatsapp;
+                            }
+                        });
+                    }
+
                     atualizados++;
                 } else {
                     window.appState.clientes.push({
                         id: window.generateId(),
                         n: '-', ano: new Date().getFullYear().toString(),
                         razao: nome, cnpj: cnpj, contato: contato, atividade: atividade, regime: regime,
-                        conta: conta, obs: '', mensal: {} 
+                        conta: conta, obs: '', whatsapp: whatsapp, mensal: {} 
                     });
                     novos++;
                 }
@@ -1064,6 +1174,7 @@
                 const valContato = (cli.contato || '').replace(/"/g, '&quot;');
                 const valAtividade = (cli.atividade || '').replace(/"/g, '&quot;');
                 const valRegime = (cli.regime || '').replace(/"/g, '&quot;');
+                const valWhatsapp = (cli.whatsapp || '').replace(/"/g, '&quot;');
 
                 return `
                 <div class="bg-white p-2.5 rounded border border-slate-200 shadow-sm flex flex-col gap-2 relative group hover:border-indigo-300 transition-colors">
@@ -1084,6 +1195,9 @@
                         <select class="border border-slate-200 rounded text-[8px] px-1 py-0.5 outline-none focus:border-indigo-500 cursor-pointer w-1/3 ${cli.conta ? 'text-indigo-700 font-bold bg-indigo-50' : 'text-slate-500 bg-slate-50'}" onchange="window.atualizarContaCadastro('${cli.id}', this, '${cli.conta || ''}')">
                             ${optionsHtml}
                         </select>
+                    </div>
+                    <div class="flex w-full mt-1 border-t border-slate-50 pt-1.5">
+                        <input type="text" value="${valWhatsapp}" class="text-[9px] text-slate-500 bg-transparent border-b border-transparent hover:border-slate-300 focus:border-emerald-500 outline-none w-full" placeholder="Link WhatsApp do Grupo ou Telefone" title="WhatsApp" onchange="window.editarClienteCadastro('${cli.id}', 'whatsapp', this)">
                     </div>
                 </div>
             `}).join('');
@@ -1706,8 +1820,9 @@
                             ${optionsHtml}
                         </select>
                     </td>
-                    <td class="col-fixed-obs align-middle">
-                        <input type="text" class="cell-input text-slate-600 text-[8px] uppercase text-left px-1 border border-transparent hover:border-slate-300" value="${(cli.obs || '').replace(/"/g, '&quot;')}" onchange="window.atualizarObs('${cli.id}', this, '${(cli.obs || '').replace(/"/g, '\\"')}')" placeholder="Obs...">
+                    <td class="col-fixed-obs align-middle flex items-center justify-between px-1 h-full gap-1">
+                        <input type="text" class="cell-input text-slate-600 text-[8px] uppercase text-left border border-transparent hover:border-slate-300 w-full" value="${(cli.obs || '').replace(/"/g, '&quot;')}" onchange="window.atualizarObs('${cli.id}', this, '${(cli.obs || '').replace(/"/g, '\\"')}')" placeholder="Obs...">
+                        <button onclick="window.cobrarWhatsApp('${cli.id}')" class="text-emerald-500 hover:text-emerald-600 transition-transform hover:scale-110 text-xs flex-shrink-0" title="Cobrar Extratos via WhatsApp">📱</button>
                     </td>`;
                 
                 window.appState.meses.forEach(m => {
@@ -1815,6 +1930,15 @@
                 el.className = `cell-input ${val ? 'text-indigo-600' : 'text-slate-400'} text-[8px] uppercase cursor-pointer px-0`;
                 el.setAttribute('onchange', `window.atualizarContaManual('${id}', this, '${val}')`);
 
+                let cnpjNum = window.getNumbers(cli.cnpj);
+                if (cnpjNum.length === 14) {
+                    window.appState.clientes.forEach(otherCli => {
+                        if (window.getNumbers(otherCli.cnpj) === cnpjNum) {
+                            otherCli.conta = val;
+                        }
+                    });
+                }
+
                 window.appState.historicoGeral.push({
                     tipo: 'edicao',
                     data: new Date().toLocaleString('pt-BR'),
@@ -1869,6 +1993,77 @@
             window.renderListaCadastro();
             window.renderHistorico();
             window.renderClassificacao();
+        };
+
+        window.cobrarWhatsApp = async function(id) {
+            let cli = window.appState.clientes.find(c => c.id === id);
+            if(!cli) return;
+            
+            if (!cli.whatsapp || cli.whatsapp.trim() === '') {
+                alert("Por favor, preencha o campo 'Link do Grupo ou WhatsApp' no Cadastro desta empresa primeiro.");
+                window.togglePainel('painelCadastro');
+                return;
+            }
+
+            let mesesFaltantes = [];
+            window.appState.meses.forEach(m => {
+                if (window.appState.mesesConfig[m] && window.appState.mesesConfig[m].visible) {
+                    let d = cli.mensal[m];
+                    if (!d || d.antec === '-' || d.antec.trim() === '') {
+                        mesesFaltantes.push(m);
+                    }
+                }
+            });
+
+            if (mesesFaltantes.length === 0) {
+                alert("Esta empresa não possui meses com valores pendentes na tela no momento.");
+                return;
+            }
+
+            let mesesStr = mesesFaltantes.join(', ');
+            if (mesesFaltantes.length > 1) {
+                let last = mesesFaltantes.pop();
+                mesesStr = mesesFaltantes.join(', ') + ' e ' + last;
+            }
+
+            let msg = `Olá, tudo bem?\nEstamos organizando os arquivos para a contabilidade da empresa *${cli.razao}* e sentimos falta dos extratos bancários de *${mesesStr}*.\n\nSe puder disponibilizar por aqui, já consigo deixar tudo engatilhado para que o pessoal do contábil dê continuidade na contabilização.`;
+
+            // Usando execCommand para garantir compatibilidade dentro do iFrame
+            const el = document.createElement('textarea');
+            el.value = msg;
+            document.body.appendChild(el);
+            el.select();
+            document.execCommand('copy');
+            document.body.removeChild(el);
+
+            let link = cli.whatsapp.trim();
+            let finalUrl = link;
+            let numOnly = window.getNumbers(link);
+            
+            if (numOnly.length >= 10 && numOnly.length <= 13) {
+                finalUrl = `https://wa.me/55${numOnly}`;
+            } else if (!link.startsWith('http')) {
+                finalUrl = `https://${link}`;
+            }
+
+            window.open(finalUrl, '_blank');
+
+            let dataAtual = new Date().toLocaleDateString('pt-BR');
+            cli.obs = `COBRADO EM ${dataAtual}`;
+            
+            window.appState.historicoGeral.push({
+                tipo: 'edicao',
+                data: new Date().toLocaleString('pt-BR'),
+                usuario: window.appState.currentUser,
+                mes: 'GERAL',
+                alteracoes: [`<span class="text-emerald-600 font-bold">COBRANÇA WHATSAPP:</span> <b>${cli.razao}</b> - Observação atualizada automaticamente.`]
+            });
+
+            await window.saveState();
+            window.renderTable();
+            window.renderHistorico();
+            
+            alert("A mensagem de cobrança foi copiada! (Pressione Ctrl+V no WhatsApp para colar e enviar)");
         };
 
         // ==========================================
@@ -1979,7 +2174,7 @@
                         n: cols[offset+0]?.trim(), ano: cols[offset+1]?.trim(), 
                         razao: razao, cnpj: cnpj || "S/ CNPJ", 
                         contato: contato, regime: importRegime, atividade: '',
-                        conta: '', obs: '',
+                        conta: '', obs: '', whatsapp: '',
                         mensal: {} 
                     };
                     window.appState.clientes.push(cli);
