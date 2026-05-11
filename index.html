@@ -828,9 +828,10 @@
             setTimeout(() => container.scrollTop = container.scrollHeight, 100);
         };
 
-        window.adicionarSocio = async function(cnpj, contatoB64) {
+        window.adicionarSocio = async function(cnpjB64, contatoB64) {
+            let cnpj = decodeURIComponent(escape(atob(cnpjB64)));
             let contato = decodeURIComponent(escape(atob(contatoB64)));
-            let cliBase = window.appState.clientes.find(c => c.cnpj === cnpj && c.contato === contato);
+            let cliBase = window.appState.clientes.find(c => (c.cnpj || '') === cnpj && (c.contato || '') === contato);
             if (cliBase) {
                 window.appState.clientes.push({
                     n: cliBase.n, ano: cliBase.ano,
@@ -851,9 +852,10 @@
             }
         };
 
-        window.editarClienteCadastro = async function(oldCnpj, oldContatoB64, campo, novoValor) {
+        window.editarClienteCadastro = async function(oldCnpjB64, oldContatoB64, campo, novoValor) {
+            let oldCnpj = decodeURIComponent(escape(atob(oldCnpjB64)));
             let oldContato = decodeURIComponent(escape(atob(oldContatoB64)));
-            let idx = window.appState.clientes.findIndex(c => c.cnpj === oldCnpj && c.contato === oldContato);
+            let idx = window.appState.clientes.findIndex(c => (c.cnpj || '') === oldCnpj && (c.contato || '') === oldContato);
             
             if(idx !== -1) {
                 let cli = window.appState.clientes[idx];
@@ -992,6 +994,7 @@
             }
 
             container.innerHTML = list.map(cli => {
+                const safeCnpj = btoa(unescape(encodeURIComponent(cli.cnpj || '')));
                 const safeContato = btoa(unescape(encodeURIComponent(cli.contato || '')));
                 
                 let optionsHtml = `<option value="" ${!cli.conta ? 'selected' : ''}>-</option>`;
@@ -1012,20 +1015,20 @@
                 return `
                 <div class="bg-white p-2.5 rounded border border-slate-200 shadow-sm flex flex-col gap-2 relative group hover:border-indigo-300 transition-colors">
                     <div class="flex justify-between items-start gap-2">
-                        <input type="text" value="${valRazao}" class="text-[10px] font-black text-slate-800 uppercase leading-tight flex-grow bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none w-full" placeholder="RAZÃO SOCIAL" title="Razão Social" onchange="window.editarClienteCadastro('${cli.cnpj}', '${safeContato}', 'razao', this.value)">
+                        <input type="text" value="${valRazao}" class="text-[10px] font-black text-slate-800 uppercase leading-tight flex-grow bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none w-full" placeholder="RAZÃO SOCIAL" title="Razão Social" onchange="window.editarClienteCadastro('${safeCnpj}', '${safeContato}', 'razao', this.value)">
                         <div class="flex items-center gap-1 flex-shrink-0">
-                            <button onclick="window.adicionarSocio('${cli.cnpj}', '${safeContato}')" class="text-indigo-400 hover:text-indigo-700 text-[9px] font-bold leading-none transition-colors border border-indigo-200 px-1 py-0.5 rounded" title="Adicionar Novo Sócio para esta Empresa">➕ SÓCIO</button>
-                            <button onclick="window.excluirCliente('${cli.cnpj}', '${safeContato}')" class="text-red-400 hover:text-red-700 text-lg leading-none transition-colors" title="Excluir Cliente">&times;</button>
+                            <button onclick="window.adicionarSocio('${safeCnpj}', '${safeContato}')" class="text-indigo-400 hover:text-indigo-700 text-[9px] font-bold leading-none transition-colors border border-indigo-200 px-1 py-0.5 rounded" title="Adicionar Novo Sócio para esta Empresa">➕ SÓCIO</button>
+                            <button onclick="window.excluirCliente('${safeCnpj}', '${safeContato}')" class="text-red-400 hover:text-red-700 text-lg leading-none transition-colors" title="Excluir Cliente">&times;</button>
                         </div>
                     </div>
                     <div class="flex gap-2 w-full">
-                        <input type="text" value="${valCnpj}" class="text-[9px] font-mono text-indigo-600 font-bold bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none w-1/3" placeholder="CNPJ" title="CNPJ" onchange="window.editarClienteCadastro('${cli.cnpj}', '${safeContato}', 'cnpj', this.value)">
-                        <input type="text" value="${valContato}" class="text-[9px] text-slate-500 bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none w-2/3" placeholder="Sócio / Contato" title="Contato" onchange="window.editarClienteCadastro('${cli.cnpj}', '${safeContato}', 'contato', this.value)">
+                        <input type="text" value="${valCnpj}" class="text-[9px] font-mono text-indigo-600 font-bold bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none w-1/3" placeholder="CNPJ" title="CNPJ" onchange="window.editarClienteCadastro('${safeCnpj}', '${safeContato}', 'cnpj', this.value)">
+                        <input type="text" value="${valContato}" class="text-[9px] text-slate-500 bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none w-2/3" placeholder="Sócio / Contato" title="Contato" onchange="window.editarClienteCadastro('${safeCnpj}', '${safeContato}', 'contato', this.value)">
                     </div>
                     <div class="flex justify-between items-center mt-1 border-t border-slate-50 pt-1.5 gap-2">
-                        <input type="text" value="${valAtividade}" class="text-[8px] text-slate-400 bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none w-1/3 uppercase font-bold" placeholder="ATIVIDADE" title="Atividade" onchange="window.editarClienteCadastro('${cli.cnpj}', '${safeContato}', 'atividade', this.value)">
-                        <input type="text" value="${valRegime}" class="text-[8px] text-slate-400 bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none w-1/3 uppercase font-bold" placeholder="REGIME" title="Regime" onchange="window.editarClienteCadastro('${cli.cnpj}', '${safeContato}', 'regime', this.value)">
-                        <select class="border border-slate-200 rounded text-[8px] px-1 py-0.5 outline-none focus:border-indigo-500 cursor-pointer w-1/3 ${cli.conta ? 'text-indigo-700 font-bold bg-indigo-50' : 'text-slate-500 bg-slate-50'}" onchange="window.atualizarContaManual('${cli.cnpj}', '${safeContato}', this.value, '${cli.conta || ''}')">
+                        <input type="text" value="${valAtividade}" class="text-[8px] text-slate-400 bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none w-1/3 uppercase font-bold" placeholder="ATIVIDADE" title="Atividade" onchange="window.editarClienteCadastro('${safeCnpj}', '${safeContato}', 'atividade', this.value)">
+                        <input type="text" value="${valRegime}" class="text-[8px] text-slate-400 bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none w-1/3 uppercase font-bold" placeholder="REGIME" title="Regime" onchange="window.editarClienteCadastro('${safeCnpj}', '${safeContato}', 'regime', this.value)">
+                        <select class="border border-slate-200 rounded text-[8px] px-1 py-0.5 outline-none focus:border-indigo-500 cursor-pointer w-1/3 ${cli.conta ? 'text-indigo-700 font-bold bg-indigo-50' : 'text-slate-500 bg-slate-50'}" onchange="window.atualizarContaManual('${safeCnpj}', '${safeContato}', this.value, '${cli.conta || ''}')">
                             ${optionsHtml}
                         </select>
                     </div>
@@ -1033,11 +1036,12 @@
             `}).join('');
         };
 
-        window.excluirCliente = async function(cnpj, contatoB64) {
+        window.excluirCliente = async function(cnpjB64, contatoB64) {
             if(!confirm("Tem certeza que deseja remover este cliente de toda a planilha? Todos os dados dos meses também serão perdidos para ele.")) return;
             
+            let cnpj = decodeURIComponent(escape(atob(cnpjB64)));
             let contato = decodeURIComponent(escape(atob(contatoB64)));
-            let idx = window.appState.clientes.findIndex(c => c.cnpj === cnpj && c.contato === contato);
+            let idx = window.appState.clientes.findIndex(c => (c.cnpj || '') === cnpj && (c.contato || '') === contato);
             if(idx !== -1) {
                 let nome = window.appState.clientes[idx].razao;
                 window.appState.clientes.splice(idx, 1);
@@ -1636,6 +1640,7 @@
 
             tbody.innerHTML = list.length === 0 ? `<tr><td colspan="100" class="text-center py-20 text-slate-300 uppercase font-black italic tracking-widest">Nenhum dado</td></tr>` : 
             list.map(cli => {
+                const safeCnpj = btoa(unescape(encodeURIComponent(cli.cnpj || '')));
                 const safeContato = btoa(unescape(encodeURIComponent(cli.contato || '')));
                 
                 let optionsHtml = `<option value="" ${!cli.conta ? 'selected' : ''}>-</option>`;
@@ -1654,9 +1659,9 @@
                     <td class="col-fixed-cnpj font-mono text-blue-700 tracking-tighter">${cli.cnpj}</td>
                     <td class="col-fixed-contato text-slate-500 uppercase" title="${cli.contato}">${cli.contato}</td>
                     <td class="col-fixed-atividade text-slate-500 uppercase" title="${cli.atividade || ''}">${cli.atividade || ''}</td>
-                    <td class="col-fixed-regime font-black text-slate-600 uppercase">${cli.regime}</td>
+                    <td class="col-fixed-regime font-black text-slate-600 uppercase">${cli.regime || ''}</td>
                     <td class="col-fixed-conta align-middle">
-                        <select class="cell-input ${cli.conta ? 'text-indigo-600' : 'text-slate-400'} text-[9px] uppercase cursor-pointer" onchange="window.atualizarContaManual('${cli.cnpj}', '${safeContato}', this.value, '${cli.conta || ''}')">
+                        <select class="cell-input ${cli.conta ? 'text-indigo-600' : 'text-slate-400'} text-[9px] uppercase cursor-pointer" onchange="window.atualizarContaManual('${safeCnpj}', '${safeContato}', this.value, '${cli.conta || ''}')">
                             ${optionsHtml}
                         </select>
                     </td>`;
@@ -1685,10 +1690,10 @@
                                 ${badgeHtml}
                             </td>
                             <td class="align-middle">
-                                <input type="text" class="cell-input ${cLancado}" value="${d.lancado}" onchange="window.atualizarCelulaManual('${cli.cnpj}', '${safeContato}', '${m}', 'lancado', this.value, '${d.lancado}')">
+                                <input type="text" class="cell-input ${cLancado}" value="${d.lancado}" onchange="window.atualizarCelulaManual('${safeCnpj}', '${safeContato}', '${m}', 'lancado', this.value, '${d.lancado}')">
                             </td>
                             <td class="bg-green-50/20 align-middle">
-                                <input type="text" class="cell-input text-emerald-700 uppercase" value="${d.reinf}" onchange="window.atualizarCelulaManual('${cli.cnpj}', '${safeContato}', '${m}', 'reinf', this.value, '${d.reinf}')">
+                                <input type="text" class="cell-input text-emerald-700 uppercase" value="${d.reinf}" onchange="window.atualizarCelulaManual('${safeCnpj}', '${safeContato}', '${m}', 'reinf', this.value, '${d.reinf}')">
                             </td>`;
                     }
                 });
@@ -1732,9 +1737,10 @@
             window.renderTable(); 
         };
 
-        window.atualizarCelulaManual = async function(cnpj, contatoB64, mes, campo, val, old) {
+        window.atualizarCelulaManual = async function(cnpjB64, contatoB64, mes, campo, val, old) {
+            let cnpj = decodeURIComponent(escape(atob(cnpjB64)));
             let contato = decodeURIComponent(escape(atob(contatoB64)));
-            let cli = window.appState.clientes.find(c => c.cnpj === cnpj && c.contato === contato);
+            let cli = window.appState.clientes.find(c => (c.cnpj || '') === cnpj && (c.contato || '') === contato);
             if (cli && cli.mensal[mes] && val !== old) {
                 cli.mensal[mes][campo] = val;
                 window.appState.historicoGeral.push({
@@ -1751,9 +1757,10 @@
             }
         };
 
-        window.atualizarContaManual = async function(cnpj, contatoB64, val, old) {
+        window.atualizarContaManual = async function(cnpjB64, contatoB64, val, old) {
+            let cnpj = decodeURIComponent(escape(atob(cnpjB64)));
             let contato = decodeURIComponent(escape(atob(contatoB64)));
-            let cli = window.appState.clientes.find(c => c.cnpj === cnpj && c.contato === contato);
+            let cli = window.appState.clientes.find(c => (c.cnpj || '') === cnpj && (c.contato || '') === contato);
             if (cli && val !== old) {
                 cli.conta = val;
                 window.appState.historicoGeral.push({
