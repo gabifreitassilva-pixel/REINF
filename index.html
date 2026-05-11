@@ -672,7 +672,12 @@
 
             container.innerHTML = `
                 <div class="mb-6">
-                    <div class="bg-red-600 text-white text-[10px] font-black p-2 rounded shadow-md uppercase mb-2">Envio Mensal (>50k): ${mensal.length} ocorrências</div>
+                    <div class="bg-red-600 text-white text-[10px] font-black p-2 rounded shadow-md uppercase mb-2 flex justify-between items-center">
+                        <span>Envio Mensal (>50k): ${mensal.length} ocorrências</span>
+                        <button onclick="window.imprimirClassificacao('mensal')" class="bg-white text-red-600 px-2 py-0.5 rounded hover:bg-red-50 flex items-center gap-1 shadow-sm font-bold tracking-widest text-[9px] transition-colors" title="Imprimir Relatório Mensal">
+                            🖨️ IMPRIMIR
+                        </button>
+                    </div>
                     <div class="space-y-2">
                         ${mensal.map(m => `
                             <div class="bg-white border-l-4 border-red-500 p-2 text-[9px] font-bold text-slate-700 shadow-sm uppercase flex flex-col gap-1">
@@ -690,7 +695,12 @@
                     </div>
                 </div>
                 <div>
-                    <div class="bg-emerald-600 text-white text-[10px] font-black p-2 rounded shadow-md uppercase mb-2">Envio Trimestral (até 50k/SM): ${trimestral.length} ocorrências</div>
+                    <div class="bg-emerald-600 text-white text-[10px] font-black p-2 rounded shadow-md uppercase mb-2 flex justify-between items-center">
+                        <span>Envio Trimestral (até 50k/SM): ${trimestral.length} ocorrências</span>
+                        <button onclick="window.imprimirClassificacao('trimestral')" class="bg-white text-emerald-700 px-2 py-0.5 rounded hover:bg-emerald-50 flex items-center gap-1 shadow-sm font-bold tracking-widest text-[9px] transition-colors" title="Imprimir Relatório Trimestral">
+                            🖨️ IMPRIMIR
+                        </button>
+                    </div>
                     <div class="space-y-1">
                         ${trimestral.map(m => `
                             <div class="bg-white border-l-4 border-emerald-500 p-1.5 text-[9px] font-bold text-slate-700 shadow-sm uppercase flex items-center">
@@ -702,6 +712,121 @@
                     </div>
                 </div>
             `;
+        };
+
+        window.imprimirClassificacao = function(tipo) {
+            const containerCheckboxes = document.getElementById('containerMesesReinf');
+            let mesesSelecionados = Array.from(containerCheckboxes.querySelectorAll('input:checked')).map(cb => cb.value);
+
+            if (mesesSelecionados.length === 0) {
+                alert('Nenhum mês selecionado para impressão.');
+                return;
+            }
+
+            let mensal = [];
+            let trimestral = [];
+
+            window.appState.clientes.forEach(cli => {
+                mesesSelecionados.forEach(mes => {
+                    if (cli.mensal[mes]) {
+                        let vlr = window.parseCurrency(cli.mensal[mes].antec);
+                        if (vlr > 50000) {
+                            let ir = vlr * 0.10;
+                            mensal.push({
+                                razao: cli.razao,
+                                contato: cli.contato,
+                                mes: mes,
+                                antec: cli.mensal[mes].antec,
+                                ir: ir.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'})
+                            });
+                        } else if (vlr > 0 || cli.mensal[mes].antec === 'S/M') {
+                            trimestral.push({ razao: cli.razao, contato: cli.contato, mes: mes });
+                        }
+                    }
+                });
+            });
+
+            let titulo = '';
+            let htmlConteudo = '';
+
+            if (tipo === 'mensal') {
+                if (mensal.length === 0) return alert('Nenhum dado mensal para imprimir nos meses selecionados.');
+                titulo = 'Relatório de Envio Mensal (> 50k)';
+                htmlConteudo = `
+                    <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+                        <thead>
+                            <tr style="background-color: #fee2e2; color: #991b1b; text-align: left;">
+                                <th style="padding: 8px; border: 1px solid #fca5a5;">Mês</th>
+                                <th style="padding: 8px; border: 1px solid #fca5a5;">Razão Social (Contato)</th>
+                                <th style="padding: 8px; border: 1px solid #fca5a5;">Antecipação Lançada</th>
+                                <th style="padding: 8px; border: 1px solid #fca5a5;">Previsão de IR (10%)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${mensal.map(m => `
+                                <tr>
+                                    <td style="padding: 8px; border: 1px solid #fca5a5;">${m.mes}</td>
+                                    <td style="padding: 8px; border: 1px solid #fca5a5;">${m.razao} (${m.contato})</td>
+                                    <td style="padding: 8px; border: 1px solid #fca5a5;">${m.antec}</td>
+                                    <td style="padding: 8px; border: 1px solid #fca5a5; font-weight: bold; color: #b91c1c;">${m.ir}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            } else {
+                if (trimestral.length === 0) return alert('Nenhum dado trimestral para imprimir nos meses selecionados.');
+                titulo = 'Relatório de Envio Trimestral (até 50k/SM)';
+                htmlConteudo = `
+                    <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+                        <thead>
+                            <tr style="background-color: #d1fae5; color: #166534; text-align: left;">
+                                <th style="padding: 8px; border: 1px solid #6ee7b7;">Mês</th>
+                                <th style="padding: 8px; border: 1px solid #6ee7b7;">Razão Social (Contato)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${trimestral.map(m => `
+                                <tr>
+                                    <td style="padding: 8px; border: 1px solid #6ee7b7;">${m.mes}</td>
+                                    <td style="padding: 8px; border: 1px solid #6ee7b7;">${m.razao} (${m.contato})</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            }
+
+            const janelaImpressao = window.open('', '_blank');
+            janelaImpressao.document.write(`
+                <html>
+                <head>
+                    <title>${titulo}</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; padding: 20px; }
+                        h1 { font-size: 18px; color: #333; text-transform: uppercase; margin-bottom: 5px; }
+                        .header { border-bottom: 2px solid #ccc; padding-bottom: 10px; margin-bottom: 20px; }
+                        td, th { font-size: 12px; }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <h1>${titulo}</h1>
+                        <p style="font-size: 11px; color: #666; margin: 0;">Gerado em: ${new Date().toLocaleString('pt-BR')} | <strong>Planilha de Integrações REINF</strong></p>
+                    </div>
+                    ${htmlConteudo}
+                    <script>
+                        window.onload = function() { 
+                            setTimeout(function() {
+                                window.print(); 
+                                window.close();
+                            }, 500);
+                        };
+                    <\/script>
+                </body>
+                </html>
+            `);
+            janelaImpressao.document.close();
         };
 
         window.limparHistorico = async function() { 
