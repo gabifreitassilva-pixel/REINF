@@ -154,13 +154,17 @@
 
         <!-- Painel Lateral de Auditoria -->
         <div id="painelHistorico" class="painel-lateral painel-oculto absolute top-0 right-0 h-full w-80 bg-white shadow-2xl border-l border-slate-200 z-50 flex flex-col">
-            <div class="p-4 bg-amber-50 border-b border-amber-200 flex justify-between items-center">
-                <h2 class="text-sm font-black text-amber-900 uppercase tracking-tighter">Registro de Atividades (Log)</h2>
+            <div class="p-4 bg-amber-50 border-b border-amber-200 flex justify-between items-center flex-shrink-0">
+                <h2 class="text-sm font-black text-amber-900 uppercase tracking-tighter">Registro (Log)</h2>
                 <button onclick="togglePainel('painelHistorico')" class="text-slate-400 hover:text-black text-2xl font-light leading-none">&times;</button>
             </div>
+            <div class="flex border-b border-slate-200 text-[10px] font-black uppercase text-center bg-white cursor-pointer flex-shrink-0">
+                <div id="tabLogImportacao" onclick="window.setLogTab('importacao')" class="flex-1 py-2.5 text-blue-600 border-b-2 border-blue-600 bg-blue-50 transition-colors">Importações</div>
+                <div id="tabLogEdicao" onclick="window.setLogTab('edicao')" class="flex-1 py-2.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors">Alterações</div>
+            </div>
             <div class="p-3 overflow-y-auto flex-grow bg-slate-50 font-mono" id="conteudoHistorico"></div>
-            <div class="p-3 border-t border-slate-200 text-center bg-white">
-                <button onclick="limparHistorico()" class="text-[10px] text-red-600 uppercase font-black hover:underline tracking-widest">Zerar Log</button>
+            <div class="p-3 border-t border-slate-200 text-center bg-white flex-shrink-0">
+                <button onclick="window.limparHistorico()" class="text-[10px] text-red-600 uppercase font-black hover:underline tracking-widest">Zerar Log</button>
             </div>
         </div>
 
@@ -375,14 +379,34 @@
             if(id === 'painelClassificacao') window.renderClassificacao();
         };
 
+        window.currentLogTab = 'importacao';
+
+        window.setLogTab = function(tab) {
+            window.currentLogTab = tab;
+            if(tab === 'importacao') {
+                document.getElementById('tabLogImportacao').className = "flex-1 py-2.5 text-blue-600 border-b-2 border-blue-600 bg-blue-50 transition-colors";
+                document.getElementById('tabLogEdicao').className = "flex-1 py-2.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors";
+            } else {
+                document.getElementById('tabLogEdicao').className = "flex-1 py-2.5 text-blue-600 border-b-2 border-blue-600 bg-blue-50 transition-colors";
+                document.getElementById('tabLogImportacao').className = "flex-1 py-2.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors";
+            }
+            window.renderHistorico();
+        };
+
         window.renderHistorico = function() {
             const container = document.getElementById('conteudoHistorico');
             document.getElementById('badgeHistorico').innerText = window.appState.historicoGeral.length;
-            if (window.appState.historicoGeral.length === 0) {
+            
+            const logsFiltrados = window.appState.historicoGeral.filter(reg => {
+                let isImport = reg.tipo === 'importacao' || (reg.alteracoes[0] && reg.alteracoes[0].includes('IMPORTAÇÃO'));
+                return window.currentLogTab === 'importacao' ? isImport : !isImport;
+            });
+
+            if (logsFiltrados.length === 0) {
                 container.innerHTML = `<p class="text-[9px] text-slate-400 text-center mt-10 uppercase font-bold tracking-widest">Nenhum registro</p>`;
                 return;
             }
-            container.innerHTML = [...window.appState.historicoGeral].reverse().map(reg => `
+            container.innerHTML = [...logsFiltrados].reverse().map(reg => `
                 <div class="mb-3 bg-white p-2.5 rounded-lg border border-slate-200 text-[10px] shadow-sm">
                     <div class="flex justify-between items-center border-b border-slate-100 mb-2 pb-1.5">
                         <span class="text-blue-600 font-black uppercase tracking-tight">${reg.usuario}</span>
@@ -631,9 +655,10 @@
             if (cli && cli.mensal[mes] && val !== old) {
                 cli.mensal[mes][campo] = val;
                 window.appState.historicoGeral.push({
+                    tipo: 'edicao',
                     data: new Date().toLocaleString('pt-BR'),
                     usuario: window.appState.currentUser, mes: mes,
-                    alteracoes: [`<span class="text-blue-600 font-bold">EDIÇÃO MANUAL:</span> <b>${cli.razao}</b> - ${campo.toUpperCase()} mudou de '${old}' para '${val}'`]
+                    alteracoes: [`<b>${cli.razao}</b> - ${campo.toUpperCase()} mudou para '${val}'`]
                 });
                 
                 await window.saveState(); // Salva estado
@@ -662,7 +687,6 @@
             window.appState.mesesConfig[mesRef] = { visible: true, data: dataAtual, usuario: window.appState.currentUser };
 
             const linhas = input.trim().split('\n');
-            let mudancas = [];
             let qtdImportadas = 0;
 
             linhas.forEach(linha => {
@@ -685,17 +709,11 @@
                         mensal: {} 
                     };
                     window.appState.clientes.push(cli);
-                    mudancas.push(`Nova empresa cadastrada na planilha: <b>${cli.razao}</b>`);
                 }
                 
                 let ant = cols[offset+11]?.trim() || '-';
                 
                 let old = cli.mensal[mesRef];
-                if (old && old.antec !== ant && ant !== '-') {
-                    mudancas.push(`<b>${cli.razao}</b>: Antecipação atualizada de '${old.antec}' para '${ant}'`);
-                } else if ((!old || old.antec === '-') && ant !== '-') {
-                    mudancas.push(`<b>${cli.razao}</b>: Antecipação inserida '${ant}'`);
-                }
                 
                 cli.mensal[mesRef] = { 
                     antec: ant, 
@@ -704,13 +722,12 @@
                 };
             });
             
-            let resumoGeral = `<span class="text-emerald-600 font-bold">IMPORTAÇÃO (${qtdImportadas} empresas lidas):</span> Dados processados para ${mesRef}.`;
-            
             window.appState.historicoGeral.push({ 
+                tipo: 'importacao',
                 data: dataAtual, 
                 usuario: window.appState.currentUser, 
                 mes: mesRef, 
-                alteracoes: [resumoGeral, ...mudancas] 
+                alteracoes: [`Planilha processada com sucesso. ${qtdImportadas} empresas lidas.`] 
             });
             
             await window.saveState(); // Salva estado
