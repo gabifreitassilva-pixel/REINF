@@ -142,7 +142,7 @@
                 <!-- Bloco de Faltantes -->
                 <div id="blocoFaltantesModal" class="hidden">
                     <h3 class="text-[11px] font-black text-slate-600 uppercase border-b border-slate-200 pb-1 mb-2 tracking-widest flex items-center justify-between">
-                        <span>🕵️ Clientes Faltantes (Sem Movimento) <span id="badgeCountFaltantes" class="bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full text-[9px] ml-1">0</span></span>
+                        <span>🕵️ Clientes Faltantes (Sem Movimento neste Mês) <span id="badgeCountFaltantes" class="bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full text-[9px] ml-1">0</span></span>
                         <button onclick="window.imprimirRelatorioImportacao('faltantes')" class="bg-white text-slate-600 px-2 py-0.5 rounded border border-slate-200 hover:bg-slate-50 flex items-center gap-1 shadow-sm font-bold tracking-widest text-[9px] transition-colors" title="Imprimir Relatório">🖨️ IMPRIMIR</button>
                     </h3>
                     <p class="text-[9px] text-slate-400 mb-2 italic">Estes clientes estão no seu Cadastro, mas não vieram na planilha que você acabou de colar para este mês.</p>
@@ -151,7 +151,7 @@
                 <!-- NOVO: Bloco de Clientes Novos/Não Cadastrados -->
                 <div id="blocoNovosModal" class="hidden">
                     <h3 class="text-[11px] font-black text-blue-600 uppercase border-b border-blue-200 pb-1 mb-2 tracking-widest mt-2 flex justify-between items-center">
-                        <span>✨ Novos Clientes na Planilha (Sem Cadastro)</span>
+                        <span>✨ Novos Clientes na Planilha (Sem Cadastro Prévio)</span>
                         <button onclick="window.imprimirRelatorioImportacao('novos')" class="bg-white text-blue-700 px-2 py-0.5 rounded border border-blue-200 hover:bg-blue-50 flex items-center gap-1 shadow-sm font-bold tracking-widest text-[9px] transition-colors" title="Imprimir Relatório">🖨️ IMPRIMIR</button>
                     </h3>
                     <p class="text-[9px] text-slate-400 mb-2 italic">Estes clientes vieram na importação mas não estavam no seu Cadastro. Avise o responsável para atualizar a planilha de integração.</p>
@@ -422,6 +422,7 @@
                 if(!window.appState.historicoPlanilhas) window.appState.historicoPlanilhas = [];
                 if(!window.appState.opcoesConta || window.appState.opcoesConta.length === 0) window.appState.opcoesConta = ['BANCO', 'CAIXA', 'PRESUNÇÃO'];
                 
+                // Limpeza de Cabeçalhos (Títulos acidentalmente importados)
                 if (window.appState.clientes) {
                     window.appState.clientes = window.appState.clientes.filter(c => {
                         if(!c.razao) return false;
@@ -609,6 +610,67 @@
         };
 
         // ==========================================
+        // IMPRESSÃO DOS RELATÓRIOS DO POPUP DE IMPORTAÇÃO
+        // ==========================================
+        window.imprimirRelatorioImportacao = function(tipo) {
+            let titulo = '';
+            let listaId = '';
+            
+            if (tipo === 'alteracoes') {
+                titulo = 'Relatório de Valores Alterados (Divergência)';
+                listaId = 'listaAlteracoesModal';
+            } else if (tipo === '50k') {
+                titulo = 'Relatório de Distribuição > 50 Mil (Atenção IR)';
+                listaId = 'listaAlertas50kModal';
+            } else if (tipo === 'faltantes') {
+                titulo = 'Relatório de Clientes Faltantes (Sem Movimento)';
+                listaId = 'listaFaltantesModal';
+            } else if (tipo === 'novos') {
+                titulo = 'Relatório de Novos Clientes na Planilha (Sem Cadastro Prévio)';
+                listaId = 'listaNovosModal';
+            }
+
+            const listaHTML = document.getElementById(listaId).innerHTML;
+
+            const janelaImpressao = window.open('', '_blank');
+            janelaImpressao.document.write(`
+                <html>
+                <head>
+                    <title>${titulo}</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; padding: 20px; }
+                        h1 { font-size: 18px; color: #333; text-transform: uppercase; margin-bottom: 5px; }
+                        .header { border-bottom: 2px solid #ccc; padding-bottom: 10px; margin-bottom: 20px; }
+                        ul { list-style-type: none; padding-left: 0; }
+                        li { padding: 8px; border-bottom: 1px solid #eee; font-size: 13px; color: #444; }
+                        b { color: #111; font-size: 14px; }
+                        i { color: #666; font-size: 11px; }
+                        .text-slate-400 { color: #888; }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <h1>${titulo}</h1>
+                        <p style="font-size: 11px; color: #666; margin: 0;">Gerado em: ${new Date().toLocaleString('pt-BR')} | <strong>Planilha de Integrações</strong></p>
+                    </div>
+                    <ul>
+                        ${listaHTML}
+                    </ul>
+                    <script>
+                        window.onload = function() { 
+                            setTimeout(function() {
+                                window.print(); 
+                                window.close();
+                            }, 500);
+                        };
+                    <\/script>
+                </body>
+                </html>
+            `);
+            janelaImpressao.document.close();
+        };
+
+        // ==========================================
         // GESTÃO DE OPÇÕES DE CONTA
         // ==========================================
         window.renderOpcoesConta = function() {
@@ -648,7 +710,7 @@
 
 
         // ==========================================
-        // CADASTRO DE CLIENTES (Inteligente)
+        // CADASTRO DE CLIENTES (Inteligente - Apenas armazena)
         // ==========================================
         window.importarCadastro = async function() {
             const input = document.getElementById('rawDataCadastro').value;
@@ -690,7 +752,6 @@
                 if (cnpjNum.length === 14) {
                     cliExistente = window.appState.clientes.find(c => window.getNumbers(c.cnpj) === cnpjNum && (c.contato || '').toUpperCase() === contato);
                     
-                    // Se não encontrou por CNPJ+Contato, mas foi importado sem contato, atualiza os que têm esse CNPJ
                     if (!cliExistente && contato === '') {
                         let clientesVinculados = window.appState.clientes.filter(c => window.getNumbers(c.cnpj) === cnpjNum);
                         if(clientesVinculados.length > 0) {
@@ -699,12 +760,12 @@
                                 if(conta && !v.conta) v.conta = conta;
                             });
                             atualizados++;
-                            return; // Avança pra próxima linha
+                            return; 
                         }
                     }
                 }
 
-                // 2. Busca Inteligente por Nome (se CNPJ for vazio ou não achou)
+                // 2. Busca Inteligente por Nome 
                 if (!cliExistente && nome) {
                     cliExistente = window.appState.clientes.find(c => 
                         window.isSameCompanyByName(c.razao, nome) && 
@@ -722,7 +783,7 @@
                     window.appState.clientes.push({
                         n: '-', ano: new Date().getFullYear().toString(),
                         razao: nome, cnpj: cnpj, contato: contato, regime: regime,
-                        conta: conta, mensal: {}
+                        conta: conta, mensal: {} // MENSAL VAZIO - NÃO APARECE NA TELA PRINCIPAL
                     });
                     novos++;
                 }
@@ -960,68 +1021,7 @@
         };
 
         // ==========================================
-        // IMPRESSÃO DOS RELATÓRIOS DO POPUP DE IMPORTAÇÃO
-        // ==========================================
-        window.imprimirRelatorioImportacao = function(tipo) {
-            let titulo = '';
-            let listaId = '';
-            
-            if (tipo === 'alteracoes') {
-                titulo = 'Relatório de Valores Alterados (Divergência)';
-                listaId = 'listaAlteracoesModal';
-            } else if (tipo === '50k') {
-                titulo = 'Relatório de Distribuição > 50 Mil (Atenção IR)';
-                listaId = 'listaAlertas50kModal';
-            } else if (tipo === 'faltantes') {
-                titulo = 'Relatório de Clientes Faltantes (Sem Movimento)';
-                listaId = 'listaFaltantesModal';
-            } else if (tipo === 'novos') {
-                titulo = 'Relatório de Novos Clientes na Planilha (Sem Cadastro Prévio)';
-                listaId = 'listaNovosModal';
-            }
-
-            const listaHTML = document.getElementById(listaId).innerHTML;
-
-            const janelaImpressao = window.open('', '_blank');
-            janelaImpressao.document.write(`
-                <html>
-                <head>
-                    <title>${titulo}</title>
-                    <style>
-                        body { font-family: Arial, sans-serif; padding: 20px; }
-                        h1 { font-size: 18px; color: #333; text-transform: uppercase; margin-bottom: 5px; }
-                        .header { border-bottom: 2px solid #ccc; padding-bottom: 10px; margin-bottom: 20px; }
-                        ul { list-style-type: none; padding-left: 0; }
-                        li { padding: 8px; border-bottom: 1px solid #eee; font-size: 13px; color: #444; }
-                        b { color: #111; font-size: 14px; }
-                        i { color: #666; font-size: 11px; }
-                        .text-slate-400 { color: #888; }
-                    </style>
-                </head>
-                <body>
-                    <div class="header">
-                        <h1>${titulo}</h1>
-                        <p style="font-size: 11px; color: #666; margin: 0;">Gerado em: ${new Date().toLocaleString('pt-BR')} | <strong>Planilha de Integrações</strong></p>
-                    </div>
-                    <ul>
-                        ${listaHTML}
-                    </ul>
-                    <script>
-                        window.onload = function() { 
-                            setTimeout(function() {
-                                window.print(); 
-                                window.close();
-                            }, 500);
-                        };
-                    <\/script>
-                </body>
-                </html>
-            `);
-            janelaImpressao.document.close();
-        };
-
-        // ==========================================
-        // CÁLCULO DE IR E CLASSIFICAÇÃO MULTI-MÊS COM IMPRESSÃO (TABELA DINÂMICA)
+        // CÁLCULO DE IR E CLASSIFICAÇÃO MULTI-MÊS COM IMPRESSÃO
         // ==========================================
         window.renderFiltroReinf = function() {
             const container = document.getElementById('containerMesesReinf');
@@ -1067,7 +1067,6 @@
                     if (cli.mensal[mes]) {
                         let vlr = window.parseCurrency(cli.mensal[mes].antec);
                         
-                        // Lógica Mensal (> 50k)
                         if (vlr > 50000) {
                             if (!dadosAgrupadosMensal[chave]) dadosAgrupadosMensal[chave] = { razao: cli.razao, contato: cli.contato, meses: {} };
                             let ir = vlr * 0.10;
@@ -1078,7 +1077,6 @@
                             mesesMensal.add(mes);
                             contMensal++;
                         } 
-                        // Lógica Trimestral (até 50k)
                         else if (vlr > 0 || cli.mensal[mes].antec === 'S/M') {
                             if (!dadosAgrupadosTrimestral[chave]) dadosAgrupadosTrimestral[chave] = { razao: cli.razao, contato: cli.contato, meses: {} };
                             dadosAgrupadosTrimestral[chave].meses[mes] = {
@@ -1103,7 +1101,6 @@
                 return new Date(ya, ma-1) - new Date(yb, mb-1);
             });
 
-            // UI do Painel Classificação em formato de Tabela Dinâmica
             container.innerHTML = `
                 <div class="mb-6">
                     <div class="bg-red-600 text-white text-[10px] font-black p-2 rounded shadow-md uppercase mb-2 flex justify-between items-center">
@@ -1429,7 +1426,8 @@
             }
             thead.innerHTML = tr1 + tr2;
 
-            let list = [...window.appState.clientes].sort((a, b) => {
+            // APENAS MOSTRA NA TELA PRINCIPAL QUEM TEM DADOS FINANCEIROS
+            let list = [...window.appState.clientes].filter(cli => Object.keys(cli.mensal).length > 0).sort((a, b) => {
                 let cmp = a.razao.localeCompare(b.razao);
                 if (cmp === 0) return (a.contato || '').localeCompare(b.contato || '');
                 return cmp;
@@ -1688,7 +1686,6 @@
                     houveAlteracaoNoPopup = true;
                     htmlNovosPopup += `<li><b>${razao}</b> ${contato ? `(${contato})` : ''} - <i class="text-slate-400">CNPJ: ${cnpj}</i></li>`;
                     
-                    // NOVO: Adiciona no log de Ajustes
                     logAlteracoesHistorico.push(`<span class="text-indigo-600 font-bold">NOVO CLIENTE AUTOMÁTICO:</span> <b>${razao}</b> ${contato ? `(${contato})` : ''} <span class="text-slate-400 text-[8px]">(CNPJ: ${cnpj})</span>`);
                 }
                 
