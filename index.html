@@ -80,6 +80,16 @@
 </head>
 <body class="font-sans overflow-hidden">
 
+    <!-- Modal de Identificação -->
+    <div id="modalUser" class="fixed inset-0 bg-slate-900 bg-opacity-80 flex justify-center items-center z-[100] hidden px-4">
+        <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-sm text-center border-t-4 border-blue-600">
+            <h2 class="text-xl font-black mb-2 text-slate-800 uppercase tracking-tight">Acesso ao Sistema</h2>
+            <p class="text-xs text-slate-500 mb-4 font-medium">Identifique-se para registrar suas alterações no log de auditoria.</p>
+            <input type="text" id="userNameInput" class="w-full border-2 border-slate-200 p-3 rounded-lg mb-4 text-center font-bold text-lg focus:border-blue-500 outline-none uppercase" placeholder="SEU NOME">
+            <button onclick="window.salvarUsuario()" class="bg-blue-600 hover:bg-blue-700 text-white font-black px-6 py-3 rounded-lg w-full shadow-lg transition-all uppercase tracking-widest">Entrar na Planilha</button>
+        </div>
+    </div>
+
     <div class="h-screen flex flex-col relative bg-white">
         
         <!-- Cabeçalho Principal -->
@@ -90,15 +100,18 @@
             </h1>
             <div class="flex items-center gap-2">
                 <div class="text-[10px] bg-white px-3 py-1.5 rounded-full border border-slate-200 shadow-sm font-bold flex items-center gap-2">
-                    <span class="text-slate-400">USUÁRIO:</span> <span id="displayUserName" class="text-blue-600 uppercase">VOCÊ</span>
+                    <span class="text-slate-400">USUÁRIO:</span> <span id="displayUserName" class="text-blue-600 uppercase"></span>
+                    <button onclick="window.abrirLogin()" class="text-slate-300 hover:text-red-500 transition-colors" title="Alterar Usuário">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                    </button>
                 </div>
                 
                 <button onclick="togglePainel('painelClassificacao')" class="bg-blue-100 hover:bg-blue-200 text-blue-900 px-4 py-1.5 rounded-full text-[10px] font-black border border-blue-300 transition-all leading-none flex items-center gap-2 shadow-sm">
-                    REINF: MENSAL/TRIMESTRAL
+                    📊 REINF: MENSAL/TRIMESTRAL
                 </button>
 
                 <button onclick="togglePainel('painelHistorico')" class="bg-amber-100 hover:bg-amber-200 text-amber-900 px-4 py-1.5 rounded-full text-[10px] font-black border border-amber-300 transition-all leading-none flex items-center gap-2 shadow-sm">
-                    AUDITORIA 
+                    📋 LOG DE ATIVIDADES 
                     <span id="badgeHistorico" class="bg-amber-500 text-white rounded-full px-2 py-0.5 text-[10px]">0</span>
                 </button>
             </div>
@@ -142,7 +155,7 @@
         <!-- Painel Lateral de Auditoria -->
         <div id="painelHistorico" class="painel-lateral painel-oculto absolute top-0 right-0 h-full w-80 bg-white shadow-2xl border-l border-slate-200 z-50 flex flex-col">
             <div class="p-4 bg-amber-50 border-b border-amber-200 flex justify-between items-center">
-                <h2 class="text-sm font-black text-amber-900 uppercase tracking-tighter">Log de Auditoria</h2>
+                <h2 class="text-sm font-black text-amber-900 uppercase tracking-tighter">Registro de Atividades (Log)</h2>
                 <button onclick="togglePainel('painelHistorico')" class="text-slate-400 hover:text-black text-2xl font-light leading-none">&times;</button>
             </div>
             <div class="p-3 overflow-y-auto flex-grow bg-slate-50 font-mono" id="conteudoHistorico"></div>
@@ -169,7 +182,7 @@
         </div>
     </div>
 
-    <!-- Script Atualizado: Replica EXATA da lógica do DEFIS (IndexedDB Fallback + GetDoc) -->
+    <!-- Script Atualizado: Replica EXATA da lógica do DEFIS (IndexedDB Fallback + GetDoc) + Seleção de Usuário -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
@@ -182,7 +195,7 @@
             clientes: [],
             historicoGeral: [],
             filtros: {},
-            currentUser: 'VOCÊ'
+            currentUser: '' // Inicia vazio para pedir o nome
         };
 
         let db = null;
@@ -312,10 +325,38 @@
         // FUNÇÕES GLOBAIS DA INTERFACE
         // ==========================================
         window.syncUI = function() {
+            // Lógica de exibir o modal de login apenas se não houver usuário ou se for "VOCÊ" (da versão anterior)
+            if (!window.appState.currentUser || window.appState.currentUser === 'VOCÊ') {
+                window.abrirLogin();
+            } else {
+                document.getElementById('displayUserName').innerText = window.appState.currentUser;
+                document.getElementById('modalUser').classList.add('hidden');
+            }
             window.renderTable();
             window.renderHistorico();
             window.renderClassificacao();
         };
+
+        window.abrirLogin = function() {
+            document.getElementById('modalUser').classList.remove('hidden');
+            if(window.appState.currentUser && window.appState.currentUser !== 'VOCÊ') {
+                document.getElementById('userNameInput').value = window.appState.currentUser;
+            }
+            document.getElementById('userNameInput').focus();
+        };
+
+        window.salvarUsuario = async function() {
+            let n = document.getElementById('userNameInput').value.trim();
+            if (!n) return alert("Por favor, identifique-se.");
+            window.appState.currentUser = n;
+            await window.saveState(); // Salva estado
+            window.syncUI();
+        };
+
+        // Permite salvar nome com Enter
+        document.getElementById('userNameInput').addEventListener('keypress', function(e){
+            if(e.key === 'Enter') window.salvarUsuario();
+        });
 
         // Formatação automática da máscara de data
         document.getElementById('mesRefInput').addEventListener('blur', function(e) {
@@ -592,7 +633,7 @@
                 window.appState.historicoGeral.push({
                     data: new Date().toLocaleString('pt-BR'),
                     usuario: window.appState.currentUser, mes: mes,
-                    alteracoes: [`<b>${cli.razao}</b>: ${campo.toUpperCase()} de '${old}' para '${val}'`]
+                    alteracoes: [`<span class="text-blue-600 font-bold">EDIÇÃO MANUAL:</span> <b>${cli.razao}</b> - ${campo.toUpperCase()} mudou de '${old}' para '${val}'`]
                 });
                 
                 await window.saveState(); // Salva estado
@@ -622,6 +663,8 @@
 
             const linhas = input.trim().split('\n');
             let mudancas = [];
+            let qtdImportadas = 0;
+
             linhas.forEach(linha => {
                 if (linha.toUpperCase().includes('INTEGRAÇOES')) return;
                 const cols = linha.split('\t');
@@ -631,6 +674,8 @@
                 let cnpj = cols[offset+3]?.trim();
                 if (!cnpj || cnpj === 'CNPJ') return;
                 
+                qtdImportadas++;
+
                 let cli = window.appState.clientes.find(c => c.cnpj === cnpj);
                 if (!cli) {
                     cli = { 
@@ -640,13 +685,16 @@
                         mensal: {} 
                     };
                     window.appState.clientes.push(cli);
+                    mudancas.push(`Nova empresa cadastrada na planilha: <b>${cli.razao}</b>`);
                 }
                 
                 let ant = cols[offset+11]?.trim() || '-';
                 
                 let old = cli.mensal[mesRef];
-                if (old && old.antec !== ant) {
-                    mudancas.push(`<b>${cli.razao}</b>: Antecipação atualizada via importação.`);
+                if (old && old.antec !== ant && ant !== '-') {
+                    mudancas.push(`<b>${cli.razao}</b>: Antecipação atualizada de '${old.antec}' para '${ant}'`);
+                } else if ((!old || old.antec === '-') && ant !== '-') {
+                    mudancas.push(`<b>${cli.razao}</b>: Antecipação inserida '${ant}'`);
                 }
                 
                 cli.mensal[mesRef] = { 
@@ -656,7 +704,14 @@
                 };
             });
             
-            if (mudancas.length > 0) window.appState.historicoGeral.push({ data: dataAtual, usuario: window.appState.currentUser, mes: mesRef, alteracoes: mudancas });
+            let resumoGeral = `<span class="text-emerald-600 font-bold">IMPORTAÇÃO (${qtdImportadas} empresas lidas):</span> Dados processados para ${mesRef}.`;
+            
+            window.appState.historicoGeral.push({ 
+                data: dataAtual, 
+                usuario: window.appState.currentUser, 
+                mes: mesRef, 
+                alteracoes: [resumoGeral, ...mudancas] 
+            });
             
             await window.saveState(); // Salva estado
 
