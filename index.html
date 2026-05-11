@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Controle de Integrações Reinf 2026</title>
+    <title>Planilha de Integrações</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         /* Ajuste total à tela sem rolagem horizontal desnecessária */
-        html, body { height: 100%; margin: 0; padding: 0; background-color: #f8fafc; color: #1e293b; }
+        html, body { height: 100%; margin: 0; padding: 0; background-color: #f8fafc; }
         
         table { 
             border-collapse: collapse; 
@@ -16,144 +16,125 @@
         }
         
         th, td { 
-            font-size: 9px; 
-            padding: 2px 4px !important; 
+            font-size: 10px; 
+            padding: 4px 6px !important; 
             white-space: nowrap; 
             text-align: center;
             border: 1px solid #cbd5e1;
         }
 
-        /* LARGURAS FIXAS DAS COLUNAS DE CADASTRO */
+        /* CONFIGURAÇÃO DE COLUNAS FIXAS */
         .col-fixed-n { width: 35px; min-width: 35px; max-width: 35px; }
-        .col-fixed-ano { width: 40px; min-width: 40px; max-width: 40px; }
-        .col-fixed-razao { width: 220px; min-width: 220px; max-width: 220px; text-align: left; overflow: hidden; text-overflow: ellipsis; }
-        .col-fixed-cnpj { width: 125px; min-width: 125px; max-width: 125px; font-family: monospace; font-weight: bold; }
-        .col-fixed-contato { width: 110px; min-width: 110px; max-width: 110px; text-align: left; overflow: hidden; text-overflow: ellipsis; }
-        .col-fixed-regime { width: 45px; min-width: 45px; max-width: 45px; }
+        .col-fixed-ano { width: 45px; min-width: 45px; max-width: 45px; }
+        .col-fixed-razao { width: 250px; min-width: 250px; max-width: 250px; text-align: left; overflow: hidden; text-overflow: ellipsis; }
+        .col-fixed-cnpj { width: 130px; min-width: 130px; max-width: 130px; font-family: monospace; font-weight: bold; }
+        .col-fixed-contato { width: 120px; min-width: 120px; max-width: 120px; text-align: left; overflow: hidden; text-overflow: ellipsis; }
+        .col-fixed-regime { width: 50px; min-width: 50px; max-width: 50px; }
 
-        /* Colunas dos meses */
-        .col-month-data { width: 75px; min-width: 75px; }
+        /* Colunas dos meses dinâmicos */
+        .col-month-data { min-width: 85px; }
 
         .filter-container {
             display: flex;
             flex-direction: column;
             align-items: center;
+            gap: 2px;
             width: 100%;
-            margin-top: 1px;
+            margin-top: 2px;
         }
 
         .filter-select {
-            font-size: 8px;
-            padding: 0;
+            font-size: 9px;
+            padding: 0px 2px;
             width: 100%;
             max-width: 80px; 
             border: 1px solid #94a3b8;
             background: white;
             border-radius: 2px;
-            height: 14px;
+            font-weight: normal;
             outline: none;
             color: #334155;
         }
 
         thead { position: sticky; top: 0; z-index: 20; }
         
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: #f1f1f1; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
         .painel-lateral { transition: transform 0.3s ease-in-out; }
         .painel-oculto { transform: translateX(100%); }
 
+        /* Input de edição na célula */
         .cell-input {
             width: 100%;
             background: transparent;
             text-align: center;
             outline: none;
             font-weight: bold;
-            border-radius: 1px;
-            height: 100%;
+            border-radius: 2px;
         }
         .cell-input:focus { background: white; box-shadow: inset 0 0 0 1px #3b82f6; }
-
-        #loadingOverlay {
-            background: rgba(255,255,255,0.9);
-            z-index: 300;
-        }
     </style>
 </head>
 <body class="font-sans overflow-hidden">
 
-    <!-- Overlay de Sincronização -->
-    <div id="loadingOverlay" class="fixed inset-0 flex flex-col justify-center items-center">
-        <div class="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-        <p class="mt-3 font-bold text-blue-800 uppercase text-[10px] tracking-widest">Sincronizando Nuvem...</p>
-    </div>
-
-    <!-- Modal de Usuário -->
-    <div id="modalUser" class="fixed inset-0 bg-slate-900 bg-opacity-80 flex justify-center items-center z-[100] hidden px-4">
-        <div class="bg-white p-6 rounded-lg shadow-2xl w-full max-w-sm text-center border-t-4 border-blue-600">
-            <h2 class="text-lg font-black mb-1 text-slate-800 uppercase tracking-tighter">Identificação</h2>
-            <p class="text-[10px] text-slate-500 mb-4 font-medium uppercase">Seu nome será registrado em todas as alterações.</p>
-            <input type="text" id="userNameInput" class="w-full border-2 border-slate-200 p-2 rounded mb-4 text-center font-bold text-base focus:border-blue-500 outline-none uppercase" placeholder="QUEM ESTÁ ACESSANDO?">
-            <button onclick="salvarUsuario()" class="bg-blue-600 hover:bg-blue-700 text-white font-black py-2.5 rounded w-full shadow-lg transition-all uppercase text-xs tracking-widest">Entrar</button>
-        </div>
-    </div>
-
     <div class="h-screen flex flex-col relative bg-white">
         
         <!-- Cabeçalho Principal -->
-        <div class="p-2 border-b border-slate-200 flex justify-between items-center bg-slate-50 flex-shrink-0 z-30">
-            <h1 class="text-[11px] font-black text-slate-700 uppercase tracking-tighter flex items-center gap-2 leading-none">
-                <span class="bg-blue-600 text-white px-1.5 py-0.5 rounded shadow-sm">REINF</span>
-                Integrações 2026
+        <div class="p-3 border-b border-slate-200 flex justify-between items-center bg-slate-50 flex-shrink-0 shadow-sm z-30">
+            <h1 class="text-sm font-black text-slate-700 uppercase tracking-tighter flex items-center gap-2 leading-none">
+                <span class="bg-blue-600 text-white p-1 rounded shadow-sm">PI</span>
+                Controle de Integrações Reinf
             </h1>
             <div class="flex items-center gap-2">
-                <div class="text-[9px] bg-white px-3 py-1 rounded-full border border-slate-200 shadow-sm font-bold flex items-center gap-2">
-                    <span class="text-slate-400">USUÁRIO:</span> <span id="displayUserName" class="text-blue-600 uppercase"></span>
-                    <button onclick="abrirLogin()" class="text-slate-300 hover:text-red-500" title="Sair">
-                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="3" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
-                    </button>
+                <div class="text-[10px] bg-white px-3 py-1.5 rounded-full border border-slate-200 shadow-sm font-bold flex items-center gap-2">
+                    <span class="text-slate-400">USUÁRIO:</span> <span id="displayUserName" class="text-blue-600 uppercase">VOCÊ</span>
                 </div>
-                <button onclick="togglePainel('painelClassificacao')" class="bg-blue-600 text-white px-3 py-1 rounded-full text-[9px] font-black shadow-sm hover:bg-blue-700 transition-all uppercase">
-                    Classificação Reinf
+                
+                <button onclick="togglePainel('painelClassificacao')" class="bg-blue-100 hover:bg-blue-200 text-blue-900 px-4 py-1.5 rounded-full text-[10px] font-black border border-blue-300 transition-all leading-none flex items-center gap-2 shadow-sm">
+                    REINF: MENSAL/TRIMESTRAL
                 </button>
-                <button onclick="togglePainel('painelHistorico')" class="bg-amber-100 text-amber-900 px-3 py-1 rounded-full text-[9px] font-black border border-amber-300 flex items-center gap-2 shadow-sm">
-                    Log (<span id="badgeHistorico">0</span>)
+
+                <button onclick="togglePainel('painelHistorico')" class="bg-amber-100 hover:bg-amber-200 text-amber-900 px-4 py-1.5 rounded-full text-[10px] font-black border border-amber-300 transition-all leading-none flex items-center gap-2 shadow-sm">
+                    AUDITORIA 
+                    <span id="badgeHistorico" class="bg-amber-500 text-white rounded-full px-2 py-0.5 text-[10px]">0</span>
                 </button>
             </div>
         </div>
 
         <!-- Área de Importação -->
-        <div class="p-2 bg-blue-50 border-b border-blue-100 flex-shrink-0 z-10">
-            <div class="flex gap-3 items-center">
-                <div class="flex items-center gap-2 flex-shrink-0">
-                    <label class="text-[9px] font-black text-blue-900 uppercase">Mês:</label>
-                    <input type="text" id="mesRefInput" placeholder="01/2026" class="w-20 border border-blue-300 rounded px-2 py-1 text-[10px] font-black outline-none focus:ring-1 focus:ring-blue-500 bg-white shadow-sm">
+        <div class="p-3 bg-blue-50 border-b border-blue-100 flex-shrink-0 relative z-10">
+            <div class="flex gap-4 items-center">
+                <div class="flex items-center gap-3 flex-shrink-0">
+                    <label class="text-[10px] font-black text-blue-900 uppercase">Mês Ref:</label>
+                    <input type="text" id="mesRefInput" placeholder="01/2026" class="w-24 border-2 border-blue-200 rounded-md px-3 py-2 text-xs font-black outline-none focus:border-blue-500 bg-white shadow-inner">
                 </div>
                 <div class="flex-grow">
-                    <textarea id="rawData" rows="1" class="w-full border border-blue-200 rounded px-3 py-1 text-[10px] outline-none focus:ring-1 focus:ring-blue-400 resize-none leading-tight shadow-inner" placeholder="Cole a tabela do Excel aqui..."></textarea>
+                    <textarea id="rawData" rows="1" class="w-full border-2 border-blue-100 rounded-md px-4 py-2 text-xs outline-none focus:border-blue-400 resize-none font-medium h-10 leading-tight shadow-inner" placeholder="Cole aqui os dados copiados do seu sistema/Excel..."></textarea>
                 </div>
-                <div class="flex gap-1 flex-shrink-0">
-                    <button onclick="adicionarDados()" class="bg-blue-600 text-white text-[10px] font-black py-1.5 px-4 rounded shadow hover:bg-blue-700 uppercase transition-colors">Processar</button>
-                    <button onclick="limparTabela()" class="bg-white text-red-500 border border-red-100 text-[9px] font-bold py-1.5 px-2 rounded hover:bg-red-50 uppercase transition-colors">Limpar</button>
+                <div class="flex gap-2 flex-shrink-0">
+                    <button onclick="adicionarDados()" class="bg-blue-600 text-white text-xs font-black py-2.5 px-6 rounded-md shadow-md hover:bg-blue-700 transition-all uppercase tracking-tighter">Processar</button>
+                    <button onclick="limparTabela()" class="bg-white text-red-600 border-2 border-red-100 text-xs font-bold py-2.5 px-4 rounded-md hover:bg-red-50 transition-all uppercase tracking-tighter shadow-sm">Limpar</button>
                 </div>
             </div>
         </div>
         
         <!-- Barra de Meses Ocultos -->
-        <div id="barraMesesOcultos" class="bg-slate-100 border-b border-slate-200 p-1.5 px-4 flex-shrink-0 hidden items-center gap-3 shadow-inner">
-            <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Períodos Ocultos:</span>
-            <div id="listaMesesOcultos" class="flex gap-2"></div>
+        <div id="barraMesesOcultos" class="bg-slate-100 border-b border-slate-200 p-2 px-4 flex-shrink-0 hidden items-center gap-3 shadow-inner">
+            <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Períodos Ocultos:</span>
+            <div id="listaMesesOcultos" class="flex gap-2 flex-wrap"></div>
         </div>
 
         <!-- Tabela -->
         <div class="overflow-auto flex-grow relative bg-white">
             <table id="mainTable">
                 <thead id="tabelaHead" class="text-slate-700 uppercase bg-slate-100 border-b-2 border-slate-300 shadow-sm">
-                    <!-- Gerado dinamicamente -->
+                    <!-- Dinâmico -->
                 </thead>
                 <tbody id="tabelaCorpo" class="divide-y divide-slate-100">
-                    <!-- Gerado dinamicamente -->
+                    <!-- Dinâmico -->
                 </tbody>
             </table>
         </div>
@@ -162,7 +143,7 @@
         <div id="painelHistorico" class="painel-lateral painel-oculto absolute top-0 right-0 h-full w-80 bg-white shadow-2xl border-l border-slate-200 z-50 flex flex-col">
             <div class="p-4 bg-amber-50 border-b border-amber-200 flex justify-between items-center">
                 <h2 class="text-sm font-black text-amber-900 uppercase tracking-tighter">Log de Auditoria</h2>
-                <button onclick="togglePainel('painelHistorico')" class="text-slate-400 hover:text-black text-xl leading-none">&times;</button>
+                <button onclick="togglePainel('painelHistorico')" class="text-slate-400 hover:text-black text-2xl font-light leading-none">&times;</button>
             </div>
             <div class="p-3 overflow-y-auto flex-grow bg-slate-50 font-mono" id="conteudoHistorico"></div>
             <div class="p-3 border-t border-slate-200 text-center bg-white">
@@ -171,313 +152,529 @@
         </div>
 
         <!-- Painel Lateral de Classificação Reinf -->
-        <div id="painelClassificacao" class="painel-lateral painel-oculto absolute top-0 right-0 h-full w-80 md:w-[420px] bg-white shadow-2xl border-l border-slate-200 z-50 flex flex-col">
+        <div id="painelClassificacao" class="painel-lateral painel-oculto absolute top-0 right-0 h-full w-80 bg-white shadow-2xl border-l border-slate-200 z-50 flex flex-col">
             <div class="p-4 bg-blue-50 border-b border-blue-200 flex justify-between items-center">
-                <h2 class="text-sm font-black text-blue-900 uppercase tracking-tighter">Resumo de Envio (R-4010)</h2>
-                <button onclick="togglePainel('painelClassificacao')" class="text-slate-400 hover:text-black text-xl leading-none">&times;</button>
+                <h2 class="text-sm font-black text-blue-900 uppercase tracking-tighter">Classificação Reinf</h2>
+                <button onclick="togglePainel('painelClassificacao')" class="text-slate-400 hover:text-black text-2xl font-light leading-none">&times;</button>
             </div>
-            <div class="p-3 bg-slate-50 border-b">
-                <select id="selectMesClassificacao" class="w-full border p-2 text-xs font-bold rounded outline-none focus:ring-1 focus:ring-blue-500 bg-white shadow-sm" onchange="renderClassificacao()">
-                    <option value="">Escolha o Mês...</option>
+            <div class="p-4 bg-slate-50 flex-shrink-0 border-b">
+                <label class="text-[9px] font-bold text-slate-500 uppercase">Selecione o Mês para Análise:</label>
+                <select id="selectMesClassificacao" class="w-full border p-2 text-xs font-bold rounded mt-1 outline-none focus:ring-1 focus:ring-blue-500" onchange="window.renderClassificacao()">
+                    <option value="">Selecione...</option>
                 </select>
             </div>
-            <div class="p-3 overflow-y-auto flex-grow bg-slate-50" id="conteudoClassificacao"></div>
+            <div class="p-3 overflow-y-auto flex-grow bg-slate-50" id="conteudoClassificacao">
+                <p class="text-[9px] text-slate-400 text-center mt-10 uppercase italic">Selecione um mês para ver a classificação mensal/trimestral.</p>
+            </div>
         </div>
     </div>
 
+    <!-- Script Atualizado: Replica EXATA da lógica do DEFIS (IndexedDB Fallback + GetDoc) -->
     <script type="module">
-        import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
-        import { getFirestore, doc, setDoc, onSnapshot, collection, writeBatch } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // --- CONFIGURAÇÃO FIREBASE ---
-        const firebaseConfig = JSON.parse(__firebase_config);
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'reinf-distribuicao-2026';
+        // Variáveis de Estado da Aplicação
+        window.appState = {
+            meses: [], 
+            mesesConfig: {},
+            clientes: [],
+            historicoGeral: [],
+            filtros: {},
+            currentUser: 'VOCÊ'
+        };
 
-        let currentUser = localStorage.getItem('userImportador') || '';
-        let appState = { meses: [], mesesConfig: {}, clientes: [], historicoGeral: [], filtros: {} };
-        let currentFirebaseUser = null;
+        let db = null;
+        let auth = null;
+        let currentUserId = null;
+        let appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
-        // --- AUXILIARES ---
-        const safeSetText = (id, val) => { const el = document.getElementById(id); if(el) el.innerText = val; };
-        const safeSetHTML = (id, val) => { const el = document.getElementById(id); if(el) el.innerHTML = val; };
-
-        // --- AUTENTICAÇÃO ---
-        const initAuth = async () => {
-            return new Promise((resolve) => {
-                onAuthStateChanged(auth, (user) => {
-                    if (user) {
-                        currentFirebaseUser = user;
-                        resolve(user);
-                    } else {
-                        // Se não houver usuário, tenta logar
-                        const performSignIn = async () => {
-                            try {
-                                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                                    await signInWithCustomToken(auth, __initial_auth_token);
-                                } else {
-                                    await signInAnonymously(auth);
-                                }
-                            } catch (e) {
-                                console.error("Auth error:", e);
-                            }
-                        };
-                        performSignIn();
-                    }
+        // ==========================================
+        // PERSISTÊNCIA LOCAL (INDEXED DB - IGUAL DEFIS)
+        // ==========================================
+        window.salvarDadosLocais = async function(dados) {
+            try {
+                const dbLocal = await new Promise((resolve, reject) => {
+                    const req = indexedDB.open("PlanilhaReinfDB", 1);
+                    req.onupgradeneeded = e => e.target.result.createObjectStore("store");
+                    req.onsuccess = e => resolve(e.target.result);
+                    req.onerror = e => reject(e.target.error);
                 });
-            });
+                const tx = dbLocal.transaction("store", "readwrite");
+                tx.objectStore("store").put(dados, "estado_geral");
+            } catch(e) { console.warn("Erro ao salvar localmente", e); }
         };
 
-        // --- SINCRONIZAÇÃO EM TEMPO REAL ---
-        const startSync = () => {
-            if (!currentFirebaseUser) return;
+        window.carregarDadosLocais = async function() {
+            try {
+                const dbLocal = await new Promise((resolve, reject) => {
+                    const req = indexedDB.open("PlanilhaReinfDB", 1);
+                    req.onupgradeneeded = e => e.target.result.createObjectStore("store");
+                    req.onsuccess = e => resolve(e.target.result);
+                    req.onerror = e => reject(e.target.error);
+                });
+                const tx = dbLocal.transaction("store", "readonly");
+                const req = tx.objectStore("store").get("estado_geral");
+                req.onsuccess = () => {
+                    if(req.result) {
+                        window.aplicarDados(req.result);
+                    } else {
+                        window.syncUI(); // Força render inicial
+                    }
+                };
+            } catch(e) { 
+                console.warn("Nenhum dado local encontrado", e); 
+                window.syncUI();
+            }
+        };
 
-            // Monitorar Configuração Global
-            onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'appConfig', 'global'), (ds) => {
-                if (ds.exists()) {
-                    const d = ds.data();
-                    appState.meses = d.meses || [];
-                    appState.mesesConfig = d.mesesConfig || {};
-                    appState.historicoGeral = d.historicoGeral || [];
-                    renderTable();
-                    renderHistorico();
+        window.aplicarDados = function(data) {
+            if (data) {
+                window.appState = Object.assign(window.appState, data);
+            }
+            window.syncUI();
+        };
+
+        // ==========================================
+        // INICIALIZAÇÃO UNIVERSAL
+        // ==========================================
+        const initApp = async () => {
+            if (typeof __firebase_config !== 'undefined') {
+                try {
+                    const firebaseConfig = JSON.parse(__firebase_config);
+                    const app = initializeApp(firebaseConfig);
+                    auth = getAuth(app);
+                    db = getFirestore(app);
+
+                    const initAuth = async () => {
+                        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                            await signInWithCustomToken(auth, __initial_auth_token);
+                        } else {
+                            await signInAnonymously(auth);
+                        }
+                    };
+                    await initAuth();
+
+                    onAuthStateChanged(auth, async (user) => {
+                        if (user) { 
+                            currentUserId = user.uid; 
+                            await window.carregarDadosFirebase(); 
+                        }
+                    });
+                } catch(e) { 
+                    console.error("Firebase indisponível, ativando modo offline:", e);
+                    await window.carregarDadosLocais();
                 }
-                const loader = document.getElementById('loadingOverlay');
-                if(loader) loader.classList.add('hidden');
-            }, (err) => console.error("Sync Config Error:", err));
+            } else {
+                // Se o usuário baixou o HTML para rodar localmente
+                await window.carregarDadosLocais();
+            }
+        };
+        initApp();
 
-            // Monitorar Clientes
-            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'clients'), (qs) => {
-                let clis = [];
-                qs.forEach(doc => clis.push(doc.data()));
-                appState.clientes = clis;
-                renderTable();
-                renderClassificacao();
-                safeSetText('contadorLinhas', `${clis.length} clientes`);
-            }, (err) => console.error("Sync Clients Error:", err));
+        window.carregarDadosFirebase = async function() {
+            if (!currentUserId || !db) return;
+            try {
+                const docRef = doc(db, 'artifacts', appId, 'users', currentUserId, 'dados_reinf', 'estado_geral');
+                const docSnap = await getDoc(docRef); // Usa getDoc para ler uma vez, em vez de escutar contínuo (evita resets fantasma)
+                if (docSnap.exists()) {
+                    window.aplicarDados(docSnap.data());
+                } else {
+                    // Nuvem vazia (usuário novo ou link aberto de novo), tenta puxar do histórico local
+                    await window.carregarDadosLocais();
+                }
+            } catch(e) { 
+                console.error("Erro ao carregar da nuvem. Puxando base local:", e);
+                await window.carregarDadosLocais();
+            }
         };
 
-        const saveConfig = async () => {
-            if (!currentFirebaseUser) return;
-            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'appConfig', 'global'), {
-                meses: appState.meses, mesesConfig: appState.mesesConfig, historicoGeral: appState.historicoGeral
+        window.saveState = async function() {
+            const dadosParaSalvar = window.appState;
+            
+            // 1. Salva na Nuvem
+            if (currentUserId && db) {
+                try {
+                    const docRef = doc(db, 'artifacts', appId, 'users', currentUserId, 'dados_reinf', 'estado_geral');
+                    await setDoc(docRef, dadosParaSalvar);
+                } catch(e) { 
+                    console.error("Erro na nuvem. Salvando no PC local...", e); 
+                }
+            } 
+            
+            // 2. Sempre salva localmente também como backup blindado
+            await window.salvarDadosLocais(dadosParaSalvar);
+        };
+
+
+        // ==========================================
+        // FUNÇÕES GLOBAIS DA INTERFACE
+        // ==========================================
+        window.syncUI = function() {
+            window.renderTable();
+            window.renderHistorico();
+            window.renderClassificacao();
+        };
+
+        // Formatação automática da máscara de data
+        document.getElementById('mesRefInput').addEventListener('blur', function(e) {
+            let val = e.target.value.replace(/\D/g, '');
+            if (val.length === 6) {
+                e.target.value = val.substring(0,2) + '/' + val.substring(2);
+            }
+        });
+
+        window.togglePainel = function(id) { 
+            // Fecha outros painéis abertos
+            ['painelHistorico', 'painelClassificacao'].forEach(p => {
+                if(p !== id) document.getElementById(p).classList.add('painel-oculto');
             });
+            document.getElementById(id).classList.toggle('painel-oculto');
+            if(id === 'painelClassificacao') window.renderClassificacao();
         };
 
-        const saveClient = async (c) => {
-            if (!currentFirebaseUser) return;
-            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'clients', c.cnpj.replace(/\D/g, '')), c);
+        window.renderHistorico = function() {
+            const container = document.getElementById('conteudoHistorico');
+            document.getElementById('badgeHistorico').innerText = window.appState.historicoGeral.length;
+            if (window.appState.historicoGeral.length === 0) {
+                container.innerHTML = `<p class="text-[9px] text-slate-400 text-center mt-10 uppercase font-bold tracking-widest">Nenhum registro</p>`;
+                return;
+            }
+            container.innerHTML = [...window.appState.historicoGeral].reverse().map(reg => `
+                <div class="mb-3 bg-white p-2.5 rounded-lg border border-slate-200 text-[10px] shadow-sm">
+                    <div class="flex justify-between items-center border-b border-slate-100 mb-2 pb-1.5">
+                        <span class="text-blue-600 font-black uppercase tracking-tight">${reg.usuario}</span>
+                        <div class="text-right leading-none">
+                            <span class="text-slate-400 font-bold block">${reg.mes}</span>
+                            <span class="text-slate-300 text-[8px]">${reg.data}</span>
+                        </div>
+                    </div>
+                    ${reg.alteracoes.map(a => `<div class="text-slate-700 py-0.5 leading-tight">• ${a}</div>`).join('')}
+                </div>
+            `).join('');
         };
 
-        // --- LÓGICA DE INTERFACE ---
-        window.abrirLogin = () => {
-            document.getElementById('modalUser').classList.remove('hidden');
-            if(currentUser) document.getElementById('userNameInput').value = currentUser;
-            document.getElementById('userNameInput').focus();
-        };
+        window.renderClassificacao = function() {
+            const container = document.getElementById('conteudoClassificacao');
+            const selMes = document.getElementById('selectMesClassificacao');
+            const mes = selMes.value;
 
-        window.salvarUsuario = () => {
-            let n = document.getElementById('userNameInput').value.trim();
-            if (!n) return alert("Identifique-se primeiro.");
-            currentUser = n;
-            localStorage.setItem('userImportador', n);
-            safeSetText('displayUserName', n);
-            document.getElementById('modalUser').classList.add('hidden');
-        };
-
-        window.togglePainel = (id) => {
-            ['painelHistorico', 'painelClassificacao'].forEach(p => { 
-                const el = document.getElementById(p);
-                if(p !== id && el) el.classList.add('painel-oculto'); 
+            // Atualiza opções do select se necessário
+            const currentOptions = Array.from(selMes.options).map(o => o.value);
+            window.appState.meses.forEach(m => {
+                if(!currentOptions.includes(m)) {
+                    let opt = document.createElement('option');
+                    opt.value = m; opt.text = m;
+                    selMes.add(opt);
+                }
             });
-            const target = document.getElementById(id);
-            if(target) target.classList.toggle('painel-oculto');
-            if(id === 'painelClassificacao') renderClassificacao();
+
+            if (!mes) return;
+
+            let mensal = [];
+            let trimestral = [];
+
+            window.appState.clientes.forEach(cli => {
+                if (cli.mensal[mes]) {
+                    let vlr = window.parseCurrency(cli.mensal[mes].antec);
+                    if (vlr > 50000) mensal.push(cli.razao);
+                    else if (vlr > 0 || cli.mensal[mes].antec === 'S/M') trimestral.push(cli.razao);
+                }
+            });
+
+            container.innerHTML = `
+                <div class="mb-6">
+                    <div class="bg-red-600 text-white text-[10px] font-black p-2 rounded shadow-md uppercase mb-2">Envio Mensal (>50k): ${mensal.length}</div>
+                    <div class="space-y-1">
+                        ${mensal.map(r => `<div class="bg-white border-l-4 border-red-500 p-1.5 text-[9px] font-bold text-slate-700 shadow-sm uppercase">${r}</div>`).join('')}
+                        ${mensal.length === 0 ? '<p class="text-[9px] text-slate-400 italic">Nenhum cliente para este período.</p>' : ''}
+                    </div>
+                </div>
+                <div>
+                    <div class="bg-emerald-600 text-white text-[10px] font-black p-2 rounded shadow-md uppercase mb-2">Envio Trimestral (até 50k/SM): ${trimestral.length}</div>
+                    <div class="space-y-1">
+                        ${trimestral.map(r => `<div class="bg-white border-l-4 border-emerald-500 p-1.5 text-[9px] font-bold text-slate-700 shadow-sm uppercase">${r}</div>`).join('')}
+                        ${trimestral.length === 0 ? '<p class="text-[9px] text-slate-400 italic">Nenhum cliente para este período.</p>' : ''}
+                    </div>
+                </div>
+            `;
         };
 
-        window.toggleMes = async (m) => {
-            if(!appState.mesesConfig[m]) appState.mesesConfig[m] = { visible: true };
-            appState.mesesConfig[m].visible = !appState.mesesConfig[m].visible;
-            await saveConfig();
+        window.limparHistorico = async function() { 
+            if(confirm("Zerar log?")) { 
+                window.appState.historicoGeral = []; 
+                await window.saveState(); // Salva estado
+                window.renderHistorico(); 
+            } 
         };
 
-        function parseCurrency(v) {
-            if (!v || v === '-' || v === 'S/M') return 0;
-            // Limpeza robusta para converter formato brasileiro (1.234,56) para float
-            let n = parseFloat(v.replace(/\./g, '').replace(',', '.'));
-            return isNaN(n) ? 0 : n;
-        }
+        window.setFiltro = async function(mes, campo, status) {
+            if (!window.appState.filtros[mes]) window.appState.filtros[mes] = {};
+            window.appState.filtros[mes][campo] = status;
+            await window.saveState(); // Salva estado
+            window.renderTable();
+        };
 
-        window.renderTable = () => {
+        window.getUniqueValues = function(mes, campo) {
+            const vals = new Set();
+            window.appState.clientes.forEach(c => {
+                let v = c.mensal[mes] ? c.mensal[mes][campo] : '-';
+                if (v && v !== '-') vals.add(v.trim());
+            });
+            return Array.from(vals).sort();
+        };
+
+        window.parseCurrency = function(valStr) {
+            if (!valStr || valStr === '-' || valStr === 'S/M') return 0;
+            let clean = valStr.replace(/\./g, '').replace(',', '.');
+            let num = parseFloat(clean);
+            return isNaN(num) ? 0 : num;
+        };
+
+        window.renderTable = function() {
             const thead = document.getElementById('tabelaHead');
             const tbody = document.getElementById('tabelaCorpo');
-            if(!thead || !tbody) return;
 
-            let tr1 = `<tr><th rowspan="2" class="col-fixed-n text-slate-500">Nº</th><th rowspan="2" class="col-fixed-ano text-slate-500">ANO</th><th rowspan="2" class="col-fixed-razao text-slate-500">RAZÃO SOCIAL</th><th rowspan="2" class="col-fixed-cnpj text-slate-500">CNPJ</th><th rowspan="2" class="col-fixed-contato text-slate-500">CONTATO</th><th rowspan="2" class="col-fixed-regime text-slate-500">REG.</th>`;
+            let tr1 = `<tr>
+                <th rowspan="2" class="col-fixed-n text-slate-500">Nº</th>
+                <th rowspan="2" class="col-fixed-ano text-slate-500">ANO</th>
+                <th rowspan="2" class="col-fixed-razao text-slate-500">RAZÃO SOCIAL</th>
+                <th rowspan="2" class="col-fixed-cnpj text-slate-500">CNPJ</th>
+                <th rowspan="2" class="col-fixed-contato text-slate-500">CONTATO</th>
+                <th rowspan="2" class="col-fixed-regime text-slate-500">REG.</th>`;
+            
             let tr2 = `<tr>`;
             let hasVisible = false;
 
-            appState.meses.forEach(mes => {
-                let cfg = appState.mesesConfig[mes] || { visible: true, data: '', usuario: '' };
-                if (cfg.visible) {
+            window.appState.meses.forEach(mes => {
+                let config = window.appState.mesesConfig[mes] || { visible: true, data: '', usuario: '' };
+                if (config.visible) {
                     hasVisible = true;
-                    let meta = cfg.data ? `<div class="text-[7px] font-bold text-blue-500 lowercase leading-none mt-0.5">Imp: ${cfg.data.split(' ')[0]} ${cfg.usuario}</div>` : '';
-                    tr1 += `<th colspan="3" onclick="toggleMes('${mes}')" class="cursor-pointer hover:bg-red-50 border-b border-blue-200 bg-blue-100 text-blue-900 font-black py-1">MÊS: ${mes}${meta}</th>`;
+                    let metaInfo = config.data ? `<div class="text-[8px] font-bold text-blue-500 lowercase leading-tight mt-1">Imp: ${config.data.split(' ')[0]} por <span class="uppercase">${config.usuario}</span></div>` : '';
                     
-                    const f = appState.filtros[mes] || {};
-                    ['antec', 'lancado', 'reinf'].forEach((campo, i) => {
-                        let unique = Array.from(new Set(appState.clientes.map(c => c.mensal[mes] ? c.mensal[mes][campo] : '-'))).filter(v => v !== '-').sort();
-                        let nome = ['ANT', 'FOLHA', 'REINF'][i];
-                        let cor = ['bg-blue-50', 'bg-slate-50', 'bg-green-50'][i];
-                        tr2 += `<th class="col-month-data ${cor}"><div class="filter-container"><span class="font-black text-slate-700">${nome}</span><select class="filter-select" onchange="setFiltro('${mes}', '${campo}', this.value)" onclick="event.stopPropagation()"><option value="">TUDO</option><option value="__VAZIO__" ${f[campo]==='__VAZIO__'?'selected':''}>VAZIO</option>${unique.map(v => `<option value="${v}" ${f[campo]===v?'selected':''}>${v}</option>`).join('')}</select></div></th>`;
+                    tr1 += `<th colspan="3" onclick="window.toggleMes('${mes}')" class="cursor-pointer hover:bg-red-50 border-b border-blue-200 bg-blue-100 text-blue-900 font-black tracking-tight" title="Clique para Ocultar">
+                        MÊS: ${mes}${metaInfo}
+                    </th>`;
+                    
+                    const f = window.appState.filtros[mes] || {};
+                    const configCols = [
+                        { campo: 'antec', nome: 'ANT', cor: 'bg-blue-50' },
+                        { campo: 'lancado', nome: 'FOLHA', cor: 'bg-slate-50' },
+                        { campo: 'reinf', nome: 'REINF', cor: 'bg-green-50' }
+                    ];
+
+                    configCols.forEach(cfg => {
+                        let unique = window.getUniqueValues(mes, cfg.campo);
+                        tr2 += `
+                        <th class="col-month-data ${cfg.cor}">
+                            <div class="filter-container">
+                                <span class="font-black text-[10px] text-slate-700">${cfg.nome}</span>
+                                <select class="filter-select" onclick="event.stopPropagation()" onchange="window.setFiltro('${mes}', '${cfg.campo}', this.value)">
+                                    <option value="">TODOS</option>
+                                    <option value="__VAZIO__" ${f[cfg.campo] === '__VAZIO__' ? 'selected' : ''}>(Vazio)</option>
+                                    ${unique.map(v => `<option value="${v}" ${f[cfg.campo] === v ? 'selected' : ''}>${v}</option>`).join('')}
+                                </select>
+                            </div>
+                        </th>`;
                     });
                 }
             });
             tr1 += `</tr>`; tr2 += `</tr>`;
+            
+            if (window.appState.meses.length > 0 && !hasVisible) {
+                tr1 += `<th colspan="20" class="text-center italic text-slate-400 py-6 uppercase font-black bg-slate-50 tracking-widest text-xs">Períodos ocultos na barra superior</th></tr>`;
+                tr2 = ``;
+            }
             thead.innerHTML = tr1 + tr2;
 
-            let list = [...appState.clientes].sort((a,b) => a.razao.localeCompare(b.razao));
-            appState.meses.forEach(m => {
-                const f = appState.filtros[m];
-                if(f) Object.keys(f).forEach(c => {
-                    if(f[c]==='__VAZIO__') list = list.filter(x => !x.mensal[m] || !x.mensal[m][c] || x.mensal[m][c] === '-' || x.mensal[m][c].trim() === '');
-                    else if(f[c] !== '') list = list.filter(x => x.mensal[m] && x.mensal[m][c] === f[c]);
-                });
+            let list = [...window.appState.clientes].sort((a, b) => a.razao.localeCompare(b.razao));
+            
+            window.appState.meses.forEach(m => {
+                const f = window.appState.filtros[m];
+                if (f) {
+                    Object.keys(f).forEach(campo => {
+                        if (f[campo] === '__VAZIO__') {
+                            list = list.filter(c => !c.mensal[m] || !c.mensal[m][campo] || c.mensal[m][campo] === '-' || c.mensal[m][campo].trim() === '');
+                        } else if (f[campo] !== '') {
+                            list = list.filter(c => c.mensal[m] && c.mensal[m][campo] && c.mensal[m][campo].trim() === f[campo]);
+                        }
+                    });
+                }
             });
 
-            tbody.innerHTML = list.map(cli => {
-                let row = `<tr class="hover:bg-blue-50 border-b border-slate-100 transition-colors"><td class="col-fixed-n text-slate-400 font-bold">${cli.n}</td><td class="text-slate-400">${cli.ano}</td><td class="col-fixed-razao font-black text-slate-800 uppercase">${cli.razao}</td><td class="col-fixed-cnpj font-mono text-blue-700">${cli.cnpj}</td><td class="col-fixed-contato text-slate-500 uppercase">${cli.contato}</td><td class="font-black text-slate-600 uppercase">${cli.regime}</td>`;
-                appState.meses.forEach(m => {
-                    if(appState.mesesConfig[m]?.visible) {
+            tbody.innerHTML = list.length === 0 ? `<tr><td colspan="100" class="text-center py-20 text-slate-300 uppercase font-black italic tracking-widest">Nenhum dado</td></tr>` : 
+            list.map(cli => {
+                let row = `<tr class="hover:bg-blue-50 border-b border-slate-100 transition-colors">
+                    <td class="col-fixed-n font-mono text-slate-400 font-bold">${cli.n}</td>
+                    <td class="col-fixed-ano text-slate-400 font-medium">${cli.ano}</td>
+                    <td class="col-fixed-razao font-black text-slate-800 uppercase tracking-tighter" title="${cli.razao}">${cli.razao}</td>
+                    <td class="col-fixed-cnpj font-mono text-blue-700 tracking-tighter">${cli.cnpj}</td>
+                    <td class="col-fixed-contato text-slate-500 uppercase" title="${cli.contato}">${cli.contato}</td>
+                    <td class="col-fixed-regime font-black text-slate-600 uppercase">${cli.regime}</td>`;
+                
+                window.appState.meses.forEach(m => {
+                    if (window.appState.mesesConfig[m]?.visible) {
                         let d = cli.mensal[m] || { antec: '-', lancado: '-', reinf: '-' };
-                        let v = parseCurrency(d.antec);
-                        let bg = v > 50000 ? "bg-red-50 text-red-700" : (v > 0 || d.antec === 'S/M' ? "bg-emerald-50 text-emerald-800" : "bg-blue-50/20 text-slate-900");
-                        let badge = v > 50000 ? `<div class="text-[7px] bg-red-600 text-white rounded px-1 mt-0.5 font-black uppercase">Mensal</div>` : (v > 0 || d.antec === 'S/M' ? `<div class="text-[7px] bg-emerald-500 text-white rounded px-1 mt-0.5 font-black uppercase">Trimestral</div>` : "");
-                        row += `<td class="${bg} font-black align-middle"><div>${d.antec}</div>${badge}</td><td><input type="text" class="cell-input ${d.lancado.toUpperCase()==='OK'?'text-blue-600 font-black':'text-slate-400'}" value="${d.lancado}" onchange="atualizarCelulaManual('${cli.cnpj}', '${m}', 'lancado', this.value, '${d.lancado}')"></td><td class="bg-green-50/20"><input type="text" class="cell-input text-emerald-700 uppercase font-black" value="${d.reinf}" onchange="atualizarCelulaManual('${cli.cnpj}', '${m}', 'reinf', this.value, '${d.reinf}')"></td>`;
+                        let cLancado = d.lancado.toUpperCase() === 'OK' ? 'text-blue-600 font-black' : (d.lancado.toUpperCase() === 'NT' ? 'text-emerald-600 font-black' : 'text-slate-400');
+                        
+                        // LÓGICA DE ALERTA > 50 MIL
+                        let vlr = window.parseCurrency(d.antec);
+                        let bgAntec = "bg-blue-50/20";
+                        let fontAntec = "text-slate-900";
+                        let badgeHtml = "";
+                        
+                        if (vlr > 50000) {
+                            bgAntec = "bg-red-50"; fontAntec = "text-red-700";
+                            badgeHtml = `<div class="text-[8px] bg-red-600 text-white rounded px-1.5 mt-0.5 inline-block font-black tracking-widest leading-tight shadow-sm">MENSAL >50k</div>`;
+                        } else if (vlr > 0 || d.antec === 'S/M') {
+                            bgAntec = "bg-emerald-50"; fontAntec = "text-emerald-800";
+                            badgeHtml = `<div class="text-[8px] bg-emerald-500 text-white rounded px-1.5 mt-0.5 inline-block font-black tracking-widest leading-tight shadow-sm">TRIMESTRAL</div>`;
+                        }
+
+                        row += `
+                            <td class="${bgAntec} font-black ${fontAntec} align-middle">
+                                <div>${d.antec}</div>
+                                ${badgeHtml}
+                            </td>
+                            <td class="align-middle">
+                                <input type="text" class="cell-input ${cLancado}" value="${d.lancado}" onchange="window.atualizarCelulaManual('${cli.cnpj}', '${m}', 'lancado', this.value, '${d.lancado}')">
+                            </td>
+                            <td class="bg-green-50/20 align-middle">
+                                <input type="text" class="cell-input text-emerald-700 uppercase" value="${d.reinf}" onchange="window.atualizarCelulaManual('${cli.cnpj}', '${m}', 'reinf', this.value, '${d.reinf}')">
+                            </td>`;
                     }
                 });
                 return row + `</tr>`;
             }).join('');
-            renderHiddenMonths();
+            
+            window.renderHiddenMonths();
         };
 
-        window.setFiltro = (m, c, s) => { if(!appState.filtros[m]) appState.filtros[m] = {}; appState.filtros[m][c] = s; renderTable(); };
-
-        window.renderHistorico = () => {
-            const container = document.getElementById('conteudoHistorico');
-            if(!container) return;
-            safeSetText('badgeHistorico', appState.historicoGeral.length);
-            if(appState.historicoGeral.length === 0) return container.innerHTML = `<p class="text-center py-10 text-slate-400 text-[9px] uppercase font-bold">Vazio</p>`;
-            container.innerHTML = [...appState.historicoGeral].reverse().map(r => `<div class="mb-3 bg-white p-2 rounded border border-slate-200 text-[9px] shadow-sm"><div class="flex justify-between border-b mb-1 pb-1"><span class="text-blue-600 font-black uppercase tracking-tighter">${r.usuario}</span><span class="text-slate-400 font-bold">${r.mes}</span></div>${r.alteracoes.map(a => `<div class="text-slate-700 py-0.5 leading-tight">• ${a}</div>`).join('')}</div>`).join('');
-        };
-
-        window.renderClassificacao = () => {
-            const c = document.getElementById('conteudoClassificacao');
-            const s = document.getElementById('selectMesClassificacao');
-            if(!c || !s) return;
-            const m = s.value;
-            appState.meses.forEach(mes => { if(!Array.from(s.options).some(o => o.value === mes)) { let o = document.createElement('option'); o.value = mes; o.text = mes; s.add(o); } });
-            if(!m) return;
-            let mns = [], tri = [];
-            appState.clientes.forEach(cli => { if(cli.mensal[m]) { let v = parseCurrency(cli.mensal[m].antec); if(v > 50000) mns.push({ r: cli.razao, v: v, d: (v-50000)*0.10 }); else if(v > 0 || cli.mensal[m].antec === 'S/M') tri.push({ r: cli.razao, v: v }); } });
-            const brl = (v) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-            c.innerHTML = `
-                <div class="mb-6"><div class="bg-red-600 text-white text-[9px] font-black p-2 rounded flex justify-between shadow-md uppercase"><span>Envio Mensal (>50k)</span><span>${mns.length}</span></div><div class="mt-2 space-y-1.5">${mns.map(x => `<div class="bg-white border-l-4 border-red-500 p-2 text-[9px] shadow-sm"><div class="font-black uppercase truncate text-slate-800">${x.r}</div><div class="flex justify-between mt-1 items-center"><span>Total: <b>${brl(x.v)}</b></span><span class="bg-red-50 text-red-700 px-2 py-0.5 rounded font-black border border-red-100">DARF: ${brl(x.d)}</span></div></div>`).join('')}</div></div>
-                <div><div class="bg-emerald-600 text-white text-[9px] font-black p-2 rounded flex justify-between shadow-md uppercase"><span>Envio Trimestral (Até 50k)</span><span>${tri.length}</span></div><div class="mt-2 space-y-1.5">${tri.map(x => `<div class="bg-white border-l-4 border-emerald-500 p-2 text-[9px] shadow-sm"><div class="font-black uppercase truncate text-slate-800">${x.r}</div><div class="flex justify-between mt-1 items-center"><span>Total: <b>${x.v>0?brl(x.v):'S. MOV'}</b></span><span class="text-emerald-600 font-black uppercase text-[8px]">Isento</span></div></div>`).join('')}</div></div>`;
-        };
-
-        function renderHiddenMonths() {
+        window.renderHiddenMonths = function() {
             const barra = document.getElementById('barraMesesOcultos');
             const lista = document.getElementById('listaMesesOcultos');
-            if(!barra || !lista) return;
-            const ocultos = appState.meses.filter(m => appState.mesesConfig[m] && !appState.mesesConfig[m].visible);
-            if(ocultos.length > 0) { barra.classList.remove('hidden'); lista.innerHTML = ocultos.map(m => `<button onclick="toggleMes('${m}')" class="bg-white border-2 border-blue-200 text-[9px] font-black px-2.5 py-0.5 rounded shadow-sm hover:border-blue-600 transition-all uppercase text-slate-600">Restaurar ${m}</button>`).join(''); } 
-            else barra.classList.add('hidden');
-        }
-
-        window.atualizarCelulaManual = async (cnpj, mes, campo, val, old) => {
-            if(!currentFirebaseUser) return;
-            let cli = appState.clientes.find(c => c.cnpj === cnpj);
-            if (cli && cli.mensal[mes] && val !== old) {
-                cli.mensal[mes][campo] = val;
-                appState.historicoGeral.push({ data: new Date().toLocaleString('pt-BR'), usuario: currentUser, mes: mes, alteracoes: [`<b>${cli.razao}</b>: ${campo.toUpperCase()} alterado de '${old}' para '${val}'`] });
-                await saveClient(cli); await saveConfig();
+            const ocultos = window.appState.meses.filter(m => window.appState.mesesConfig[m] && !window.appState.mesesConfig[m].visible);
+            
+            if (ocultos.length > 0) {
+                barra.classList.remove('hidden');
+                barra.classList.add('flex');
+                lista.innerHTML = ocultos.map(m => {
+                    let hasAntec = window.appState.clientes.some(c => {
+                        let val = c.mensal[m]?.antec || '';
+                        return (/\d/.test(val)) || val.toUpperCase().includes('S/M');
+                    });
+                    let hasFolha = window.appState.clientes.some(c => {
+                        let val = c.mensal[m]?.lancado?.toUpperCase() || '';
+                        return val === 'OK' || val === 'NT';
+                    });
+                    let tics = hasAntec && hasFolha ? " ✓✓" : (hasAntec ? " ✓" : "");
+                    return `<button onclick="window.toggleMes('${m}')" class="bg-white border-2 border-blue-200 text-[10px] font-black px-3 py-1 rounded-md shadow-sm hover:border-blue-600 hover:bg-blue-50 transition-all uppercase tracking-tighter text-slate-700">
+                        Restaurar ${m}<span class="text-emerald-500 font-black ml-1">${tics}</span>
+                    </button>`;
+                }).join('');
+            } else {
+                barra.classList.add('hidden');
+                barra.classList.remove('flex');
             }
         };
 
-        window.adicionarDados = async () => {
-            if(!currentFirebaseUser) return;
-            const input = document.getElementById('rawData').value;
-            let mRef = document.getElementById('mesRefInput').value.trim();
-            if(!currentUser) return abrirLogin();
-            if(!mRef || !input.trim()) return alert("Por favor, informe o mês e cole os dados.");
-            if(mRef.length === 6 && !mRef.includes('/')) mRef = mRef.substring(0,2)+'/'+mRef.substring(2);
+        window.toggleMes = async function(m) { 
+            window.appState.mesesConfig[m].visible = !window.appState.mesesConfig[m].visible; 
+            await window.saveState(); // Salva estado
+            window.renderTable(); 
+        };
 
-            if(!appState.meses.includes(mRef)) {
-                appState.meses.push(mRef);
-                appState.meses.sort((a,b) => { let [ma, ya] = a.split('/'); let [mb, yb] = b.split('/'); return new Date(ya, ma-1) - new Date(yb, mb-1); });
+        window.atualizarCelulaManual = async function(cnpj, mes, campo, val, old) {
+            let cli = window.appState.clientes.find(c => c.cnpj === cnpj);
+            if (cli && cli.mensal[mes] && val !== old) {
+                cli.mensal[mes][campo] = val;
+                window.appState.historicoGeral.push({
+                    data: new Date().toLocaleString('pt-BR'),
+                    usuario: window.appState.currentUser, mes: mes,
+                    alteracoes: [`<b>${cli.razao}</b>: ${campo.toUpperCase()} de '${old}' para '${val}'`]
+                });
+                
+                await window.saveState(); // Salva estado
+
+                window.renderHistorico();
+                window.renderTable();
+                window.renderClassificacao();
             }
-            const dt = new Date().toLocaleString('pt-BR');
-            appState.mesesConfig[mRef] = { visible: true, data: dt, usuario: currentUser };
+        };
+
+        window.adicionarDados = async function() {
+            const input = document.getElementById('rawData').value;
+            let mesRef = document.getElementById('mesRefInput').value.trim();
+            
+            if (!mesRef || !input.trim()) return alert("Mês inválido ou dados vazios.");
+
+            if (!window.appState.meses.includes(mesRef)) {
+                window.appState.meses.push(mesRef);
+                window.appState.meses.sort((a, b) => {
+                    let [ma, ya] = a.split('/'); let [mb, yb] = b.split('/');
+                    return new Date(ya, ma-1) - new Date(yb, mb-1);
+                });
+            }
+            
+            const dataAtual = new Date().toLocaleString('pt-BR');
+            window.appState.mesesConfig[mesRef] = { visible: true, data: dataAtual, usuario: window.appState.currentUser };
 
             const linhas = input.trim().split('\n');
             let mudancas = [];
-            const batch = writeBatch(db);
-
-            linhas.forEach(l => {
-                if(l.toUpperCase().includes('INTEGRAÇOES')) return;
-                const cols = l.split('\t');
-                if(cols.length < 5) return;
+            linhas.forEach(linha => {
+                if (linha.toUpperCase().includes('INTEGRAÇOES')) return;
+                const cols = linha.split('\t');
+                if (cols.length < 5) return;
                 
-                // Lógica de Âncora pelo ANO para ajustar desalinhamento
-                let idxAno = cols.findIndex((c, i) => i < 5 && /^\d{4}$/.test(c.trim()));
-                if(idxAno === -1) return;
+                let offset = cols[2] && /^\d{4}$/.test(cols[2].trim()) ? 1 : 0;
+                let cnpj = cols[offset+3]?.trim();
+                if (!cnpj || cnpj === 'CNPJ') return;
                 
-                let cnpj = cols[idxAno + 2]?.trim();
-                if(!cnpj || cnpj === 'CNPJ') return;
+                let cli = window.appState.clientes.find(c => c.cnpj === cnpj);
+                if (!cli) {
+                    cli = { 
+                        n: cols[offset+0]?.trim(), ano: cols[offset+1]?.trim(), 
+                        razao: cols[offset+2]?.trim(), cnpj, 
+                        contato: cols[offset+4]?.trim(), regime: cols[offset+5]?.trim(), 
+                        mensal: {} 
+                    };
+                    window.appState.clientes.push(cli);
+                }
                 
-                let cli = appState.clientes.find(x => x.cnpj === cnpj);
-                if(!cli) cli = { n: cols[idxAno-1]?.trim() || '', ano: cols[idxAno]?.trim() || '', razao: cols[idxAno+1]?.trim() || '', cnpj, contato: cols[idxAno+3]?.trim() || '', regime: cols[idxAno+4]?.trim() || '', mensal: {} };
+                let ant = cols[offset+11]?.trim() || '-';
                 
-                // ANTECIPAÇÃO ESTÁ NO ÍNDICE 9 RELATIVO AO ANO (Âncora na coluna 2 do excel original)
-                let ant = cols[idxAno + 9]?.trim() || '-';
-                let old = cli.mensal[mRef];
+                let old = cli.mensal[mesRef];
+                if (old && old.antec !== ant) {
+                    mudancas.push(`<b>${cli.razao}</b>: Antecipação atualizada via importação.`);
+                }
                 
-                if(old && old.antec !== ant) mudancas.push(`<b>${cli.razao}</b>: Antecipação atualizada.`);
-                
-                cli.mensal[mRef] = { antec: ant, lancado: old?.lancado || '-', reinf: old?.reinf || '-' };
-                batch.set(doc(db, 'artifacts', appId, 'public', 'data', 'clients', cnpj.replace(/\D/g, '')), cli);
+                cli.mensal[mesRef] = { 
+                    antec: ant, 
+                    lancado: old?.lancado || '-', 
+                    reinf: old?.reinf || '-' 
+                };
             });
+            
+            if (mudancas.length > 0) window.appState.historicoGeral.push({ data: dataAtual, usuario: window.appState.currentUser, mes: mesRef, alteracoes: mudancas });
+            
+            await window.saveState(); // Salva estado
 
-            if(mudancas.length > 0) appState.historicoGeral.push({ data: dt, usuario: currentUser, mes: mRef, alteracoes: mudancas });
-            await batch.commit(); await saveConfig();
-            const textInput = document.getElementById('rawData');
-            if(textInput) textInput.value = '';
+            document.getElementById('rawData').value = '';
+            window.renderTable();
+            window.renderHistorico();
+            window.renderClassificacao();
         };
 
-        window.limparTabela = async () => {
-            if(!currentFirebaseUser) return;
-            if(confirm("Deseja apagar TUDO da nuvem para todos os computadores?")) {
-                const b = writeBatch(db);
-                appState.clientes.forEach(c => b.delete(doc(db, 'artifacts', appId, 'public', 'data', 'clients', c.cnpj.replace(/\D/g, ''))));
-                await b.commit();
-                appState.meses = []; appState.historicoGeral = []; appState.mesesConfig = {};
-                await saveConfig();
-            }
-        };
-
-        window.limparHistorico = async () => { 
-            if(!currentFirebaseUser) return;
-            if(confirm("Zerar log de auditoria?")) { appState.historicoGeral = []; await saveConfig(); } 
-        };
-
-        window.onload = async () => {
-            await initAuth();
-            if(!currentUser) abrirLogin(); else safeSetText('displayUserName', currentUser);
-            startSync();
+        window.limparTabela = async function() { 
+            if(confirm("Apagar tudo?")) { 
+                window.appState.meses = []; window.appState.clientes = []; window.appState.historicoGeral = []; 
+                window.appState.mesesConfig = {}; window.appState.filtros = {}; 
+                
+                await window.saveState(); // Salva estado
+                
+                window.renderTable(); window.renderHistorico(); 
+            } 
         };
     </script>
 </body>
