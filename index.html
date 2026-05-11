@@ -25,14 +25,16 @@
         }
 
         /* CONFIGURAÇÃO DE COLUNAS FIXAS - Otimizadas para não dar scroll horizontal */
+        .col-fixed-del { width: 25px; min-width: 25px; max-width: 25px; } /* Coluna Admin */
         .col-fixed-n { width: 25px; min-width: 25px; max-width: 25px; }
         .col-fixed-ano { width: 35px; min-width: 35px; max-width: 35px; }
-        .col-fixed-razao { width: auto; min-width: 120px; max-width: 220px; text-align: left; overflow: hidden; text-overflow: ellipsis; }
+        .col-fixed-razao { width: auto; min-width: 120px; max-width: 200px; text-align: left; overflow: hidden; text-overflow: ellipsis; }
         .col-fixed-cnpj { width: 105px; min-width: 105px; max-width: 105px; font-family: monospace; font-weight: bold; }
-        .col-fixed-contato { width: auto; min-width: 70px; max-width: 120px; text-align: left; overflow: hidden; text-overflow: ellipsis; }
-        .col-fixed-atividade { width: auto; min-width: 60px; max-width: 90px; text-align: left; overflow: hidden; text-overflow: ellipsis; }
+        .col-fixed-contato { width: auto; min-width: 70px; max-width: 100px; text-align: left; overflow: hidden; text-overflow: ellipsis; }
+        .col-fixed-atividade { width: auto; min-width: 60px; max-width: 80px; text-align: left; overflow: hidden; text-overflow: ellipsis; }
         .col-fixed-regime { width: 40px; min-width: 40px; max-width: 40px; }
         .col-fixed-conta { width: 60px; min-width: 60px; max-width: 60px; }
+        .col-fixed-obs { width: 90px; min-width: 90px; max-width: 90px; }
 
         /* Colunas dos meses dinâmicos - Otimizadas */
         .col-month-data { min-width: 65px; }
@@ -210,6 +212,10 @@
                     <button onclick="window.abrirLogin()" class="text-slate-300 hover:text-red-500 transition-colors" title="Alterar Usuário">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
                     </button>
+                    <!-- NOVO BOTAO ADMIN -->
+                    <button onclick="window.toggleAdmin()" id="btnAdmin" class="bg-slate-100 hover:bg-red-100 text-slate-500 hover:text-red-700 transition-colors px-2 py-0.5 rounded font-black text-[8px] uppercase flex items-center gap-1" title="Ativar Modo Admin">
+                        🔐 Admin
+                    </button>
                 </div>
                 
                 <button onclick="togglePainel('painelCadastro')" class="bg-indigo-100 hover:bg-indigo-200 text-indigo-900 px-4 py-1.5 rounded-full text-[10px] font-black border border-indigo-300 transition-all leading-none flex items-center gap-2 shadow-sm">
@@ -342,7 +348,7 @@
 
     <script>
         // ==========================================
-        // FUNÇÕES GLOBAIS DE LIMPEZA E MATCHING INTELIGENTE
+        // FUNÇÕES GLOBAIS DE LIMPEZA E IDENTIFICAÇÃO ÚNICA
         // ==========================================
         window.getNumbers = function(str) {
             return (str || '').replace(/\D/g, '');
@@ -380,6 +386,9 @@
             return false;
         };
 
+        window.generateId = function() {
+            return 'cli_' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
+        };
 
         // Variáveis de Estado da Aplicação
         window.appState = {
@@ -391,6 +400,30 @@
             filtros: {},
             opcoesConta: ['BANCO', 'CAIXA', 'PRESUNÇÃO'], 
             currentUser: '' 
+        };
+
+        window.isAdmin = false;
+
+        window.toggleAdmin = function() {
+            if(window.isAdmin) {
+                window.isAdmin = false;
+                document.getElementById('btnAdmin').classList.replace('bg-red-100', 'bg-slate-100');
+                document.getElementById('btnAdmin').classList.replace('text-red-700', 'text-slate-500');
+                document.getElementById('btnAdmin').innerHTML = '🔐 Admin';
+                window.renderTable();
+            } else {
+                let pass = prompt("Digite a senha do Administrador:");
+                if(pass === 'admin') {
+                    window.isAdmin = true;
+                    document.getElementById('btnAdmin').classList.replace('bg-slate-100', 'bg-red-100');
+                    document.getElementById('btnAdmin').classList.replace('text-slate-500', 'text-red-700');
+                    document.getElementById('btnAdmin').innerHTML = '🔓 ADMIN ATIVO';
+                    alert("Modo Administrador ativado! Agora você pode excluir linhas diretamente na Tabela Principal.");
+                    window.renderTable();
+                } else if(pass !== null) {
+                    alert("Senha incorreta!");
+                }
+            }
         };
 
         // ==========================================
@@ -450,8 +483,11 @@
                         return !['RAZÃO SOCIAL', 'RAZAO SOCIAL', 'NOME', 'CLIENTE', 'EMPRESA', 'NOME DA EMPRESA', 'TITULO', 'CNPJ'].includes(r);
                     });
 
+                    // MIGRAÇÃO SEGURA PARA ID ÚNICO E OBSERVAÇÕES
                     window.appState.clientes.forEach(c => {
                         if (c.atividade === undefined) c.atividade = '';
+                        if (c.obs === undefined) c.obs = '';
+                        if (!c.id) c.id = window.generateId();
                     });
                 }
             }
@@ -807,13 +843,14 @@
 
 
         // ==========================================
-        // CADASTRO DE CLIENTES (Inteligente e Editável)
+        // CADASTRO DE CLIENTES (Inteligente e Editável com ID Único)
         // ==========================================
         window.adicionarClienteManual = async function() {
             window.appState.clientes.push({
+                id: window.generateId(),
                 n: '-', ano: new Date().getFullYear().toString(),
                 razao: 'NOVA EMPRESA', cnpj: 'S/ CNPJ', contato: '', atividade: '', regime: '',
-                conta: '', mensal: {}
+                conta: '', obs: '', mensal: {}
             });
             window.appState.historicoGeral.push({
                 tipo: 'edicao',
@@ -828,16 +865,15 @@
             setTimeout(() => container.scrollTop = container.scrollHeight, 100);
         };
 
-        window.adicionarSocio = async function(cnpjB64, contatoB64) {
-            let cnpj = decodeURIComponent(escape(atob(cnpjB64)));
-            let contato = decodeURIComponent(escape(atob(contatoB64)));
-            let cliBase = window.appState.clientes.find(c => (c.cnpj || '') === cnpj && (c.contato || '') === contato);
+        window.adicionarSocio = async function(id) {
+            let cliBase = window.appState.clientes.find(c => c.id === id);
             if (cliBase) {
                 window.appState.clientes.push({
+                    id: window.generateId(),
                     n: cliBase.n, ano: cliBase.ano,
                     razao: cliBase.razao, cnpj: cliBase.cnpj,
                     contato: 'NOVO SÓCIO', regime: cliBase.regime, atividade: cliBase.atividade,
-                    conta: cliBase.conta, mensal: {}
+                    conta: cliBase.conta, obs: '', mensal: {}
                 });
                 window.appState.historicoGeral.push({
                     tipo: 'edicao',
@@ -852,23 +888,22 @@
             }
         };
 
-        window.editarClienteCadastro = async function(oldCnpjB64, oldContatoB64, campo, novoValor) {
-            let oldCnpj = decodeURIComponent(escape(atob(oldCnpjB64)));
-            let oldContato = decodeURIComponent(escape(atob(oldContatoB64)));
-            let idx = window.appState.clientes.findIndex(c => (c.cnpj || '') === oldCnpj && (c.contato || '') === oldContato);
-            
-            if(idx !== -1) {
-                let cli = window.appState.clientes[idx];
-                let valAntigo = cli[campo];
+        window.editarClienteCadastro = async function(id, campo, el) {
+            let cli = window.appState.clientes.find(c => c.id === id);
+            if(cli) {
+                let valAntigo = cli[campo] || '';
+                let novoValor = el.value.trim();
                 
                 if (campo === 'cnpj') {
                     novoValor = window.formatCNPJ(novoValor);
-                } else if (campo === 'razao' || campo === 'contato' || campo === 'regime' || campo === 'atividade') {
+                } else if (['razao', 'contato', 'regime', 'atividade'].includes(campo)) {
                     novoValor = novoValor.toUpperCase();
                 }
 
                 if (valAntigo !== novoValor) {
                     cli[campo] = novoValor;
+                    el.value = novoValor; // Atualiza o visual sem recarregar a lista toda
+                    
                     window.appState.historicoGeral.push({
                         tipo: 'edicao',
                         data: new Date().toLocaleString('pt-BR'),
@@ -876,11 +911,33 @@
                         mes: 'CADASTRO',
                         alteracoes: [`<span class="text-blue-600 font-bold">EDIÇÃO DE CADASTRO:</span> <b>${cli.razao}</b> - ${campo.toUpperCase()} alterado de '${valAntigo || '-'}' para '${novoValor || '-'}'`]
                     });
-                    await window.saveState();
-                    window.renderListaCadastro();
+                    
+                    window.saveState();
+                    window.renderHistorico();
                     window.renderTable();
                     window.renderClassificacao();
                 }
+            }
+        };
+
+        window.atualizarContaCadastro = async function(id, el, old) {
+            let cli = window.appState.clientes.find(c => c.id === id);
+            let val = el.value;
+            if (cli && val !== old) {
+                cli.conta = val;
+                el.className = `border border-slate-200 rounded text-[8px] px-1 py-0.5 outline-none focus:border-indigo-500 cursor-pointer w-1/3 ${val ? 'text-indigo-700 font-bold bg-indigo-50' : 'text-slate-500 bg-slate-50'}`;
+                el.setAttribute('onchange', `window.atualizarContaCadastro('${id}', this, '${val}')`);
+                
+                window.appState.historicoGeral.push({
+                    tipo: 'edicao',
+                    data: new Date().toLocaleString('pt-BR'),
+                    usuario: window.appState.currentUser, mes: 'CADASTRO',
+                    alteracoes: [`<span class="text-blue-600 font-bold">EDIÇÃO MANUAL:</span> <b>${cli.razao} (${cli.contato})</b> - TIPO DE CONTA mudou para '${val || '-'}'`]
+                });
+                
+                window.saveState(); 
+                window.renderHistorico();
+                window.renderTable();
             }
         };
 
@@ -929,9 +986,9 @@
                         let clientesVinculados = window.appState.clientes.filter(c => window.getNumbers(c.cnpj) === cnpjNum);
                         if(clientesVinculados.length > 0) {
                             clientesVinculados.forEach(v => {
-                                if(atividade && !v.atividade) v.atividade = atividade;
-                                if(regime && !v.regime) v.regime = regime;
-                                if(conta && !v.conta) v.conta = conta;
+                                if(atividade) v.atividade = atividade;
+                                if(regime) v.regime = regime;
+                                if(conta) v.conta = conta;
                             });
                             atualizados++;
                             return; 
@@ -948,17 +1005,18 @@
                 }
 
                 if (cliExistente) {
-                    if(contato && !cliExistente.contato) cliExistente.contato = contato;
-                    if(atividade && !cliExistente.atividade) cliExistente.atividade = atividade;
-                    if(regime && !cliExistente.regime) cliExistente.regime = regime;
-                    if(conta && !cliExistente.conta) cliExistente.conta = conta;
+                    if(contato) cliExistente.contato = contato;
+                    if(atividade) cliExistente.atividade = atividade;
+                    if(regime) cliExistente.regime = regime;
+                    if(conta) cliExistente.conta = conta;
                     if(cnpj !== "S/ CNPJ" && window.getNumbers(cliExistente.cnpj).length !== 14) cliExistente.cnpj = cnpj;
                     atualizados++;
                 } else {
                     window.appState.clientes.push({
+                        id: window.generateId(),
                         n: '-', ano: new Date().getFullYear().toString(),
                         razao: nome, cnpj: cnpj, contato: contato, atividade: atividade, regime: regime,
-                        conta: conta, mensal: {} 
+                        conta: conta, obs: '', mensal: {} 
                     });
                     novos++;
                 }
@@ -994,9 +1052,6 @@
             }
 
             container.innerHTML = list.map(cli => {
-                const safeCnpj = btoa(unescape(encodeURIComponent(cli.cnpj || '')));
-                const safeContato = btoa(unescape(encodeURIComponent(cli.contato || '')));
-                
                 let optionsHtml = `<option value="" ${!cli.conta ? 'selected' : ''}>-</option>`;
                 let optionsArray = window.appState.opcoesConta || ['BANCO', 'CAIXA', 'PRESUNÇÃO'];
                 if (cli.conta && !optionsArray.includes(cli.conta)) {
@@ -1015,20 +1070,20 @@
                 return `
                 <div class="bg-white p-2.5 rounded border border-slate-200 shadow-sm flex flex-col gap-2 relative group hover:border-indigo-300 transition-colors">
                     <div class="flex justify-between items-start gap-2">
-                        <input type="text" value="${valRazao}" class="text-[10px] font-black text-slate-800 uppercase leading-tight flex-grow bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none w-full" placeholder="RAZÃO SOCIAL" title="Razão Social" onchange="window.editarClienteCadastro('${safeCnpj}', '${safeContato}', 'razao', this.value)">
+                        <input type="text" value="${valRazao}" class="text-[10px] font-black text-slate-800 uppercase leading-tight flex-grow bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none w-full" placeholder="RAZÃO SOCIAL" title="Razão Social" onchange="window.editarClienteCadastro('${cli.id}', 'razao', this)">
                         <div class="flex items-center gap-1 flex-shrink-0">
-                            <button onclick="window.adicionarSocio('${safeCnpj}', '${safeContato}')" class="text-indigo-400 hover:text-indigo-700 text-[9px] font-bold leading-none transition-colors border border-indigo-200 px-1 py-0.5 rounded" title="Adicionar Novo Sócio para esta Empresa">➕ SÓCIO</button>
-                            <button onclick="window.excluirCliente('${safeCnpj}', '${safeContato}')" class="text-red-400 hover:text-red-700 text-lg leading-none transition-colors" title="Excluir Cliente">&times;</button>
+                            <button onclick="window.adicionarSocio('${cli.id}')" class="text-indigo-400 hover:text-indigo-700 text-[9px] font-bold leading-none transition-colors border border-indigo-200 px-1 py-0.5 rounded" title="Adicionar Novo Sócio para esta Empresa">➕ SÓCIO</button>
+                            <button onclick="window.excluirCliente('${cli.id}')" class="text-red-400 hover:text-red-700 text-lg leading-none transition-colors" title="Excluir Cliente">&times;</button>
                         </div>
                     </div>
                     <div class="flex gap-2 w-full">
-                        <input type="text" value="${valCnpj}" class="text-[9px] font-mono text-indigo-600 font-bold bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none w-1/3" placeholder="CNPJ" title="CNPJ" onchange="window.editarClienteCadastro('${safeCnpj}', '${safeContato}', 'cnpj', this.value)">
-                        <input type="text" value="${valContato}" class="text-[9px] text-slate-500 bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none w-2/3" placeholder="Sócio / Contato" title="Contato" onchange="window.editarClienteCadastro('${safeCnpj}', '${safeContato}', 'contato', this.value)">
+                        <input type="text" value="${valCnpj}" class="text-[9px] font-mono text-indigo-600 font-bold bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none w-1/3" placeholder="CNPJ" title="CNPJ" onchange="window.editarClienteCadastro('${cli.id}', 'cnpj', this)">
+                        <input type="text" value="${valContato}" class="text-[9px] text-slate-500 bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none w-2/3" placeholder="Sócio / Contato" title="Contato" onchange="window.editarClienteCadastro('${cli.id}', 'contato', this)">
                     </div>
                     <div class="flex justify-between items-center mt-1 border-t border-slate-50 pt-1.5 gap-2">
-                        <input type="text" value="${valAtividade}" class="text-[8px] text-slate-400 bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none w-1/3 uppercase font-bold" placeholder="ATIVIDADE" title="Atividade" onchange="window.editarClienteCadastro('${safeCnpj}', '${safeContato}', 'atividade', this.value)">
-                        <input type="text" value="${valRegime}" class="text-[8px] text-slate-400 bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none w-1/3 uppercase font-bold" placeholder="REGIME" title="Regime" onchange="window.editarClienteCadastro('${safeCnpj}', '${safeContato}', 'regime', this.value)">
-                        <select class="border border-slate-200 rounded text-[8px] px-1 py-0.5 outline-none focus:border-indigo-500 cursor-pointer w-1/3 ${cli.conta ? 'text-indigo-700 font-bold bg-indigo-50' : 'text-slate-500 bg-slate-50'}" onchange="window.atualizarContaManual('${safeCnpj}', '${safeContato}', this.value, '${cli.conta || ''}')">
+                        <input type="text" value="${valAtividade}" class="text-[8px] text-slate-400 bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none w-1/3 uppercase font-bold" placeholder="ATIVIDADE" title="Atividade" onchange="window.editarClienteCadastro('${cli.id}', 'atividade', this)">
+                        <input type="text" value="${valRegime}" class="text-[8px] text-slate-400 bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none w-1/3 uppercase font-bold" placeholder="REGIME" title="Regime" onchange="window.editarClienteCadastro('${cli.id}', 'regime', this)">
+                        <select class="border border-slate-200 rounded text-[8px] px-1 py-0.5 outline-none focus:border-indigo-500 cursor-pointer w-1/3 ${cli.conta ? 'text-indigo-700 font-bold bg-indigo-50' : 'text-slate-500 bg-slate-50'}" onchange="window.atualizarContaCadastro('${cli.id}', this, '${cli.conta || ''}')">
                             ${optionsHtml}
                         </select>
                     </div>
@@ -1036,30 +1091,27 @@
             `}).join('');
         };
 
-        window.excluirCliente = async function(cnpjB64, contatoB64) {
-            if(!confirm("Tem certeza que deseja remover este cliente de toda a planilha? Todos os dados dos meses também serão perdidos para ele.")) return;
+        window.excluirCliente = async function(id) {
+            let cli = window.appState.clientes.find(c => c.id === id);
+            if(!cli) return;
+            if(!confirm(`Tem certeza que deseja remover ${cli.razao} de toda a planilha? Todos os dados dos meses também serão perdidos para ele.`)) return;
             
-            let cnpj = decodeURIComponent(escape(atob(cnpjB64)));
-            let contato = decodeURIComponent(escape(atob(contatoB64)));
-            let idx = window.appState.clientes.findIndex(c => (c.cnpj || '') === cnpj && (c.contato || '') === contato);
-            if(idx !== -1) {
-                let nome = window.appState.clientes[idx].razao;
-                window.appState.clientes.splice(idx, 1);
-                
-                window.appState.historicoGeral.push({
-                    tipo: 'edicao',
-                    data: new Date().toLocaleString('pt-BR'),
-                    usuario: window.appState.currentUser,
-                    mes: 'CADASTRO',
-                    alteracoes: [`<span class="text-red-600 font-bold">CLIENTE EXCLUÍDO:</span> ${nome}`]
-                });
+            let idx = window.appState.clientes.findIndex(c => c.id === id);
+            window.appState.clientes.splice(idx, 1);
+            
+            window.appState.historicoGeral.push({
+                tipo: 'edicao',
+                data: new Date().toLocaleString('pt-BR'),
+                usuario: window.appState.currentUser,
+                mes: 'CADASTRO',
+                alteracoes: [`<span class="text-red-600 font-bold">CLIENTE EXCLUÍDO:</span> ${cli.razao}`]
+            });
 
-                await window.saveState();
-                window.renderListaCadastro();
-                window.renderTable();
-                window.renderHistorico();
-                window.renderClassificacao();
-            }
+            await window.saveState();
+            window.renderListaCadastro();
+            window.renderTable();
+            window.renderHistorico();
+            window.renderClassificacao();
         };
 
         window.limparCadastro = async function() {
@@ -1249,7 +1301,7 @@
             let contTrimestral = 0;
 
             window.appState.clientes.forEach(cli => {
-                let chave = cli.cnpj + "|||" + cli.contato;
+                let chave = cli.id;
                 
                 mesesSelecionados.forEach(mes => {
                     if (cli.mensal[mes]) {
@@ -1379,7 +1431,7 @@
             let mesesPresentes = new Set();
 
             window.appState.clientes.forEach(cli => {
-                let chave = cli.cnpj + "|||" + cli.contato;
+                let chave = cli.id;
                 
                 mesesSelecionados.forEach(mes => {
                     if (cli.mensal[mes]) {
@@ -1565,6 +1617,7 @@
             const tbody = document.getElementById('tabelaCorpo');
 
             let tr1 = `<tr>
+                ${window.isAdmin ? '<th rowspan="2" class="col-fixed-del text-red-500" title="Excluir Linha do Sistema">🗑️</th>' : ''}
                 <th rowspan="2" class="col-fixed-n text-slate-500">Nº</th>
                 <th rowspan="2" class="col-fixed-ano text-slate-500">ANO</th>
                 <th rowspan="2" class="col-fixed-razao text-slate-500">RAZÃO SOCIAL</th>
@@ -1572,7 +1625,8 @@
                 <th rowspan="2" class="col-fixed-contato text-slate-500">CONTATO</th>
                 <th rowspan="2" class="col-fixed-atividade text-slate-500">ATIVIDADE</th>
                 <th rowspan="2" class="col-fixed-regime text-slate-500">REG.</th>
-                <th rowspan="2" class="col-fixed-conta text-slate-500">CONTA</th>`;
+                <th rowspan="2" class="col-fixed-conta text-slate-500">CONTA</th>
+                <th rowspan="2" class="col-fixed-obs text-slate-500">OBSERVAÇÃO</th>`;
             
             let tr2 = `<tr>`;
             let hasVisible = false;
@@ -1618,8 +1672,8 @@
             }
             thead.innerHTML = tr1 + tr2;
 
-            // APENAS MOSTRA NA TELA PRINCIPAL QUEM TEM DADOS FINANCEIROS
-            let list = [...window.appState.clientes].filter(cli => Object.keys(cli.mensal).length > 0).sort((a, b) => {
+            // APENAS MOSTRA NA TELA PRINCIPAL QUEM TEM DADOS FINANCEIROS (A menos que tenha uma obs)
+            let list = [...window.appState.clientes].filter(cli => Object.keys(cli.mensal).length > 0 || cli.obs).sort((a, b) => {
                 let cmp = a.razao.localeCompare(b.razao);
                 if (cmp === 0) return (a.contato || '').localeCompare(b.contato || '');
                 return cmp;
@@ -1640,9 +1694,6 @@
 
             tbody.innerHTML = list.length === 0 ? `<tr><td colspan="100" class="text-center py-20 text-slate-300 uppercase font-black italic tracking-widest">Nenhum dado</td></tr>` : 
             list.map(cli => {
-                const safeCnpj = btoa(unescape(encodeURIComponent(cli.cnpj || '')));
-                const safeContato = btoa(unescape(encodeURIComponent(cli.contato || '')));
-                
                 let optionsHtml = `<option value="" ${!cli.conta ? 'selected' : ''}>-</option>`;
                 let optionsArray = window.appState.opcoesConta || ['BANCO', 'CAIXA', 'PRESUNÇÃO'];
                 if (cli.conta && !optionsArray.includes(cli.conta)) {
@@ -1653,6 +1704,7 @@
                 });
 
                 let row = `<tr class="hover:bg-blue-50 border-b border-slate-100 transition-colors">
+                    ${window.isAdmin ? `<td class="col-fixed-del align-middle"><button onclick="window.excluirLinhaMainTable('${cli.id}')" class="text-red-500 hover:text-red-700 font-black text-xs">&times;</button></td>` : ''}
                     <td class="col-fixed-n font-mono text-slate-400 font-bold">${cli.n}</td>
                     <td class="col-fixed-ano text-slate-400 font-medium">${cli.ano}</td>
                     <td class="col-fixed-razao font-black text-slate-800 uppercase tracking-tighter" title="${cli.razao}">${cli.razao}</td>
@@ -1661,9 +1713,12 @@
                     <td class="col-fixed-atividade text-slate-500 uppercase" title="${cli.atividade || ''}">${cli.atividade || ''}</td>
                     <td class="col-fixed-regime font-black text-slate-600 uppercase">${cli.regime || ''}</td>
                     <td class="col-fixed-conta align-middle">
-                        <select class="cell-input ${cli.conta ? 'text-indigo-600' : 'text-slate-400'} text-[9px] uppercase cursor-pointer" onchange="window.atualizarContaManual('${safeCnpj}', '${safeContato}', this.value, '${cli.conta || ''}')">
+                        <select class="cell-input ${cli.conta ? 'text-indigo-600' : 'text-slate-400'} text-[8px] uppercase cursor-pointer px-0" onchange="window.atualizarContaManual('${cli.id}', this, '${cli.conta || ''}')">
                             ${optionsHtml}
                         </select>
+                    </td>
+                    <td class="col-fixed-obs align-middle">
+                        <input type="text" class="cell-input text-slate-600 text-[8px] uppercase text-left px-1 border border-transparent hover:border-slate-300" value="${(cli.obs || '').replace(/"/g, '&quot;')}" onchange="window.atualizarObs('${cli.id}', this, '${(cli.obs || '').replace(/"/g, '\\"')}')" placeholder="Obs...">
                     </td>`;
                 
                 window.appState.meses.forEach(m => {
@@ -1690,10 +1745,10 @@
                                 ${badgeHtml}
                             </td>
                             <td class="align-middle">
-                                <input type="text" class="cell-input ${cLancado}" value="${d.lancado}" onchange="window.atualizarCelulaManual('${safeCnpj}', '${safeContato}', '${m}', 'lancado', this.value, '${d.lancado}')">
+                                <input type="text" class="cell-input ${cLancado}" value="${d.lancado}" onchange="window.atualizarCelulaManual('${cli.id}', '${m}', 'lancado', this, '${d.lancado}')">
                             </td>
                             <td class="bg-green-50/20 align-middle">
-                                <input type="text" class="cell-input text-emerald-700 uppercase" value="${d.reinf}" onchange="window.atualizarCelulaManual('${safeCnpj}', '${safeContato}', '${m}', 'reinf', this.value, '${d.reinf}')">
+                                <input type="text" class="cell-input text-emerald-700 uppercase" value="${d.reinf}" onchange="window.atualizarCelulaManual('${cli.id}', '${m}', 'reinf', this, '${d.reinf}')">
                             </td>`;
                     }
                 });
@@ -1737,12 +1792,19 @@
             window.renderTable(); 
         };
 
-        window.atualizarCelulaManual = async function(cnpjB64, contatoB64, mes, campo, val, old) {
-            let cnpj = decodeURIComponent(escape(atob(cnpjB64)));
-            let contato = decodeURIComponent(escape(atob(contatoB64)));
-            let cli = window.appState.clientes.find(c => (c.cnpj || '') === cnpj && (c.contato || '') === contato);
+        window.atualizarCelulaManual = async function(id, mes, campo, el, old) {
+            let cli = window.appState.clientes.find(c => c.id === id);
+            let val = el.value.trim().toUpperCase();
             if (cli && cli.mensal[mes] && val !== old) {
                 cli.mensal[mes][campo] = val;
+                el.value = val;
+                
+                if (campo === 'lancado') {
+                    el.className = `cell-input ${val === 'OK' ? 'text-blue-600 font-black' : (val === 'NT' ? 'text-emerald-600 font-black' : 'text-slate-400')}`;
+                }
+                
+                el.setAttribute('onchange', `window.atualizarCelulaManual('${id}', '${mes}', '${campo}', this, '${val}')`);
+
                 window.appState.historicoGeral.push({
                     tipo: 'edicao',
                     data: new Date().toLocaleString('pt-BR'),
@@ -1750,19 +1812,20 @@
                     alteracoes: [`<span class="text-blue-600 font-bold">EDIÇÃO MANUAL:</span> <b>${cli.razao} (${cli.contato})</b> - ${campo.toUpperCase()} mudou para '${val}'`]
                 });
                 
-                await window.saveState(); 
+                window.saveState(); 
                 window.renderHistorico();
-                window.renderTable();
                 window.renderClassificacao();
             }
         };
 
-        window.atualizarContaManual = async function(cnpjB64, contatoB64, val, old) {
-            let cnpj = decodeURIComponent(escape(atob(cnpjB64)));
-            let contato = decodeURIComponent(escape(atob(contatoB64)));
-            let cli = window.appState.clientes.find(c => (c.cnpj || '') === cnpj && (c.contato || '') === contato);
+        window.atualizarContaManual = async function(id, el, old) {
+            let cli = window.appState.clientes.find(c => c.id === id);
+            let val = el.value;
             if (cli && val !== old) {
                 cli.conta = val;
+                el.className = `cell-input ${val ? 'text-indigo-600' : 'text-slate-400'} text-[8px] uppercase cursor-pointer px-0`;
+                el.setAttribute('onchange', `window.atualizarContaManual('${id}', this, '${val}')`);
+
                 window.appState.historicoGeral.push({
                     tipo: 'edicao',
                     data: new Date().toLocaleString('pt-BR'),
@@ -1770,11 +1833,53 @@
                     alteracoes: [`<span class="text-blue-600 font-bold">EDIÇÃO MANUAL:</span> <b>${cli.razao} (${cli.contato})</b> - TIPO DE CONTA mudou para '${val || '-'}'`]
                 });
                 
-                await window.saveState(); 
+                window.saveState(); 
                 window.renderHistorico();
-                window.renderTable();
                 window.renderListaCadastro();
             }
+        };
+
+        window.atualizarObs = async function(id, el, old) {
+            let cli = window.appState.clientes.find(c => c.id === id);
+            let val = el.value.trim().toUpperCase();
+            if (cli && val !== old) {
+                cli.obs = val;
+                el.value = val;
+                el.setAttribute('onchange', `window.atualizarObs('${id}', this, '${val.replace(/'/g, "\\'")}')`);
+                
+                window.appState.historicoGeral.push({
+                    tipo: 'edicao',
+                    data: new Date().toLocaleString('pt-BR'),
+                    usuario: window.appState.currentUser, mes: 'GERAL',
+                    alteracoes: [`<span class="text-blue-600 font-bold">EDIÇÃO MANUAL:</span> <b>${cli.razao}</b> - OBSERVAÇÃO alterada para '${val}'`]
+                });
+                
+                window.saveState(); 
+                window.renderHistorico();
+            }
+        };
+
+        window.excluirLinhaMainTable = async function(id) {
+            let cli = window.appState.clientes.find(c => c.id === id);
+            if(!cli) return;
+            if(!confirm(`⚠️ MODO ADMIN: Excluir DEFINITIVAMENTE a empresa "${cli.razao}" e todo o seu histórico financeiro desta planilha?`)) return;
+
+            let idx = window.appState.clientes.findIndex(c => c.id === id);
+            window.appState.clientes.splice(idx, 1);
+
+            window.appState.historicoGeral.push({
+                tipo: 'edicao',
+                data: new Date().toLocaleString('pt-BR'),
+                usuario: window.appState.currentUser,
+                mes: 'ADMIN',
+                alteracoes: [`<span class="text-red-600 font-bold">EXCLUSÃO ADMIN:</span> Empresa <b>${cli.razao}</b> removida da base.`]
+            });
+
+            await window.saveState();
+            window.renderTable();
+            window.renderListaCadastro();
+            window.renderHistorico();
+            window.renderClassificacao();
         };
 
         // ==========================================
@@ -1881,10 +1986,11 @@
                 // 4. Cria Novo Cliente se não encontrou em nenhuma das regras
                 if (!cli) {
                     cli = { 
+                        id: window.generateId(),
                         n: cols[offset+0]?.trim(), ano: cols[offset+1]?.trim(), 
                         razao: razao, cnpj: cnpj || "S/ CNPJ", 
                         contato: contato, regime: importRegime, atividade: '',
-                        conta: '',
+                        conta: '', obs: '',
                         mensal: {} 
                     };
                     window.appState.clientes.push(cli);
@@ -1895,7 +2001,7 @@
                     logAlteracoesHistorico.push(`<span class="text-indigo-600 font-bold">NOVO CLIENTE AUTOMÁTICO:</span> <b>${razao}</b> ${contato ? `(${contato})` : ''} <span class="text-slate-400 text-[8px]">(CNPJ: ${cnpj})</span>`);
                 }
                 
-                chavesImportadasNoMes.add(cli.cnpj + "|||" + cli.contato);
+                chavesImportadasNoMes.add(cli.id);
 
                 let ant = cols[offset+11]?.trim() || '-';
                 let old = cli.mensal[mesRef];
@@ -1924,8 +2030,7 @@
             let countFaltantes = 0;
             
             window.appState.clientes.forEach(cli => {
-                let chave = cli.cnpj + "|||" + cli.contato;
-                if (!chavesImportadasNoMes.has(chave)) {
+                if (!chavesImportadasNoMes.has(cli.id)) {
                     let dMes = cli.mensal[mesRef];
                     if (!dMes || (dMes.antec === '-' && dMes.lancado === '-' && dMes.reinf === '-')) {
                         countFaltantes++;
