@@ -80,7 +80,6 @@
 </head>
 <body class="font-sans overflow-hidden">
 
-    <!-- Modal de Identificação -->
     <div id="modalUser" class="fixed inset-0 bg-slate-900 bg-opacity-80 flex justify-center items-center z-[100] hidden px-4">
         <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-sm text-center border-t-4 border-blue-600">
             <h2 class="text-xl font-black mb-2 text-slate-800 uppercase tracking-tight">Acesso ao Sistema</h2>
@@ -90,7 +89,6 @@
         </div>
     </div>
 
-    <!-- Modal de Configuração do Gist -->
     <div id="modalGist" class="fixed inset-0 bg-slate-900 bg-opacity-80 flex justify-center items-center z-[100] hidden px-4">
         <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-md text-center border-t-4 border-emerald-600 relative">
             <button onclick="window.fecharModalGist()" class="absolute top-3 right-4 text-slate-400 hover:text-slate-700 text-xl font-bold">&times;</button>
@@ -116,7 +114,6 @@
 
     <div class="h-screen flex flex-col relative bg-white">
         
-        <!-- Cabeçalho Principal -->
         <div class="p-3 border-b border-slate-200 flex justify-between items-center bg-slate-50 flex-shrink-0 shadow-sm z-30">
             <h1 class="text-sm font-black text-slate-700 uppercase tracking-tighter flex items-center gap-2 leading-none">
                 <span class="bg-blue-600 text-white p-1 rounded shadow-sm">PI</span>
@@ -146,7 +143,6 @@
             </div>
         </div>
 
-        <!-- Área de Importação -->
         <div class="p-3 bg-blue-50 border-b border-blue-100 flex-shrink-0 relative z-10">
             <div class="flex gap-4 items-center">
                 <div class="flex items-center gap-3 flex-shrink-0">
@@ -163,25 +159,20 @@
             </div>
         </div>
         
-        <!-- Barra de Meses Ocultos -->
         <div id="barraMesesOcultos" class="bg-slate-100 border-b border-slate-200 p-2 px-4 flex-shrink-0 hidden items-center gap-3 shadow-inner">
             <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Períodos Ocultos:</span>
             <div id="listaMesesOcultos" class="flex gap-2 flex-wrap"></div>
         </div>
 
-        <!-- Tabela -->
         <div class="overflow-auto flex-grow relative bg-white">
             <table id="mainTable">
                 <thead id="tabelaHead" class="text-slate-700 uppercase bg-slate-100 border-b-2 border-slate-300 shadow-sm">
-                    <!-- Dinâmico -->
-                </thead>
+                    </thead>
                 <tbody id="tabelaCorpo" class="divide-y divide-slate-100">
-                    <!-- Dinâmico -->
-                </tbody>
+                    </tbody>
             </table>
         </div>
 
-        <!-- Painel Lateral de Auditoria -->
         <div id="painelHistorico" class="painel-lateral painel-oculto absolute top-0 right-0 h-full w-80 bg-white shadow-2xl border-l border-slate-200 z-50 flex flex-col">
             <div class="p-4 bg-amber-50 border-b border-amber-200 flex justify-between items-center flex-shrink-0">
                 <h2 class="text-sm font-black text-amber-900 uppercase tracking-tighter">Registro (Log)</h2>
@@ -197,7 +188,6 @@
             </div>
         </div>
 
-        <!-- Painel Lateral de Classificação Reinf -->
         <div id="painelClassificacao" class="painel-lateral painel-oculto absolute top-0 right-0 h-full w-80 bg-white shadow-2xl border-l border-slate-200 z-50 flex flex-col">
             <div class="p-4 bg-blue-50 border-b border-blue-200 flex justify-between items-center">
                 <h2 class="text-sm font-black text-blue-900 uppercase tracking-tighter">Classificação Reinf</h2>
@@ -215,7 +205,6 @@
         </div>
     </div>
 
-    <!-- Script Atualizado: Removido Firebase, Integrado GitHub Gist -->
     <script>
         // Variáveis de Estado da Aplicação
         window.appState = {
@@ -290,7 +279,7 @@
                 
                 const data = await response.json();
                 const files = data.files;
-                const firstFileName = Object.keys(files)[0]; // Pega o primeiro arquivo do gist (ex: distribuicao)
+                const firstFileName = Object.keys(files)[0];
                 
                 if (firstFileName && files[firstFileName].content && files[firstFileName].content !== "{}") {
                     const nuvemState = JSON.parse(files[firstFileName].content);
@@ -310,7 +299,6 @@
             if (!window.gistConfig.token || !window.gistConfig.id) return;
             
             try {
-                // Descobre o nome do arquivo atual no gist para sobrescrever corretamente
                 const response = await fetch(`https://api.github.com/gists/${window.gistConfig.id}`, {
                     headers: { 'Authorization': `Bearer ${window.gistConfig.token}` }
                 });
@@ -342,13 +330,8 @@
 
         window.saveState = async function() {
             const dadosParaSalvar = window.appState;
-            
-            // 1. Sempre salva localmente primeiro (ultra rápido)
             await window.salvarDadosLocais(dadosParaSalvar);
-            
-            // 2. Tenta salvar no Gist em background (Nuvem)
             if (window.gistConfig.token && window.gistConfig.id) {
-                // Chama sem await para não travar a interface do usuário
                 window.salvarNoGist(dadosParaSalvar);
             }
         };
@@ -357,7 +340,6 @@
         // INICIALIZAÇÃO
         // ==========================================
         window.onload = async () => {
-            // Se tiver Gist configurado, tenta puxar da nuvem primeiro
             if (window.gistConfig.token && window.gistConfig.id) {
                 const sucessoNuvem = await window.sincronizarDoGist();
                 if (!sucessoNuvem) {
@@ -398,7 +380,7 @@
             document.getElementById('gistBtnText').innerText = "Testando...";
             
             window.gistConfig = { token, id };
-            const sucesso = await window.sincronizarDoGist(); // Testa conectividade baixando os dados
+            const sucesso = await window.sincronizarDoGist();
             
             if (sucesso) {
                 localStorage.setItem('reinfGistToken', token);
@@ -470,7 +452,6 @@
             if(e.key === 'Enter') window.salvarUsuario();
         });
 
-        // Formatação automática da máscara de data
         document.getElementById('mesRefInput').addEventListener('blur', function(e) {
             let val = e.target.value.replace(/\D/g, '');
             if (val.length === 6) {
@@ -479,7 +460,6 @@
         });
 
         window.togglePainel = function(id) { 
-            // Fecha outros painéis abertos
             ['painelHistorico', 'painelClassificacao'].forEach(p => {
                 if(p !== id) document.getElementById(p).classList.add('painel-oculto');
             });
@@ -528,12 +508,14 @@
             `).join('');
         };
 
+        // ==========================================
+        // CÁLCULO DE IR E CLASSIFICAÇÃO
+        // ==========================================
         window.renderClassificacao = function() {
             const container = document.getElementById('conteudoClassificacao');
             const selMes = document.getElementById('selectMesClassificacao');
             const mes = selMes.value;
 
-            // Atualiza opções do select se necessário
             const currentOptions = Array.from(selMes.options).map(o => o.value);
             window.appState.meses.forEach(m => {
                 if(!currentOptions.includes(m)) {
@@ -551,23 +533,42 @@
             window.appState.clientes.forEach(cli => {
                 if (cli.mensal[mes]) {
                     let vlr = window.parseCurrency(cli.mensal[mes].antec);
-                    if (vlr > 50000) mensal.push(cli.razao);
-                    else if (vlr > 0 || cli.mensal[mes].antec === 'S/M') trimestral.push(cli.razao);
+                    
+                    if (vlr > 50000) {
+                        // Calcula IR de 10% sobre o valor distribuído
+                        let ir = vlr * 0.10;
+                        mensal.push({
+                            razao: cli.razao,
+                            antec: cli.mensal[mes].antec,
+                            ir: ir.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'})
+                        });
+                    }
+                    else if (vlr > 0 || cli.mensal[mes].antec === 'S/M') {
+                        trimestral.push({ razao: cli.razao });
+                    }
                 }
             });
 
             container.innerHTML = `
                 <div class="mb-6">
                     <div class="bg-red-600 text-white text-[10px] font-black p-2 rounded shadow-md uppercase mb-2">Envio Mensal (>50k): ${mensal.length}</div>
-                    <div class="space-y-1">
-                        ${mensal.map(r => `<div class="bg-white border-l-4 border-red-500 p-1.5 text-[9px] font-bold text-slate-700 shadow-sm uppercase">${r}</div>`).join('')}
+                    <div class="space-y-2">
+                        ${mensal.map(m => `
+                            <div class="bg-white border-l-4 border-red-500 p-2 text-[9px] font-bold text-slate-700 shadow-sm uppercase flex flex-col gap-1">
+                                <div class="flex justify-between border-b border-slate-100 pb-1">
+                                    <span class="truncate w-3/4" title="${m.razao}">${m.razao}</span> 
+                                    <span class="text-slate-900">${m.antec}</span>
+                                </div>
+                                <div class="text-right text-red-600 font-black tracking-tight">PREVISÃO IR (10%): ${m.ir}</div>
+                            </div>
+                        `).join('')}
                         ${mensal.length === 0 ? '<p class="text-[9px] text-slate-400 italic">Nenhum cliente para este período.</p>' : ''}
                     </div>
                 </div>
                 <div>
                     <div class="bg-emerald-600 text-white text-[10px] font-black p-2 rounded shadow-md uppercase mb-2">Envio Trimestral (até 50k/SM): ${trimestral.length}</div>
                     <div class="space-y-1">
-                        ${trimestral.map(r => `<div class="bg-white border-l-4 border-emerald-500 p-1.5 text-[9px] font-bold text-slate-700 shadow-sm uppercase">${r}</div>`).join('')}
+                        ${trimestral.map(m => `<div class="bg-white border-l-4 border-emerald-500 p-1.5 text-[9px] font-bold text-slate-700 shadow-sm uppercase">${m.razao}</div>`).join('')}
                         ${trimestral.length === 0 ? '<p class="text-[9px] text-slate-400 italic">Nenhum cliente para este período.</p>' : ''}
                     </div>
                 </div>
@@ -577,7 +578,7 @@
         window.limparHistorico = async function() { 
             if(confirm("Zerar log?")) { 
                 window.appState.historicoGeral = []; 
-                await window.saveState(); // Salva estado
+                await window.saveState(); 
                 window.renderHistorico(); 
             } 
         };
@@ -585,7 +586,7 @@
         window.setFiltro = async function(mes, campo, status) {
             if (!window.appState.filtros[mes]) window.appState.filtros[mes] = {};
             window.appState.filtros[mes][campo] = status;
-            await window.saveState(); // Salva estado
+            await window.saveState(); 
             window.renderTable();
         };
 
@@ -754,7 +755,7 @@
 
         window.toggleMes = async function(m) { 
             window.appState.mesesConfig[m].visible = !window.appState.mesesConfig[m].visible; 
-            await window.saveState(); // Salva estado
+            await window.saveState(); 
             window.renderTable(); 
         };
 
@@ -769,14 +770,16 @@
                     alteracoes: [`<span class="text-blue-600 font-bold">EDIÇÃO MANUAL:</span> <b>${cli.razao}</b> - ${campo.toUpperCase()} mudou para '${val}'`]
                 });
                 
-                await window.saveState(); // Salva estado
-
+                await window.saveState(); 
                 window.renderHistorico();
                 window.renderTable();
                 window.renderClassificacao();
             }
         };
 
+        // ==========================================
+        // IMPORTAÇÃO DE DADOS (COM VERIFICAÇÃO DE DIVERGÊNCIA)
+        // ==========================================
         window.adicionarDados = async function() {
             const input = document.getElementById('rawData').value;
             let mesRef = document.getElementById('mesRefInput').value.trim();
@@ -820,8 +823,19 @@
                 }
                 
                 let ant = cols[offset+11]?.trim() || '-';
-                
                 let old = cli.mensal[mesRef];
+                let oldAntec = old?.antec || '-';
+
+                // VERIFICA SE HOUVE MUDANÇA NA IMPORTAÇÃO (E AVISA NA ABA "ALTERAÇÕES")
+                if (old && oldAntec !== '-' && oldAntec !== ant && ant !== '-') {
+                    window.appState.historicoGeral.push({
+                        tipo: 'edicao',
+                        data: dataAtual,
+                        usuario: window.appState.currentUser + " (Via Importação)",
+                        mes: mesRef,
+                        alteracoes: [`<span class="text-amber-500 font-bold">ATUALIZADO VIA IMPORTAÇÃO:</span> <b>${cli.razao}</b> - ANT mudou de '${oldAntec}' para '${ant}'`]
+                    });
+                }
                 
                 cli.mensal[mesRef] = { 
                     antec: ant, 
@@ -830,6 +844,7 @@
                 };
             });
             
+            // LOG RESUMIDO DE IMPORTAÇÃO
             window.appState.historicoGeral.push({ 
                 tipo: 'importacao',
                 data: dataAtual, 
@@ -838,7 +853,7 @@
                 alteracoes: [`<span class="text-emerald-600 font-bold">IMPORTAÇÃO (${qtdImportadas} lidas):</span> Planilha processada.`] 
             });
             
-            await window.saveState(); // Salva estado
+            await window.saveState(); 
 
             document.getElementById('rawData').value = '';
             window.renderTable();
@@ -851,7 +866,7 @@
                 window.appState.meses = []; window.appState.clientes = []; window.appState.historicoGeral = []; 
                 window.appState.mesesConfig = {}; window.appState.filtros = {}; 
                 
-                await window.saveState(); // Salva estado
+                await window.saveState(); 
                 
                 window.renderTable(); window.renderHistorico(); 
             } 
