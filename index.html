@@ -26,8 +26,6 @@
 
         /* CONFIGURAÇÃO DE COLUNAS FIXAS - Otimizadas para não dar scroll horizontal */
         .col-fixed-del { width: 25px; min-width: 25px; max-width: 25px; } /* Coluna Admin */
-        .col-fixed-n { width: 25px; min-width: 25px; max-width: 25px; }
-        .col-fixed-ano { width: 35px; min-width: 35px; max-width: 35px; }
         .col-fixed-razao { width: auto; min-width: 120px; max-width: 200px; text-align: left; overflow: hidden; text-overflow: ellipsis; }
         .col-fixed-cnpj { width: 105px; min-width: 105px; max-width: 105px; font-family: monospace; font-weight: bold; }
         .col-fixed-contato { width: auto; min-width: 70px; max-width: 100px; text-align: left; overflow: hidden; text-overflow: ellipsis; }
@@ -212,7 +210,7 @@
                     <button onclick="window.abrirLogin()" class="text-slate-300 hover:text-red-500 transition-colors" title="Alterar Usuário">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
                     </button>
-                    <!-- NOVO BOTAO ADMIN -->
+                    <!-- BOTAO ADMIN -->
                     <button onclick="window.toggleAdmin()" id="btnAdmin" class="bg-slate-100 hover:bg-red-100 text-slate-500 hover:text-red-700 transition-colors px-2 py-0.5 rounded font-black text-[8px] uppercase flex items-center gap-1" title="Ativar Modo Admin">
                         🔐 Admin
                     </button>
@@ -1223,7 +1221,6 @@
                 if (['RAZÃO SOCIAL', 'RAZAO SOCIAL', 'NOME', 'CLIENTE', 'EMPRESA', 'NOME DA EMPRESA', 'CNPJ'].includes(razao)) return;
                 
                 tempCli.push({
-                    n: cols[offset+0]?.trim(), ano: cols[offset+1]?.trim(),
                     razao: razao, cnpj: cnpj || 'S/ CNPJ',
                     contato: cols[offset+4]?.trim(), regime: cols[offset+5]?.trim(),
                     antec: cols[offset+11]?.trim() || '-'
@@ -1232,8 +1229,6 @@
 
             document.getElementById('tabelaVisualizacaoHead').innerHTML = `
                 <tr>
-                    <th class="col-fixed-n text-slate-500 py-3">Nº</th>
-                    <th class="col-fixed-ano text-slate-500 py-3">ANO</th>
                     <th class="col-fixed-razao text-slate-500 py-3">RAZÃO SOCIAL</th>
                     <th class="col-fixed-cnpj text-slate-500 py-3">CNPJ</th>
                     <th class="col-fixed-contato text-slate-500 py-3">CONTATO</th>
@@ -1244,8 +1239,6 @@
 
             let tbody = tempCli.map(cli => `
                 <tr class="hover:bg-blue-50 border-b border-slate-100 transition-colors">
-                    <td class="col-fixed-n font-mono text-slate-400 font-bold">${cli.n}</td>
-                    <td class="col-fixed-ano text-slate-400 font-medium">${cli.ano}</td>
                     <td class="col-fixed-razao font-black text-slate-800 uppercase" title="${cli.razao}">${cli.razao}</td>
                     <td class="col-fixed-cnpj font-mono text-blue-700">${cli.cnpj}</td>
                     <td class="col-fixed-contato text-slate-500 uppercase" title="${cli.contato}">${cli.contato}</td>
@@ -1254,7 +1247,7 @@
                 </tr>
             `).join('');
 
-            if(tempCli.length === 0) tbody = `<tr><td colspan="7" class="text-center py-20 text-slate-400 font-black tracking-widest uppercase">Nenhum dado válido processado</td></tr>`;
+            if(tempCli.length === 0) tbody = `<tr><td colspan="5" class="text-center py-20 text-slate-400 font-black tracking-widest uppercase">Nenhum dado válido processado</td></tr>`;
 
             document.getElementById('tabelaVisualizacaoCorpo').innerHTML = tbody;
             document.getElementById('modalVisualizarPlanilha').classList.remove('hidden');
@@ -1618,8 +1611,6 @@
 
             let tr1 = `<tr>
                 ${window.isAdmin ? '<th rowspan="2" class="col-fixed-del text-red-500" title="Excluir Linha do Sistema">🗑️</th>' : ''}
-                <th rowspan="2" class="col-fixed-n text-slate-500">Nº</th>
-                <th rowspan="2" class="col-fixed-ano text-slate-500">ANO</th>
                 <th rowspan="2" class="col-fixed-razao text-slate-500">RAZÃO SOCIAL</th>
                 <th rowspan="2" class="col-fixed-cnpj text-slate-500">CNPJ</th>
                 <th rowspan="2" class="col-fixed-contato text-slate-500">CONTATO</th>
@@ -1705,8 +1696,6 @@
 
                 let row = `<tr class="hover:bg-blue-50 border-b border-slate-100 transition-colors">
                     ${window.isAdmin ? `<td class="col-fixed-del align-middle"><button onclick="window.excluirLinhaMainTable('${cli.id}')" class="text-red-500 hover:text-red-700 font-black text-xs">&times;</button></td>` : ''}
-                    <td class="col-fixed-n font-mono text-slate-400 font-bold">${cli.n}</td>
-                    <td class="col-fixed-ano text-slate-400 font-medium">${cli.ano}</td>
                     <td class="col-fixed-razao font-black text-slate-800 uppercase tracking-tighter" title="${cli.razao}">${cli.razao}</td>
                     <td class="col-fixed-cnpj font-mono text-blue-700 tracking-tighter">${cli.cnpj}</td>
                     <td class="col-fixed-contato text-slate-500 uppercase" title="${cli.contato}">${cli.contato}</td>
