@@ -32,7 +32,7 @@
         .col-fixed-atividade { width: auto; min-width: 60px; max-width: 80px; text-align: left; overflow: hidden; text-overflow: ellipsis; }
         .col-fixed-regime { width: 40px; min-width: 40px; max-width: 40px; }
         .col-fixed-conta { width: 60px; min-width: 60px; max-width: 60px; }
-        .col-fixed-obs { width: 110px; min-width: 110px; max-width: 110px; }
+        .col-fixed-obs { width: 130px; min-width: 130px; max-width: 130px; }
 
         /* Colunas dos meses dinâmicos - Otimizadas */
         .col-month-data { min-width: 65px; }
@@ -129,19 +129,10 @@
                 <!-- Bloco de Alterações de Valores -->
                 <div id="blocoAlteracoesModal" class="hidden">
                     <h3 class="text-[11px] font-black text-amber-600 uppercase border-b border-amber-200 pb-1 mb-2 tracking-widest flex justify-between items-center">
-                        <span>⚠️ Valores Alterados (Divergência)</span>
+                        <span>⚠️ Alterações de Valores</span>
                         <button onclick="window.imprimirRelatorioImportacao('alteracoes')" class="bg-white text-amber-700 px-2 py-0.5 rounded border border-amber-200 hover:bg-amber-50 flex items-center gap-1 shadow-sm font-bold tracking-widest text-[9px] transition-colors" title="Imprimir Relatório">🖨️ IMPRIMIR</button>
                     </h3>
                     <ul id="listaAlteracoesModal" class="text-[11px] font-mono text-slate-700 space-y-1.5 list-disc pl-4"></ul>
-                </div>
-                <!-- NOVO: Bloco de Divergências de Cadastro (Regime/Atividade) -->
-                <div id="blocoDivergenciasCadModal" class="hidden">
-                    <h3 class="text-[11px] font-black text-purple-600 uppercase border-b border-purple-200 pb-1 mb-2 tracking-widest flex justify-between items-center">
-                        <span>📋 Divergências de Cadastro (Regime/Atividade)</span>
-                        <button onclick="window.imprimirRelatorioImportacao('divergenciasCad')" class="bg-white text-purple-700 px-2 py-0.5 rounded border border-purple-200 hover:bg-purple-50 flex items-center gap-1 shadow-sm font-bold tracking-widest text-[9px] transition-colors" title="Imprimir Relatório">🖨️ IMPRIMIR</button>
-                    </h3>
-                    <p class="text-[9px] text-slate-400 mb-2 italic">A planilha importada possui dados de regime/atividade diferentes dos que estão no Cadastro.</p>
-                    <ul id="listaDivergenciasCadModal" class="text-[11px] font-mono text-slate-700 space-y-1.5 list-disc pl-4"></ul>
                 </div>
                 <!-- Bloco de Alertas 50k -->
                 <div id="blocoAlertas50kModal" class="hidden">
@@ -208,7 +199,7 @@
                 <div class="text-[10px] bg-white px-3 py-1.5 rounded-full border border-slate-200 shadow-sm font-bold flex items-center gap-2">
                     <span class="text-slate-400">USUÁRIO:</span> <span id="displayUserName" class="text-blue-600 uppercase"></span>
                     <button onclick="window.abrirLogin()" class="text-slate-300 hover:text-red-500 transition-colors" title="Alterar Usuário">
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
                     </button>
                     <!-- BOTAO ADMIN -->
                     <button onclick="window.toggleAdmin()" id="btnAdmin" class="bg-slate-100 hover:bg-red-100 text-slate-500 hover:text-red-700 transition-colors px-2 py-0.5 rounded font-black text-[8px] uppercase flex items-center gap-1" title="Ativar Modo Admin">
@@ -674,9 +665,31 @@
         window.cobrarWhatsApp = async function(id) {
             let cli = window.appState.clientes.find(c => c.id === id);
             if(!cli) return;
+
+            let targetCli = cli;
+            let cnpjNum = window.getNumbers(cli.cnpj);
+
+            // Verificação de Múltiplos Sócios
+            if (cnpjNum.length === 14) {
+                let sameCnpjClients = window.appState.clientes.filter(c => window.getNumbers(c.cnpj) === cnpjNum);
+                if (sameCnpjClients.length > 1) {
+                    let optionsStr = sameCnpjClients.map((c, i) => `${i + 1} - ${c.contato || 'Sócio Sem Nome'}`).join('\n');
+                    let chosen = prompt(`Identificamos que a empresa ${cli.razao} possui múltiplos sócios cadastrados. Para qual deseja direcionar a mensagem?\n\n${optionsStr}\n\nDigite o número correspondente ao sócio:`);
+                    
+                    if (chosen === null) return; // Cancelou a operação
+                    
+                    let chosenIdx = parseInt(chosen) - 1;
+                    if (!isNaN(chosenIdx) && sameCnpjClients[chosenIdx]) {
+                        targetCli = sameCnpjClients[chosenIdx];
+                    } else {
+                        alert("Opção inválida. Operação cancelada.");
+                        return;
+                    }
+                }
+            }
             
-            if (!cli.whatsapp || cli.whatsapp.trim() === '') {
-                alert("Por favor, preencha o campo 'WhatsApp ou Link' no Cadastro desta empresa primeiro.");
+            if (!targetCli.whatsapp || targetCli.whatsapp.trim() === '') {
+                alert(`Por favor, preencha o campo 'WhatsApp ou Link' no Cadastro para o sócio selecionado (${targetCli.contato || 'Sem Nome'}).`);
                 window.togglePainel('painelCadastro');
                 return;
             }
@@ -684,7 +697,8 @@
             let mesesFaltantes = [];
             window.appState.meses.forEach(m => {
                 if (window.appState.mesesConfig[m] && window.appState.mesesConfig[m].visible) {
-                    let d = cli.mensal[m];
+                    // Verifica na base se falta o extrato
+                    let d = targetCli.mensal[m];
                     if (!d || d.antec === '-' || d.antec.trim() === '') {
                         mesesFaltantes.push(m);
                     }
@@ -702,9 +716,13 @@
                 mesesStr = mesesFaltantes.join(', ') + ' e ' + last;
             }
 
-            let msg = `Olá, tudo bem?\nEstamos organizando os arquivos para a contabilidade da empresa *${cli.razao}* e sentimos falta dos extratos bancários de *${mesesStr}*.\n\nSe puder disponibilizar por aqui, já consigo deixar tudo engatilhado para que o pessoal do contábil dê continuidade na contabilização.`;
+            // Pega apenas o primeiro nome e formata com primeira letra maiúscula
+            let firstName = targetCli.contato ? targetCli.contato.split(' ')[0] : 'Responsável';
+            firstName = firstName.charAt(0).toUpperCase() + firstName.slice(1).toLowerCase();
 
-            // Copiar para área de transferência (Compatível com iFrame Canvas)
+            let msg = `Olá ${firstName}, tudo bem?\nEstamos organizando os arquivos para a contabilidade da empresa *${targetCli.razao}* e sentimos falta dos extratos bancários de *${mesesStr}*.\n\nSe puder disponibilizar por aqui, já consigo deixar tudo engatilhado para que o pessoal do contábil dê continuidade na contabilização.`;
+
+            // Usando execCommand para garantir compatibilidade dentro do iFrame
             const el = document.createElement('textarea');
             el.value = msg;
             document.body.appendChild(el);
@@ -712,8 +730,7 @@
             document.execCommand('copy');
             document.body.removeChild(el);
 
-            // Abrir Link
-            let link = cli.whatsapp.trim();
+            let link = targetCli.whatsapp.trim();
             let finalUrl = link;
             let numOnly = window.getNumbers(link);
             
@@ -725,23 +742,64 @@
 
             window.open(finalUrl, '_blank');
 
-            // Atualizar OBS Automaticamente
             let dataAtual = new Date().toLocaleDateString('pt-BR');
-            cli.obs = `COBRADO EM ${dataAtual}`;
+            
+            // Se possuir CNPJ, atualiza todos os sócios com a data da cobrança para manter sincronizado
+            if (cnpjNum.length === 14) {
+                window.appState.clientes.forEach(c => {
+                    if (window.getNumbers(c.cnpj) === cnpjNum) {
+                        c.obs = `COBRADO EM ${dataAtual}`;
+                    }
+                });
+            } else {
+                targetCli.obs = `COBRADO EM ${dataAtual}`;
+            }
             
             window.appState.historicoGeral.push({
                 tipo: 'edicao',
                 data: new Date().toLocaleString('pt-BR'),
                 usuario: window.appState.currentUser,
                 mes: 'GERAL',
-                alteracoes: [`<span class="text-emerald-600 font-bold">COBRANÇA WHATSAPP:</span> <b>${cli.razao}</b> - Observação atualizada automaticamente.`]
+                alteracoes: [`<span class="text-emerald-600 font-bold">COBRANÇA WHATSAPP:</span> <b>${targetCli.razao}</b> - Mensagem de cobrança gerada e observação atualizada.`]
             });
 
             await window.saveState();
             window.renderTable();
             window.renderHistorico();
             
-            alert("A mensagem de cobrança foi copiada! (Pressione Ctrl+V no WhatsApp para colar e enviar)");
+            alert(`A mensagem de cobrança para ${firstName} foi copiada!\n(Pressione Ctrl+V no WhatsApp para colar e enviar)`);
+        };
+
+        // ==========================================
+        // MARCAR EXTRATO COMO RECEBIDO
+        // ==========================================
+        window.marcarExtratoRecebido = async function(id) {
+            let cli = window.appState.clientes.find(c => c.id === id);
+            if(!cli) return;
+
+            let dataAtual = new Date().toLocaleDateString('pt-BR');
+            let cnpjNum = window.getNumbers(cli.cnpj);
+
+            // Atualiza a OBS de TODOS os sócios dessa empresa
+            window.appState.clientes.forEach(c => {
+                if (window.getNumbers(c.cnpj) === cnpjNum && cnpjNum.length === 14) {
+                    c.obs = `RECEBIDO EM ${dataAtual}`;
+                } else if (c.id === id) {
+                    c.obs = `RECEBIDO EM ${dataAtual}`;
+                }
+            });
+
+            window.appState.historicoGeral.push({
+                tipo: 'edicao',
+                data: new Date().toLocaleString('pt-BR'),
+                usuario: window.appState.currentUser,
+                mes: 'GERAL',
+                alteracoes: [`<span class="text-blue-600 font-bold">EXTRATO RECEBIDO:</span> <b>${cli.razao}</b> - Observação de recebimento inserida.`]
+            });
+
+            await window.saveState();
+            window.renderTable();
+            window.renderHistorico();
         };
 
         // ==========================================
@@ -752,11 +810,8 @@
             let listaId = '';
             
             if (tipo === 'alteracoes') {
-                titulo = 'Relatório de Valores Alterados (Divergência)';
+                titulo = 'Relatório de Valores Alterados';
                 listaId = 'listaAlteracoesModal';
-            } else if (tipo === 'divergenciasCad') {
-                titulo = 'Relatório de Divergências Cadastrais (Regime/Atividade)';
-                listaId = 'listaDivergenciasCadModal';
             } else if (tipo === '50k') {
                 titulo = 'Relatório de Distribuição > 50 Mil (Atenção IR)';
                 listaId = 'listaAlertas50kModal';
@@ -1820,9 +1875,14 @@
                             ${optionsHtml}
                         </select>
                     </td>
-                    <td class="col-fixed-obs align-middle flex items-center justify-between px-1 h-full gap-1">
-                        <input type="text" class="cell-input text-slate-600 text-[8px] uppercase text-left border border-transparent hover:border-slate-300 w-full" value="${(cli.obs || '').replace(/"/g, '&quot;')}" onchange="window.atualizarObs('${cli.id}', this, '${(cli.obs || '').replace(/"/g, '\\"')}')" placeholder="Obs...">
-                        <button onclick="window.cobrarWhatsApp('${cli.id}')" class="text-emerald-500 hover:text-emerald-600 transition-transform hover:scale-110 text-xs flex-shrink-0" title="Cobrar Extratos via WhatsApp">📱</button>
+                    <td class="col-fixed-obs align-middle">
+                        <div class="flex items-center justify-between px-1 h-full gap-1">
+                            <input type="text" class="cell-input text-slate-600 text-[8px] uppercase text-left border border-transparent hover:border-slate-300 w-full" value="${(cli.obs || '').replace(/"/g, '&quot;')}" onchange="window.atualizarObs('${cli.id}', this, '${(cli.obs || '').replace(/"/g, '\\"')}')" placeholder="Obs...">
+                            <div class="flex gap-1">
+                                <button onclick="window.marcarExtratoRecebido('${cli.id}')" class="text-blue-500 hover:text-blue-600 transition-transform hover:scale-110 text-[10px] bg-blue-50 rounded px-1" title="Marcar como Recebido">✅</button>
+                                <button onclick="window.cobrarWhatsApp('${cli.id}')" class="text-emerald-500 hover:text-emerald-600 transition-transform hover:scale-110 text-[10px] bg-emerald-50 rounded px-1" title="Cobrar Extratos via WhatsApp">📱</button>
+                            </div>
+                        </div>
                     </td>`;
                 
                 window.appState.meses.forEach(m => {
@@ -1995,77 +2055,6 @@
             window.renderClassificacao();
         };
 
-        window.cobrarWhatsApp = async function(id) {
-            let cli = window.appState.clientes.find(c => c.id === id);
-            if(!cli) return;
-            
-            if (!cli.whatsapp || cli.whatsapp.trim() === '') {
-                alert("Por favor, preencha o campo 'Link do Grupo ou WhatsApp' no Cadastro desta empresa primeiro.");
-                window.togglePainel('painelCadastro');
-                return;
-            }
-
-            let mesesFaltantes = [];
-            window.appState.meses.forEach(m => {
-                if (window.appState.mesesConfig[m] && window.appState.mesesConfig[m].visible) {
-                    let d = cli.mensal[m];
-                    if (!d || d.antec === '-' || d.antec.trim() === '') {
-                        mesesFaltantes.push(m);
-                    }
-                }
-            });
-
-            if (mesesFaltantes.length === 0) {
-                alert("Esta empresa não possui meses com valores pendentes na tela no momento.");
-                return;
-            }
-
-            let mesesStr = mesesFaltantes.join(', ');
-            if (mesesFaltantes.length > 1) {
-                let last = mesesFaltantes.pop();
-                mesesStr = mesesFaltantes.join(', ') + ' e ' + last;
-            }
-
-            let msg = `Olá, tudo bem?\nEstamos organizando os arquivos para a contabilidade da empresa *${cli.razao}* e sentimos falta dos extratos bancários de *${mesesStr}*.\n\nSe puder disponibilizar por aqui, já consigo deixar tudo engatilhado para que o pessoal do contábil dê continuidade na contabilização.`;
-
-            // Usando execCommand para garantir compatibilidade dentro do iFrame
-            const el = document.createElement('textarea');
-            el.value = msg;
-            document.body.appendChild(el);
-            el.select();
-            document.execCommand('copy');
-            document.body.removeChild(el);
-
-            let link = cli.whatsapp.trim();
-            let finalUrl = link;
-            let numOnly = window.getNumbers(link);
-            
-            if (numOnly.length >= 10 && numOnly.length <= 13) {
-                finalUrl = `https://wa.me/55${numOnly}`;
-            } else if (!link.startsWith('http')) {
-                finalUrl = `https://${link}`;
-            }
-
-            window.open(finalUrl, '_blank');
-
-            let dataAtual = new Date().toLocaleDateString('pt-BR');
-            cli.obs = `COBRADO EM ${dataAtual}`;
-            
-            window.appState.historicoGeral.push({
-                tipo: 'edicao',
-                data: new Date().toLocaleString('pt-BR'),
-                usuario: window.appState.currentUser,
-                mes: 'GERAL',
-                alteracoes: [`<span class="text-emerald-600 font-bold">COBRANÇA WHATSAPP:</span> <b>${cli.razao}</b> - Observação atualizada automaticamente.`]
-            });
-
-            await window.saveState();
-            window.renderTable();
-            window.renderHistorico();
-            
-            alert("A mensagem de cobrança foi copiada! (Pressione Ctrl+V no WhatsApp para colar e enviar)");
-        };
-
         // ==========================================
         // IMPORTAÇÃO DE DADOS & GERAÇÃO DE POPUP (COM VERIFICAÇÃO DE FALTANTES)
         // ==========================================
@@ -2098,7 +2087,6 @@
             let htmlAlteracoesPopup = '';
             let htmlAlertas50kPopup = '';
             let htmlNovosPopup = '';
-            let htmlDivergenciasCadPopup = '';
             let houveAlteracaoNoPopup = false;
             let logAlteracoesHistorico = [];
             
@@ -2124,6 +2112,19 @@
                 if (['RAZÃO SOCIAL', 'RAZAO SOCIAL', 'NOME', 'CLIENTE', 'EMPRESA', 'NOME DA EMPRESA'].includes(razao)) return;
 
                 qtdImportadas++;
+
+                let valOffset5 = cols[offset+5]?.trim().toUpperCase() || '';
+                let importAtividade = '';
+                let colShift = 0;
+                
+                let possibleRegimes = ['SN', 'SIMPLES', 'SIMPLES NACIONAL', 'LP', 'LUCRO PRESUMIDO', 'LR', 'LUCRO REAL', 'MEI', 'ISENTO', 'IMUNE'];
+                if (valOffset5 === '' || possibleRegimes.includes(valOffset5)) {
+                    importRegime = valOffset5;
+                } else {
+                    importAtividade = valOffset5;
+                    importRegime = cols[offset+6]?.trim().toUpperCase() || '';
+                    colShift = 1;
+                }
 
                 let cli = null;
 
@@ -2159,22 +2160,27 @@
                     }
                 }
 
-                // Divergências Cadastrais (Regime)
-                if (cli) {
-                    if (importRegime && cli.regime && importRegime !== cli.regime) {
-                        houveAlteracaoNoPopup = true;
-                        htmlDivergenciasCadPopup += `<li><b>${cli.razao} (${cli.contato})</b> - <i class="text-slate-400">Regime na planilha: ${importRegime} | No Cadastro: ${cli.regime}</i></li>`;
-                    }
-                }
-
                 // 4. Cria Novo Cliente se não encontrou em nenhuma das regras
                 if (!cli) {
+                    let inheritedAtividade = importAtividade;
+                    let inheritedRegime = importRegime;
+                    let inheritedConta = '';
+                    
+                    if (cnpjNum.length === 14) {
+                        let relatedCli = window.appState.clientes.find(c => window.getNumbers(c.cnpj) === cnpjNum);
+                        if (relatedCli) {
+                            if (!inheritedAtividade) inheritedAtividade = relatedCli.atividade || '';
+                            if (!inheritedRegime) inheritedRegime = relatedCli.regime || '';
+                            inheritedConta = relatedCli.conta || '';
+                        }
+                    }
+
                     cli = { 
                         id: window.generateId(),
                         n: cols[offset+0]?.trim(), ano: cols[offset+1]?.trim(), 
                         razao: razao, cnpj: cnpj || "S/ CNPJ", 
-                        contato: contato, regime: importRegime, atividade: '',
-                        conta: '', obs: '', whatsapp: '',
+                        contato: contato, regime: inheritedRegime, atividade: inheritedAtividade,
+                        conta: inheritedConta, obs: '', whatsapp: '',
                         mensal: {} 
                     };
                     window.appState.clientes.push(cli);
@@ -2187,7 +2193,10 @@
                 
                 chavesImportadasNoMes.add(cli.id);
 
-                let ant = cols[offset+11]?.trim() || '-';
+                let antStr1 = cols[offset + 11 + colShift]?.trim();
+                let antStr2 = cols[offset + 11]?.trim();
+                let ant = antStr1 || antStr2 || '-';
+                
                 let old = cli.mensal[mesRef];
                 let oldAntec = old?.antec || '-';
 
@@ -2199,8 +2208,8 @@
 
                 if (old && oldAntec !== '-' && oldAntec !== ant && ant !== '-') {
                     houveAlteracaoNoPopup = true;
-                    htmlAlteracoesPopup += `<li><b>${cli.razao} (${cli.contato})</b> - ANT mudou de '${oldAntec}' para '${ant}'</li>`;
-                    logAlteracoesHistorico.push(`<span class="text-amber-500 font-bold">ATUALIZADO VIA IMPORTAÇÃO:</span> <b>${cli.razao} (${cli.contato})</b> - ANT mudou de '${oldAntec}' para '${ant}'`);
+                    htmlAlteracoesPopup += `<li><b>${cli.razao}</b>: R$ ${oldAntec} ➔ R$ ${ant}</li>`;
+                    logAlteracoesHistorico.push(`<span class="text-amber-500 font-bold">ALTERAÇÃO DE VALOR:</span> <b>${cli.razao}</b> | R$ ${oldAntec} ➔ R$ ${ant}`);
                 }
                 
                 cli.mensal[mesRef] = { 
@@ -2253,13 +2262,11 @@
             const lista50k = document.getElementById('listaAlertas50kModal');
             const listaFalt = document.getElementById('listaFaltantesModal');
             const listaNovos = document.getElementById('listaNovosModal');
-            const listaDivCad = document.getElementById('listaDivergenciasCadModal');
             
             const blocoAlt = document.getElementById('blocoAlteracoesModal');
             const bloco50k = document.getElementById('blocoAlertas50kModal');
             const blocoFalt = document.getElementById('blocoFaltantesModal');
             const blocoNovos = document.getElementById('blocoNovosModal');
-            const blocoDivCad = document.getElementById('blocoDivergenciasCadModal');
             const badgeFalt = document.getElementById('badgeCountFaltantes');
 
             let abrirModal = false;
@@ -2269,12 +2276,6 @@
                 blocoAlt.classList.remove('hidden');
                 abrirModal = true;
             } else { blocoAlt.classList.add('hidden'); }
-
-            if (htmlDivergenciasCadPopup !== '') {
-                listaDivCad.innerHTML = htmlDivergenciasCadPopup;
-                blocoDivCad.classList.remove('hidden');
-                abrirModal = true;
-            } else { blocoDivCad.classList.add('hidden'); }
 
             if (htmlAlertas50kPopup !== '') {
                 lista50k.innerHTML = htmlAlertas50kPopup;
