@@ -475,7 +475,7 @@
                         return !['RAZÃO SOCIAL', 'RAZAO SOCIAL', 'NOME', 'CLIENTE', 'EMPRESA', 'NOME DA EMPRESA', 'TITULO', 'CNPJ'].includes(r);
                     });
 
-                    // MIGRAÇÃO SEGURA PARA ID ÚNICO, OBSERVAÇÕES, WHATSAPP E DATAS DE EXTRATO
+                    // MIGRAÇÃO SEGURA PARA ID ÚNICO, OBSERVAÇÕES E WHATSAPP
                     window.appState.clientes.forEach(c => {
                         if (c.atividade === undefined) c.atividade = '';
                         if (c.obs === undefined) c.obs = '';
@@ -761,7 +761,7 @@
             }
             
             window.appState.historicoGeral.push({
-                tipo: 'edicao',
+                tipo: 'extrato_log', // Log não vai para 'Modificações'
                 data: new Date().toLocaleString('pt-BR'),
                 usuario: window.appState.currentUser,
                 mes: 'GERAL',
@@ -792,7 +792,7 @@
             });
 
             window.appState.historicoGeral.push({
-                tipo: 'edicao',
+                tipo: 'extrato_log', // Log não vai para 'Modificações'
                 data: new Date().toLocaleString('pt-BR'),
                 usuario: window.appState.currentUser,
                 mes: 'GERAL',
@@ -826,7 +826,7 @@
                     <td style="padding: 6px; border: 1px solid #ccc; font-weight: bold;">${cli.razao}</td>
                     <td style="padding: 6px; border: 1px solid #ccc; text-align: center; font-family: monospace;">${cli.cnpj}</td>
                     <td style="padding: 6px; border: 1px solid #ccc; text-align: center; color: ${cli.dataCobranca ? '#d97706' : '#94a3b8'}; font-weight: bold;">${cli.dataCobranca || '-'}</td>
-                    <td style="padding: 6px; border: 1px solid #ccc; text-align: center; color: ${cli.dataRecebimento ? '#059669' : '#94a3b8'}; font-weight: bold;">${cli.dataRecebimento || '-'}</td>
+                    <td style="padding: 6px; border: 1px solid #ccc; text-align: center; color: ${cli.dataRecebimento ? '#059669' : '#94a3b8'}; font-weight: bold;">${cli.dataRecebimento ? '✅ ' + cli.dataRecebimento : '-'}</td>
                 </tr>`;
             }).join('');
 
@@ -1941,8 +1941,8 @@
             }
             thead.innerHTML = tr1 + tr2;
 
-            // APENAS MOSTRA NA TELA PRINCIPAL QUEM TEM DADOS FINANCEIROS (A menos que tenha uma obs)
-            let list = [...window.appState.clientes].filter(cli => Object.keys(cli.mensal).length > 0 || cli.obs).sort((a, b) => {
+            // APENAS MOSTRA NA TELA PRINCIPAL QUEM TEM DADOS FINANCEIROS (A menos que tenha uma obs ou recebimento)
+            let list = [...window.appState.clientes].filter(cli => Object.keys(cli.mensal).length > 0 || cli.obs || cli.dataRecebimento).sort((a, b) => {
                 let cmp = a.razao.localeCompare(b.razao);
                 if (cmp === 0) return (a.contato || '').localeCompare(b.contato || '');
                 return cmp;
@@ -2120,26 +2120,6 @@
             }
         };
 
-        window.atualizarObs = async function(id, el, old) {
-            let cli = window.appState.clientes.find(c => c.id === id);
-            let val = el.value.trim().toUpperCase();
-            if (cli && val !== old) {
-                cli.obs = val;
-                el.value = val;
-                el.setAttribute('onchange', `window.atualizarObs('${id}', this, '${val.replace(/'/g, "\\'")}')`);
-                
-                window.appState.historicoGeral.push({
-                    tipo: 'edicao',
-                    data: new Date().toLocaleString('pt-BR'),
-                    usuario: window.appState.currentUser, mes: 'GERAL',
-                    alteracoes: [`<span class="text-blue-600 font-bold">EDIÇÃO MANUAL:</span> <b>${cli.razao}</b> - OBSERVAÇÃO alterada para '${val}'`]
-                });
-                
-                window.saveState(); 
-                window.renderHistorico();
-            }
-        };
-
         window.excluirLinhaMainTable = async function(id) {
             let cli = window.appState.clientes.find(c => c.id === id);
             if(!cli) return;
@@ -2309,8 +2289,14 @@
                 let antStr2 = cols[offset + 11]?.trim();
                 let ant = antStr1 || antStr2 || '-';
                 
+                // NOVA CAPTURA: Lançado na Folha (geralmente a coluna a seguir à antecipação, 12 ou 13)
+                let lancStr1 = cols[offset + 12 + colShift]?.trim();
+                let lancStr2 = cols[offset + 12]?.trim();
+                let lancImport = lancStr1 || lancStr2 || '';
+                
                 let old = cli.mensal[mesRef];
                 let oldAntec = old?.antec || '-';
+                let oldLancado = old?.lancado || '-';
 
                 let valorAntFormatado = window.parseCurrency(ant);
                 if (valorAntFormatado > 50000) {
@@ -2321,10 +2307,14 @@
                     htmlAlteracoesPopup += `<li><b>${cli.razao}</b>: R$ ${oldAntec} ➔ R$ ${ant}</li>`;
                     logAlteracoesValores.push(`<span class="text-amber-500 font-bold">ALTERAÇÃO DE VALOR:</span> <b>${cli.razao}</b> | R$ ${oldAntec} ➔ R$ ${ant}`);
                 }
+
+                if (lancImport && lancImport !== '-' && oldLancado !== '-' && oldLancado !== lancImport) {
+                    logAlteracoesValores.push(`<span class="text-blue-500 font-bold">ALTERAÇÃO NA FOLHA:</span> <b>${cli.razao}</b> | ${oldLancado} ➔ ${lancImport}`);
+                }
                 
                 cli.mensal[mesRef] = { 
                     antec: ant, 
-                    lancado: old?.lancado || '-', 
+                    lancado: (lancImport && lancImport !== '-') ? lancImport : oldLancado, 
                     reinf: old?.reinf || '-' 
                 };
             });
