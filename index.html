@@ -32,7 +32,7 @@
         .col-fixed-atividade { width: auto; min-width: 60px; max-width: 80px; text-align: left; overflow: hidden; text-overflow: ellipsis; }
         .col-fixed-regime { width: 40px; min-width: 40px; max-width: 40px; }
         .col-fixed-conta { width: 60px; min-width: 60px; max-width: 60px; }
-        .col-fixed-obs { width: 130px; min-width: 130px; max-width: 130px; }
+        .col-fixed-extratos { width: 50px; min-width: 50px; max-width: 50px; } /* Apenas ícones */
 
         /* Colunas dos meses dinâmicos - Otimizadas */
         .col-month-data { min-width: 65px; }
@@ -307,11 +307,13 @@
                 <h2 class="text-sm font-black text-amber-900 uppercase tracking-tighter">Registo (Log)</h2>
                 <button onclick="togglePainel('painelHistorico')" class="text-slate-400 hover:text-black text-2xl font-light leading-none">&times;</button>
             </div>
-            <div class="flex border-b border-slate-200 text-[8px] font-black uppercase text-center bg-white cursor-pointer flex-shrink-0">
-                <div id="tabLogImportacao" onclick="window.setLogTab('importacao')" class="flex-1 py-3 text-blue-600 border-b-2 border-blue-600 bg-blue-50 transition-colors">Import</div>
-                <div id="tabLogEdicao" onclick="window.setLogTab('edicao')" class="flex-1 py-3 text-slate-400 hover:text-slate-600 hover:bg-slate-50 border-b-2 border-transparent transition-colors">Ajustes</div>
-                <div id="tabLogPlanilhas" onclick="window.setLogTab('planilhas')" class="flex-1 py-3 text-slate-400 hover:text-slate-600 hover:bg-slate-50 border-b-2 border-transparent transition-colors">Planilhas</div>
-                <div id="tabLogExtratos" onclick="window.setLogTab('extratos')" class="flex-1 py-3 text-slate-400 hover:text-slate-600 hover:bg-slate-50 border-b-2 border-transparent transition-colors">Extratos</div>
+            <div class="flex flex-wrap border-b border-slate-200 text-[8px] font-black uppercase text-center bg-white cursor-pointer flex-shrink-0">
+                <div id="tabLogImportacao" onclick="window.setLogTab('importacao')" class="w-1/3 py-2.5 text-blue-600 border-b-2 border-blue-600 bg-blue-50 transition-colors">Import</div>
+                <div id="tabLogModificacoes" onclick="window.setLogTab('modificacoes')" class="w-1/3 py-2.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 border-b-2 border-transparent transition-colors">Modif.</div>
+                <div id="tabLogFaltantes" onclick="window.setLogTab('faltantes')" class="w-1/3 py-2.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 border-b-2 border-transparent transition-colors">Faltam</div>
+                <div id="tabLogNovos" onclick="window.setLogTab('novos')" class="w-1/3 py-2.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 border-b-2 border-transparent transition-colors">Novos</div>
+                <div id="tabLogPlanilhas" onclick="window.setLogTab('planilhas')" class="w-1/3 py-2.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 border-b-2 border-transparent transition-colors">Salvos</div>
+                <div id="tabLogExtratos" onclick="window.setLogTab('extratos')" class="w-1/3 py-2.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 border-b-2 border-transparent transition-colors">Extratos</div>
             </div>
             <div class="p-3 overflow-y-auto flex-grow bg-slate-50 font-mono" id="conteudoHistorico"></div>
             <div class="p-3 border-t border-slate-200 text-center bg-white flex-shrink-0">
@@ -751,12 +753,10 @@
             if (cnpjNum.length === 14) {
                 window.appState.clientes.forEach(c => {
                     if (window.getNumbers(c.cnpj) === cnpjNum) {
-                        c.obs = `COBRADO EM ${dataAtual}`;
                         c.dataCobranca = dataAtual;
                     }
                 });
             } else {
-                targetCli.obs = `COBRADO EM ${dataAtual}`;
                 targetCli.dataCobranca = dataAtual;
             }
             
@@ -765,7 +765,7 @@
                 data: new Date().toLocaleString('pt-BR'),
                 usuario: window.appState.currentUser,
                 mes: 'GERAL',
-                alteracoes: [`<span class="text-emerald-600 font-bold">COBRANÇA WHATSAPP:</span> <b>${targetCli.razao}</b> - Mensagem de cobrança gerada e observação atualizada.`]
+                alteracoes: [`<span class="text-emerald-600 font-bold">COBRANÇA WHATSAPP:</span> <b>${targetCli.razao}</b> - Mensagem de cobrança enviada.`]
             });
 
             await window.saveState();
@@ -781,15 +781,13 @@
 
             let dataAtual = new Date().toLocaleDateString('pt-BR');
             let cnpjNum = window.getNumbers(cli.cnpj);
+            
+            let desmarcar = !!cli.dataRecebimento;
 
-            // Atualiza a OBS e dataRecebimento de TODOS os sócios dessa empresa
+            // Atualiza a dataRecebimento de TODOS os sócios dessa empresa
             window.appState.clientes.forEach(c => {
-                if (window.getNumbers(c.cnpj) === cnpjNum && cnpjNum.length === 14) {
-                    c.obs = `RECEBIDO EM ${dataAtual}`;
-                    c.dataRecebimento = dataAtual;
-                } else if (c.id === id) {
-                    c.obs = `RECEBIDO EM ${dataAtual}`;
-                    c.dataRecebimento = dataAtual;
+                if ((window.getNumbers(c.cnpj) === cnpjNum && cnpjNum.length === 14) || c.id === id) {
+                    c.dataRecebimento = desmarcar ? '' : dataAtual;
                 }
             });
 
@@ -798,7 +796,7 @@
                 data: new Date().toLocaleString('pt-BR'),
                 usuario: window.appState.currentUser,
                 mes: 'GERAL',
-                alteracoes: [`<span class="text-blue-600 font-bold">EXTRATO RECEBIDO:</span> <b>${cli.razao}</b> - Observação de recebimento inserida.`]
+                alteracoes: [`<span class="${desmarcar ? 'text-slate-500' : 'text-blue-600'} font-bold">EXTRATO ${desmarcar ? 'DESMARCADO' : 'RECEBIDO'}:</span> <b>${cli.razao}</b>.`]
             });
 
             await window.saveState();
@@ -1056,7 +1054,6 @@
         window.adicionarClienteManual = async function() {
             window.appState.clientes.push({
                 id: window.generateId(),
-                n: '-', ano: new Date().getFullYear().toString(),
                 razao: 'NOVA EMPRESA', cnpj: 'S/ CNPJ', contato: '', atividade: '', regime: '',
                 conta: '', obs: '', whatsapp: '', dataCobranca: '', dataRecebimento: '', mensal: {}
             });
@@ -1078,10 +1075,9 @@
             if (cliBase) {
                 window.appState.clientes.push({
                     id: window.generateId(),
-                    n: cliBase.n, ano: cliBase.ano,
                     razao: cliBase.razao, cnpj: cliBase.cnpj,
                     contato: 'NOVO SÓCIO', regime: cliBase.regime, atividade: cliBase.atividade,
-                    conta: cliBase.conta, obs: '', whatsapp: cliBase.whatsapp, dataCobranca: '', dataRecebimento: '', mensal: {}
+                    conta: cliBase.conta, obs: cliBase.obs, whatsapp: cliBase.whatsapp, dataCobranca: cliBase.dataCobranca, dataRecebimento: cliBase.dataRecebimento, mensal: {}
                 });
                 window.appState.historicoGeral.push({
                     tipo: 'edicao',
@@ -1104,9 +1100,9 @@
                 
                 if (campo === 'cnpj') {
                     novoValor = window.formatCNPJ(novoValor);
-                } else if (['razao', 'contato', 'regime', 'atividade'].includes(campo)) {
+                } else if (['razao', 'contato', 'regime', 'atividade', 'obs'].includes(campo)) {
                     novoValor = novoValor.toUpperCase();
-                } // WhatsApp mantem-se como digitado (pode ser minúsculo/link)
+                }
 
                 if (valAntigo !== novoValor) {
                     cli[campo] = novoValor;
@@ -1121,7 +1117,7 @@
                     });
 
                     let cnpjNum = window.getNumbers(cli.cnpj);
-                    if (['atividade', 'regime', 'conta', 'razao', 'cnpj'].includes(campo) && cnpjNum.length === 14) {
+                    if (['atividade', 'regime', 'conta', 'razao', 'cnpj', 'obs'].includes(campo) && cnpjNum.length === 14) {
                          window.appState.clientes.forEach(otherCli => {
                              if (otherCli.id !== cli.id && window.getNumbers(otherCli.cnpj) === cnpjNum) {
                                  otherCli[campo] = novoValor;
@@ -1255,7 +1251,6 @@
                 } else {
                     window.appState.clientes.push({
                         id: window.generateId(),
-                        n: '-', ano: new Date().getFullYear().toString(),
                         razao: nome, cnpj: cnpj, contato: contato, atividade: atividade, regime: regime,
                         conta: conta, obs: '', whatsapp: whatsapp, dataCobranca: '', dataRecebimento: '', mensal: {} 
                     });
@@ -1264,7 +1259,7 @@
             });
 
             window.appState.historicoGeral.push({
-                tipo: 'importacao',
+                tipo: 'importacao_resumo',
                 data: new Date().toLocaleString('pt-BR'),
                 usuario: window.appState.currentUser,
                 mes: 'CADASTRO',
@@ -1329,8 +1324,9 @@
                             ${optionsHtml}
                         </select>
                     </div>
-                    <div class="flex w-full mt-1 border-t border-slate-50 pt-1.5">
-                        <input type="text" value="${valWhatsapp}" class="text-[9px] text-slate-500 bg-transparent border-b border-transparent hover:border-slate-300 focus:border-emerald-500 outline-none w-full" placeholder="Link WhatsApp do Grupo ou Telefone" title="WhatsApp" onchange="window.editarClienteCadastro('${cli.id}', 'whatsapp', this)">
+                    <div class="flex w-full mt-1 border-t border-slate-50 pt-1.5 gap-2">
+                        <input type="text" value="${valWhatsapp}" class="text-[9px] text-slate-500 bg-transparent border-b border-transparent hover:border-slate-300 focus:border-emerald-500 outline-none w-1/2" placeholder="Link/Telefone WhatsApp" title="WhatsApp" onchange="window.editarClienteCadastro('${cli.id}', 'whatsapp', this)">
+                        <input type="text" value="${(cli.obs || '').replace(/"/g, '&quot;')}" class="text-[9px] text-slate-500 bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none w-1/2 uppercase" placeholder="Observações (ex: Inativa)" title="Observações Gerais" onchange="window.editarClienteCadastro('${cli.id}', 'obs', this)">
                     </div>
                 </div>
             `}).join('');
@@ -1386,13 +1382,13 @@
 
         window.setLogTab = function(tab) {
             window.currentLogTab = tab;
-            const tabs = ['importacao', 'edicao', 'planilhas', 'extratos'];
+            const tabs = ['importacao', 'modificacoes', 'faltantes', 'novos', 'planilhas', 'extratos'];
             tabs.forEach(t => {
                 const el = document.getElementById('tabLog' + t.charAt(0).toUpperCase() + t.slice(1));
                 if(t === tab) {
-                    el.className = "flex-1 py-3 text-blue-600 border-b-2 border-blue-600 bg-blue-50 transition-colors";
+                    el.className = "w-1/3 py-2.5 text-blue-600 border-b-2 border-blue-600 bg-blue-50 transition-colors";
                 } else {
-                    el.className = "flex-1 py-3 text-slate-400 hover:text-slate-600 hover:bg-slate-50 border-b-2 border-transparent transition-colors";
+                    el.className = "w-1/3 py-2.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 border-b-2 border-transparent transition-colors";
                 }
             });
             window.renderHistorico();
@@ -1458,12 +1454,15 @@
             }
 
             const logsFiltrados = window.appState.historicoGeral.filter(reg => {
-                let isImport = reg.tipo === 'importacao' || (reg.alteracoes[0] && reg.alteracoes[0].includes('IMPORTAÇÃO'));
-                return window.currentLogTab === 'importacao' ? isImport : !isImport;
+                if (window.currentLogTab === 'importacao') return reg.tipo === 'importacao_resumo';
+                if (window.currentLogTab === 'modificacoes') return reg.tipo === 'modificacao' || reg.tipo === 'edicao';
+                if (window.currentLogTab === 'faltantes') return reg.tipo === 'faltante';
+                if (window.currentLogTab === 'novos') return reg.tipo === 'novo_cliente';
+                return false;
             });
 
             if (logsFiltrados.length === 0) {
-                container.innerHTML = `<p class="text-[9px] text-slate-400 text-center mt-10 uppercase font-bold tracking-widest">Nenhum registo</p>`;
+                container.innerHTML = `<p class="text-[9px] text-slate-400 text-center mt-10 uppercase font-bold tracking-widest">Nenhum registo nesta categoria</p>`;
                 return;
             }
             container.innerHTML = [...logsFiltrados].reverse().map(reg => `
@@ -1896,7 +1895,7 @@
                 <th rowspan="2" class="col-fixed-atividade text-slate-500">ATIVIDADE</th>
                 <th rowspan="2" class="col-fixed-regime text-slate-500">REG.</th>
                 <th rowspan="2" class="col-fixed-conta text-slate-500">CONTA</th>
-                <th rowspan="2" class="col-fixed-obs text-slate-500">OBSERVAÇÃO</th>`;
+                <th rowspan="2" class="col-fixed-extratos text-slate-500">EXTRATOS</th>`;
             
             let tr2 = `<tr>`;
             let hasVisible = false;
@@ -1985,13 +1984,12 @@
                             ${optionsHtml}
                         </select>
                     </td>
-                    <td class="col-fixed-obs align-middle">
-                        <div class="flex items-center justify-between px-1 h-full gap-1">
-                            <input type="text" class="cell-input text-slate-600 text-[8px] uppercase text-left border border-transparent hover:border-slate-300 w-full" value="${(cli.obs || '').replace(/"/g, '&quot;')}" onchange="window.atualizarObs('${cli.id}', this, '${(cli.obs || '').replace(/"/g, '\\"')}')" placeholder="Obs...">
-                            <div class="flex gap-1">
-                                <button onclick="window.marcarExtratoRecebido('${cli.id}')" class="transition-transform hover:scale-110 text-[10px] rounded px-1 flex-shrink-0 ${cli.dataRecebimento ? 'bg-emerald-100 text-emerald-600 shadow-sm' : 'bg-slate-100 grayscale opacity-40 hover:grayscale-0 hover:opacity-100'}" title="Marcar como Recebido">✅</button>
-                                <button onclick="window.cobrarWhatsApp('${cli.id}')" class="text-emerald-500 hover:text-emerald-600 transition-transform hover:scale-110 text-[10px] bg-emerald-50 rounded px-1 flex-shrink-0" title="Cobrar Extratos via WhatsApp">📱</button>
-                            </div>
+                    <td class="col-fixed-extratos align-middle">
+                        <div class="flex items-center justify-center h-full gap-2">
+                            <button onclick="window.marcarExtratoRecebido('${cli.id}')" class="transition-transform hover:scale-110 text-[10px] rounded p-1 flex-shrink-0 ${cli.dataRecebimento ? 'bg-emerald-100 text-emerald-600 shadow-sm border border-emerald-300' : 'bg-slate-100 text-slate-400 grayscale opacity-50 hover:grayscale-0 hover:opacity-100 border border-slate-200'}" title="${cli.dataRecebimento ? 'Recebido em ' + cli.dataRecebimento + ' (Clique para desmarcar)' : 'Marcar como Recebido'}">✅</button>
+                            <button onclick="window.cobrarWhatsApp('${cli.id}')" class="text-emerald-500 hover:text-emerald-600 transition-transform hover:scale-110 text-[10px] bg-emerald-50 rounded p-1 flex-shrink-0 border border-emerald-200" title="Cobrar Extratos via WhatsApp">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" class="w-3 h-3 fill-current"><path d="M380.9 97.1C339 55.1 283.2 32 223.9 32c-122.4 0-222 99.6-222 222 0 39.1 10.2 77.3 29.6 111L0 480l117.7-30.9c32.4 17.7 68.9 27 106.1 27h.1c122.3 0 224.1-99.6 224.1-222 0-59.3-23.2-115-65.1-157zM223.9 414.8c-33.2 0-65.8-8.9-94-25.7l-6.7-4-69.8 18.3L72 334.2l-4.4-7c-18.5-29.4-28.2-63.3-28.2-98.2 0-101.7 82.8-184.5 184.6-184.5 49.3 0 95.6 19.2 130.4 54.1 34.8 34.9 56.2 81.2 56.1 130.5 0 101.8-84.9 184.6-186.6 184.6zm101.2-138.2c-5.5-2.8-32.8-16.2-37.9-18-5.1-1.9-8.8-2.8-12.5 2.8-3.7 5.6-14.3 18-17.6 21.8-3.2 3.7-6.5 4.2-12 1.4-32.6-16.3-54-29.1-75.5-66-5.7-9.8 5.7-9.1 16.3-30.3 1.8-3.7 .9-6.9-.5-9.7-1.4-2.8-12.5-30.1-17.1-41.2-4.5-10.8-9.1-9.3-12.5-9.5-3.2-.2-6.9-.2-10.6-.2-3.7 0-9.7 1.4-14.8 6.9-5.1 5.6-19.4 19-19.4 46.3 0 27.3 19.9 53.7 22.6 57.4 2.8 3.7 39.1 59.7 94.8 83.8 35.2 15.2 49 16.5 66.6 13.9 10.7-1.6 32.8-13.4 37.4-26.4 4.6-13 4.6-24.1 3.2-26.4-1.3-2.5-5-3.9-10.5-6.6z"/></svg>
+                            </button>
                         </div>
                     </td>`;
                 
@@ -2197,9 +2195,11 @@
             let htmlAlteracoesPopup = '';
             let htmlAlertas50kPopup = '';
             let htmlNovosPopup = '';
-            let htmlDivergenciasCadPopup = '';
-            let houveAlteracaoNoPopup = false;
-            let logAlteracoesHistorico = [];
+            let htmlFaltantesPopup = '';
+            
+            let logAlteracoesValores = [];
+            let logNovosClientes = [];
+            let logFaltantes = [];
             
             let chavesImportadasNoMes = new Set();
 
@@ -2212,20 +2212,19 @@
                 let cnpjRaw = cols[offset+3]?.trim() || '';
                 let razao = cols[offset+2]?.trim().toUpperCase();
                 let contato = cols[offset+4]?.trim().toUpperCase() || '';
-                let importRegime = cols[offset+5]?.trim().toUpperCase() || '';
 
                 let cnpjNum = window.getNumbers(cnpjRaw);
                 let cnpj = window.formatCNPJ(cnpjRaw);
 
                 if (!cnpjNum && !razao) return;
                 
-                // IGNORA CABEÇALHOS ACIDENTALMENTE COPIADOS NO IMPORT
                 if (['RAZÃO SOCIAL', 'RAZAO SOCIAL', 'NOME', 'CLIENTE', 'EMPRESA', 'NOME DA EMPRESA'].includes(razao)) return;
 
                 qtdImportadas++;
 
                 let valOffset5 = cols[offset+5]?.trim().toUpperCase() || '';
                 let importAtividade = '';
+                let importRegime = '';
                 let colShift = 0;
                 
                 let possibleRegimes = ['SN', 'SIMPLES', 'SIMPLES NACIONAL', 'LP', 'LUCRO PRESUMIDO', 'LR', 'LUCRO REAL', 'MEI', 'ISENTO', 'IMUNE'];
@@ -2243,7 +2242,6 @@
                 if (cnpjNum.length === 14) {
                     cli = window.appState.clientes.find(c => window.getNumbers(c.cnpj) === cnpjNum && (c.contato || '').toUpperCase() === contato);
                     
-                    // 2. Busca por CNPJ Exato onde Contato no BD está vazio
                     if (!cli) {
                         let cliSemContato = window.appState.clientes.find(c => window.getNumbers(c.cnpj) === cnpjNum && (!c.contato || c.contato.trim() === ''));
                         if (cliSemContato) {
@@ -2253,7 +2251,7 @@
                     }
                 }
 
-                // 3. Busca Inteligente por Nome (Fuzzy Matching)
+                // 2. Busca Inteligente por Nome
                 if (!cli && razao) {
                     let cliByName = window.appState.clientes.find(c => 
                         window.isSameCompanyByName(c.razao, razao) && 
@@ -2271,15 +2269,12 @@
                     }
                 }
 
-                // Divergências Cadastrais (Regime)
                 if (cli) {
-                    if (importRegime && cli.regime && importRegime !== cli.regime) {
-                        houveAlteracaoNoPopup = true;
-                        htmlDivergenciasCadPopup += `<li><b>${cli.razao} (${cli.contato})</b> - <i class="text-slate-400">Regime na planilha: ${importRegime} | No Cadastro: ${cli.regime}</i></li>`;
-                    }
+                    if (!cli.atividade && importAtividade) cli.atividade = importAtividade;
+                    if (!cli.regime && importRegime) cli.regime = importRegime;
                 }
 
-                // 4. Cria Novo Cliente se não encontrou em nenhuma das regras
+                // 3. Cria Novo Cliente
                 if (!cli) {
                     let inheritedAtividade = importAtividade;
                     let inheritedRegime = importRegime;
@@ -2304,10 +2299,8 @@
                     };
                     window.appState.clientes.push(cli);
 
-                    houveAlteracaoNoPopup = true;
                     htmlNovosPopup += `<li><b>${razao}</b> ${contato ? `(${contato})` : ''} - <i class="text-slate-400">CNPJ: ${cnpj}</i></li>`;
-                    
-                    logAlteracoesHistorico.push(`<span class="text-indigo-600 font-bold">NOVO CLIENTE AUTOMÁTICO:</span> <b>${razao}</b> ${contato ? `(${contato})` : ''} <span class="text-slate-400 text-[8px]">(CNPJ: ${cnpj})</span>`);
+                    logNovosClientes.push(`<span class="text-indigo-600 font-bold">NOVO CLIENTE AUTOMÁTICO:</span> <b>${razao}</b> ${contato ? `(${contato})` : ''} <span class="text-slate-400 text-[8px]">(CNPJ: ${cnpj})</span>`);
                 }
                 
                 chavesImportadasNoMes.add(cli.id);
@@ -2321,14 +2314,12 @@
 
                 let valorAntFormatado = window.parseCurrency(ant);
                 if (valorAntFormatado > 50000) {
-                    houveAlteracaoNoPopup = true;
                     htmlAlertas50kPopup += `<li><b>${cli.razao} (${cli.contato})</b> - R$ ${ant}</li>`;
                 }
 
                 if (old && oldAntec !== '-' && oldAntec !== ant && ant !== '-') {
-                    houveAlteracaoNoPopup = true;
                     htmlAlteracoesPopup += `<li><b>${cli.razao}</b>: R$ ${oldAntec} ➔ R$ ${ant}</li>`;
-                    logAlteracoesHistorico.push(`<span class="text-amber-500 font-bold">ALTERAÇÃO DE VALOR:</span> <b>${cli.razao}</b> | R$ ${oldAntec} ➔ R$ ${ant}`);
+                    logAlteracoesValores.push(`<span class="text-amber-500 font-bold">ALTERAÇÃO DE VALOR:</span> <b>${cli.razao}</b> | R$ ${oldAntec} ➔ R$ ${ant}`);
                 }
                 
                 cli.mensal[mesRef] = { 
@@ -2338,7 +2329,6 @@
                 };
             });
             
-            let htmlFaltantesPopup = '';
             let countFaltantes = 0;
             
             window.appState.clientes.forEach(cli => {
@@ -2347,26 +2337,28 @@
                     if (!dMes || (dMes.antec === '-' && dMes.lancado === '-' && dMes.reinf === '-')) {
                         countFaltantes++;
                         htmlFaltantesPopup += `<li><b>${cli.razao}</b> ${cli.contato ? `(${cli.contato})` : ''}</li>`;
+                        logFaltantes.push(`<span class="text-red-500 font-bold">FALTANTE:</span> <b>${cli.razao}</b> não veio na importação de ${mesRef}.`);
                     }
                 }
             });
 
-            if (logAlteracoesHistorico.length > 0) {
-                window.appState.historicoGeral.push({
-                    tipo: 'edicao',
-                    data: dataAtual,
-                    usuario: window.appState.currentUser + " (Via Importação)",
-                    mes: mesRef,
-                    alteracoes: logAlteracoesHistorico
-                });
+            // SALVA LOGS POR CATEGORIA PARA OS TABS FUNCIONAREM CORRETAMENTE
+            if (logAlteracoesValores.length > 0) {
+                window.appState.historicoGeral.push({ tipo: 'modificacao', data: dataAtual, usuario: window.appState.currentUser, mes: mesRef, alteracoes: logAlteracoesValores });
+            }
+            if (logNovosClientes.length > 0) {
+                window.appState.historicoGeral.push({ tipo: 'novo_cliente', data: dataAtual, usuario: window.appState.currentUser, mes: mesRef, alteracoes: logNovosClientes });
+            }
+            if (logFaltantes.length > 0) {
+                window.appState.historicoGeral.push({ tipo: 'faltante', data: dataAtual, usuario: window.appState.currentUser, mes: mesRef, alteracoes: logFaltantes });
             }
 
             window.appState.historicoGeral.push({ 
-                tipo: 'importacao',
+                tipo: 'importacao_resumo',
                 data: dataAtual, 
                 usuario: window.appState.currentUser, 
                 mes: mesRef, 
-                alteracoes: [`<span class="text-emerald-600 font-bold">IMPORTAÇÃO (${qtdImportadas} lidas):</span> Planilha processada.`] 
+                alteracoes: [`<span class="text-blue-600 font-bold">RESUMO DA IMPORTAÇÃO:</span> ${qtdImportadas} linhas processadas com sucesso.`] 
             });
             
             await window.saveState(); 
@@ -2381,13 +2373,11 @@
             const lista50k = document.getElementById('listaAlertas50kModal');
             const listaFalt = document.getElementById('listaFaltantesModal');
             const listaNovos = document.getElementById('listaNovosModal');
-            const listaDivCad = document.getElementById('listaDivergenciasCadModal');
             
             const blocoAlt = document.getElementById('blocoAlteracoesModal');
             const bloco50k = document.getElementById('blocoAlertas50kModal');
             const blocoFalt = document.getElementById('blocoFaltantesModal');
             const blocoNovos = document.getElementById('blocoNovosModal');
-            const blocoDivCad = document.getElementById('blocoDivergenciasCadModal');
             const badgeFalt = document.getElementById('badgeCountFaltantes');
 
             let abrirModal = false;
@@ -2397,12 +2387,6 @@
                 blocoAlt.classList.remove('hidden');
                 abrirModal = true;
             } else { blocoAlt.classList.add('hidden'); }
-
-            if (htmlDivergenciasCadPopup !== '') {
-                listaDivCad.innerHTML = htmlDivergenciasCadPopup;
-                // blocoDivCad.classList.remove('hidden');
-                // Removed display as per request
-            } else { blocoDivCad.classList.add('hidden'); }
 
             if (htmlAlertas50kPopup !== '') {
                 lista50k.innerHTML = htmlAlertas50kPopup;
