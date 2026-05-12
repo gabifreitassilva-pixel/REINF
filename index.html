@@ -1381,8 +1381,8 @@
                     <div class="flex justify-between items-start gap-2">
                         <input type="text" value="${valRazao}" class="text-[10px] font-black text-slate-800 uppercase leading-tight flex-grow bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none w-full" placeholder="RAZÃO SOCIAL" title="Razão Social" onchange="window.editarClienteCadastro('${cli.id}', 'razao', this)">
                         <div class="flex items-center gap-1 flex-shrink-0">
-                            <button onclick="window.adicionarSocio('${cli.id}')" class="text-indigo-400 hover:text-indigo-700 text-[9px] font-bold leading-none transition-colors border border-indigo-200 px-1 py-0.5 rounded" title="Adicionar Novo Sócio para esta Empresa">➕ SÓCIO</button>
-                            <button onclick="window.excluirCliente('${cli.id}')" class="text-red-400 hover:text-red-700 text-lg leading-none transition-colors" title="Excluir Cliente">&times;</button>
+                            <button onclick="window.adicionarSocio('${cli.id}')" class="text-indigo-400 hover:text-indigo-700 text-[9px] font-bold LED-none transition-colors border border-indigo-200 px-1 py-0.5 rounded" title="Adicionar Novo Sócio para esta Empresa">➕ SÓCIO</button>
+                            <button onclick="window.excluirCliente('${cli.id}')" class="text-red-400 hover:text-red-700 text-lg LED-none transition-colors" title="Excluir Cliente">&times;</button>
                         </div>
                     </div>
                     <div class="flex gap-2 w-full">
@@ -1541,12 +1541,12 @@
                 <div class="mb-3 bg-white p-2.5 rounded-lg border border-slate-200 text-[10px] shadow-sm">
                     <div class="flex justify-between items-center border-b border-slate-100 mb-2 pb-1.5">
                         <span class="text-blue-600 font-black uppercase tracking-tight">${reg.usuario}</span>
-                        <div class="text-right leading-none">
+                        <div class="text-right LED-none">
                             <span class="text-slate-400 font-bold block">${reg.mes}</span>
                             <span class="text-slate-300 text-[8px]">${reg.data}</span>
                         </div>
                     </div>
-                    ${reg.alteracoes.map(a => `<div class="text-slate-700 py-0.5 leading-tight">• ${a}</div>`).join('')}
+                    ${reg.alteracoes.map(a => `<div class="text-slate-700 py-0.5 LED-tight">• ${a}</div>`).join('')}
                 </div>
             `).join('');
         };
@@ -1976,7 +1976,7 @@
                 let config = window.appState.mesesConfig[mes] || { visible: true, data: '', usuario: '' };
                 if (config.visible) {
                     hasVisible = true;
-                    let metaInfo = config.data ? `<div class="text-[8px] font-bold text-blue-500 lowercase leading-tight mt-1">Imp: ${config.data.split(' ')[0]} por <span class="uppercase">${config.usuario}</span></div>` : '';
+                    let metaInfo = config.data ? `<div class="text-[8px] font-bold text-blue-500 lowercase LED-tight mt-1">Imp: ${config.data.split(' ')[0]} por <span class="uppercase">${config.usuario}</span></div>` : '';
                     
                     tr1 += `<th colspan="3" onclick="window.toggleMes('${mes}')" class="cursor-pointer hover:bg-red-50 border-b border-blue-200 bg-blue-100 text-blue-900 font-black tracking-tight" title="Clique para Ocultar">
                         MÊS: ${mes}${metaInfo}
@@ -2261,7 +2261,7 @@
             let colIndexFolha = -1;
             
             // Varre as primeiras linhas para achar os nomes corretos das colunas
-            for(let i=0; i<Math.min(20, linhas.length); i++) {
+            for(let i=0; i<Math.min(30, linhas.length); i++) {
                 let colunas = linhas[i].toUpperCase().split('\t');
                 
                 // Procura Antecipação
@@ -2324,7 +2324,7 @@
 
                 // --- COLETA DE VALORES ---
                 let ant = '-';
-                let lancImport = '';
+                let lancImport = '-';
 
                 // Busca Antecipação pelo índice dinâmico ou fixo (fallback)
                 if (colIndexAntec !== -1) {
@@ -2335,10 +2335,18 @@
 
                 // Busca Lançado na Folha pelo índice dinâmico EXATO
                 if (colIndexFolha !== -1) {
-                    lancImport = cols[colIndexFolha]?.trim() || '';
-                    // Limpeza para garantir 'OK' ou 'NT' sem espaços ou sufixos
-                    lancImport = lancImport.toUpperCase().replace(/[^A-Z]/g, '').substring(0, 2);
-                    if (!['OK', 'NT'].includes(lancImport)) lancImport = '';
+                    let rawFolha = (cols[colIndexFolha] || '').trim().toUpperCase();
+                    // Captura literal do que está lá (OK, NT ou branco)
+                    if (rawFolha === 'OK' || rawFolha === 'NT') {
+                        lancImport = rawFolha;
+                    } else if (rawFolha === '' || rawFolha === 'FALSE') {
+                        lancImport = '-';
+                    } else {
+                        // Caso venha algo diferente mas contenha as palavras chave
+                        if (rawFolha.includes('OK')) lancImport = 'OK';
+                        else if (rawFolha.includes('NT')) lancImport = 'NT';
+                        else lancImport = '-';
+                    }
                 }
 
                 let old = cli.mensal[mesRef];
@@ -2350,16 +2358,17 @@
                     htmlAlertas50kPopup += `<li><b>${cli.razao}</b> - R$ ${ant}</li>`;
                 }
 
-                // Logs de alteração
+                // Logs de alteração de valor
                 if (old && oldAntec !== '-' && oldAntec !== ant && ant !== '-') {
                     htmlAlteracoesPopup += `<li><b>${cli.razao}</b>: R$ ${oldAntec} ➔ R$ ${ant}</li>`;
                     logAlteracoesValores.push(`<span class="text-amber-500 font-bold">VALOR:</span> <b>${cli.razao}</b> | R$ ${oldAntec} ➔ R$ ${ant}`);
                 }
 
                 // --- SALVAMENTO DOS DADOS NO MÊS ---
+                // Agora lancImport substitui o que estava lá, permitindo inclusive limpar o campo (blank)
                 cli.mensal[mesRef] = { 
                     antec: ant, 
-                    lancado: (lancImport === 'OK' || lancImport === 'NT') ? lancImport : oldLancado, 
+                    lancado: lancImport, 
                     reinf: old?.reinf || '-' 
                 };
             });
