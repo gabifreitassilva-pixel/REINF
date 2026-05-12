@@ -2246,13 +2246,15 @@
             for(let i=0; i<Math.min(10, linhas.length); i++) {
                 let colunas = linhas[i].toUpperCase().split('\t');
                 let foundA = colunas.findIndex(c => c.includes('ANTEC'));
-                if (foundA !== -1) {
-                    colIndexAntec = foundA;
-                    // Procura coluna da folha (se não achar pelo nome, assume que é a coluna a seguir à antecipação)
-                    let foundF = colunas.findIndex(c => c.includes('FOLHA') || c.includes('LANÇADO') || c.includes('LANCADO'));
-                    colIndexFolha = (foundF !== -1) ? foundF : foundA + 1;
-                    break;
-                }
+                let foundF = colunas.findIndex(c => {
+                    let text = c.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                    return text.includes('LANCADO NA FOLHA') || text.includes('FOLHA');
+                });
+                
+                if (foundA !== -1) colIndexAntec = foundA;
+                if (foundF !== -1) colIndexFolha = foundF;
+                
+                if (colIndexAntec !== -1 && colIndexFolha !== -1) break;
             }
 
             linhas.forEach(linha => {
@@ -2360,17 +2362,20 @@
                 let ant = '-';
                 let lancImport = '';
 
-                // SE ACHOU A COLUNA PELO NOME "ANTEC", USA O ÍNDICE EXATO. SENÃO, USA O FALLBACK ANTIGO.
+                // Busca Antecipação
                 if (colIndexAntec !== -1) {
                     ant = cols[colIndexAntec]?.trim() || '-';
-                    if (colIndexFolha !== -1) {
-                        lancImport = cols[colIndexFolha]?.trim() || '';
-                    }
                 } else {
                     let antStr1 = cols[offset + 11 + colShift]?.trim();
                     let antStr2 = cols[offset + 11]?.trim();
                     ant = antStr1 || antStr2 || '-';
-                    
+                }
+
+                // Busca Lançado na Folha de forma independente
+                if (colIndexFolha !== -1) {
+                    lancImport = cols[colIndexFolha]?.trim() || '';
+                } else {
+                    // Fallback antigo caso não tenha cabeçalho
                     let lancStr1 = cols[offset + 12 + colShift]?.trim();
                     let lancStr2 = cols[offset + 12]?.trim();
                     lancImport = lancStr1 || lancStr2 || '';
