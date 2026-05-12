@@ -2243,16 +2243,17 @@
             let colIndexAntec = -1;
             let colIndexFolha = -1;
             
-            for(let i=0; i<Math.min(10, linhas.length); i++) {
+            for(let i=0; i<Math.min(15, linhas.length); i++) {
                 let colunas = linhas[i].toUpperCase().split('\t');
+                
                 let foundA = colunas.findIndex(c => c.includes('ANTEC'));
                 let foundF = colunas.findIndex(c => {
-                    let text = c.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-                    return text.includes('LANCADO NA FOLHA') || text.includes('FOLHA');
+                    let text = c.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, ' ').trim();
+                    return text === 'LANCADO NA FOLHA' || text.includes('LANCADO NA FOLHA');
                 });
                 
-                if (foundA !== -1) colIndexAntec = foundA;
-                if (foundF !== -1) colIndexFolha = foundF;
+                if (foundA !== -1 && colIndexAntec === -1) colIndexAntec = foundA;
+                if (foundF !== -1 && colIndexFolha === -1) colIndexFolha = foundF;
                 
                 if (colIndexAntec !== -1 && colIndexFolha !== -1) break;
             }
@@ -2371,14 +2372,13 @@
                     ant = antStr1 || antStr2 || '-';
                 }
 
-                // Busca Lançado na Folha de forma independente
+                // Busca Lançado na Folha EXATAMENTE pela coluna mapeada no cabeçalho
                 if (colIndexFolha !== -1) {
                     lancImport = cols[colIndexFolha]?.trim() || '';
                 } else {
-                    // Fallback antigo caso não tenha cabeçalho
-                    let lancStr1 = cols[offset + 12 + colShift]?.trim();
-                    let lancStr2 = cols[offset + 12]?.trim();
-                    lancImport = lancStr1 || lancStr2 || '';
+                    // REMOVIDO o fallback que puxava a coluna errada (offset + 12).
+                    // Se não achar o cabeçalho exato "LANÇADO NA FOLHA", não puxa nada incorreto.
+                    lancImport = '';
                 }
                 
                 let old = cli.mensal[mesRef];
