@@ -1412,8 +1412,8 @@
                     <div class="flex justify-between items-start gap-2">
                         <input type="text" value="${valRazao}" class="text-[10px] font-black text-slate-800 uppercase leading-tight flex-grow bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none w-full" placeholder="RAZÃO SOCIAL" title="Razão Social" onchange="window.editarClienteCadastro('${cli.id}', 'razao', this)">
                         <div class="flex items-center gap-1 flex-shrink-0">
-                            <button onclick="window.adicionarSocio('${cli.id}')" class="text-indigo-400 hover:text-indigo-700 text-[9px] font-bold LED-none transition-colors border border-indigo-200 px-1 py-0.5 rounded" title="Adicionar Novo Sócio para esta Empresa">➕ SÓCIO</button>
-                            <button onclick="window.excluirCliente('${cli.id}')" class="text-red-400 hover:text-red-700 text-lg LED-none transition-colors" title="Excluir Cliente">&times;</button>
+                            <button onclick="window.adicionarSocio('${cli.id}')" class="text-indigo-400 hover:text-indigo-700 text-[9px] font-bold leading-none transition-colors border border-indigo-200 px-1 py-0.5 rounded" title="Adicionar Novo Sócio para esta Empresa">➕ SÓCIO</button>
+                            <button onclick="window.excluirCliente('${cli.id}')" class="text-red-400 hover:text-red-700 text-lg leading-none transition-colors" title="Excluir Cliente">&times;</button>
                         </div>
                     </div>
                     <div class="flex gap-2 w-full">
@@ -1572,12 +1572,12 @@
                 <div class="mb-3 bg-white p-2.5 rounded-lg border border-slate-200 text-[10px] shadow-sm">
                     <div class="flex justify-between items-center border-b border-slate-100 mb-2 pb-1.5">
                         <span class="text-blue-600 font-black uppercase tracking-tight">${reg.usuario}</span>
-                        <div class="text-right LED-none">
+                        <div class="text-right leading-none">
                             <span class="text-slate-400 font-bold block">${reg.mes}</span>
                             <span class="text-slate-300 text-[8px]">${reg.data}</span>
                         </div>
                     </div>
-                    ${reg.alteracoes.map(a => `<div class="text-slate-700 py-0.5 LED-tight">• ${a}</div>`).join('')}
+                    ${reg.alteracoes.map(a => `<div class="text-slate-700 py-0.5 leading-tight">• ${a}</div>`).join('')}
                 </div>
             `).join('');
         };
@@ -2007,7 +2007,7 @@
                 let config = window.appState.mesesConfig[mes] || { visible: true, data: '', usuario: '' };
                 if (config.visible) {
                     hasVisible = true;
-                    let metaInfo = config.data ? `<div class="text-[8px] font-bold text-blue-500 lowercase LED-tight mt-1">Imp: ${config.data.split(' ')[0]} por <span class="uppercase">${config.usuario}</span></div>` : '';
+                    let metaInfo = config.data ? `<div class="text-[8px] font-bold text-blue-500 lowercase leading-tight mt-1">Imp: ${config.data.split(' ')[0]} por <span class="uppercase">${config.usuario}</span></div>` : '';
                     
                     tr1 += `<th colspan="3" onclick="window.toggleMes('${mes}')" class="cursor-pointer hover:bg-red-50 border-b border-blue-200 bg-blue-100 text-blue-900 font-black tracking-tight" title="Clique para Ocultar">
                         MÊS: ${mes}${metaInfo}
@@ -2075,17 +2075,28 @@
                     optionsHtml += `<option value="${opt}" ${cli.conta === opt ? 'selected' : ''}>${opt}</option>`;
                 });
 
-                // NOVIDADE: Verifica se REINF tem algo preenchido
-                let hasReinfFilled = false;
+                // NOVIDADE: Lógica de linha verde mais escuro apenas se TODOS os REINFs devidos estiverem OK
+                let allReinfOk = true;
+                let hasAnyValue = false;
+                
                 window.appState.meses.forEach(m => {
                     if (window.appState.mesesConfig[m]?.visible) {
-                        let r = cli.mensal[m]?.reinf;
-                        if (r && r !== '-' && r.trim() !== '') hasReinfFilled = true;
+                        let d = cli.mensal[m];
+                        if (d) {
+                            let vlr = window.parseCurrency(d.antec);
+                            if (vlr > 50000 || (vlr > 0 && vlr <= 50000) || d.antec === 'S/M') {
+                                hasAnyValue = true;
+                                let r = d.reinf ? d.reinf.toUpperCase() : '';
+                                if (r === '-' || r.trim() === '') {
+                                    allReinfOk = false;
+                                }
+                            }
+                        }
                     }
                 });
 
-                // Define as cores da linha baseadas no preenchimento do REINF
-                let trBgClass = hasReinfFilled ? 'bg-emerald-50 hover:bg-emerald-100' : 'hover:bg-blue-50';
+                // Fundo da linha: Verde mais escuro se tudo ok, se não, normal.
+                let trBgClass = (hasAnyValue && allReinfOk) ? 'bg-emerald-100 hover:bg-emerald-200' : 'bg-white hover:bg-blue-50';
 
                 // Lógica de Cores dos Botões (Cinza quando inativo, Colorido quando usado)
                 let isManual = cli.tipoCobranca === 'manual';
@@ -2134,11 +2145,27 @@
                         
                         if (vlr > 50000) {
                             bgAntec = "bg-red-50"; fontAntec = "text-red-700";
-                            badgeHtml = `<div class="text-[8px] bg-red-600 text-white rounded px-1.5 mt-0.5 inline-block font-black tracking-widest LED-tight shadow-sm">MENSAL >50k</div>`;
+                            badgeHtml = `<div class="text-[8px] bg-red-600 text-white rounded px-1.5 mt-0.5 inline-block font-black tracking-widest leading-tight shadow-sm">MENSAL >50k</div>`;
                         } else if (vlr > 0 || d.antec === 'S/M') {
                             bgAntec = "bg-emerald-50"; fontAntec = "text-emerald-800";
-                            badgeHtml = `<div class="text-[8px] bg-emerald-500 text-white rounded px-1.5 mt-0.5 inline-block font-black tracking-widest LED-tight shadow-sm">TRIMESTRAL</div>`;
+                            badgeHtml = `<div class="text-[8px] bg-emerald-500 text-white rounded px-1.5 mt-0.5 inline-block font-black tracking-widest leading-tight shadow-sm">TRIMESTRAL</div>`;
                         }
+
+                        // --- NOVA LÓGICA REINF (Cores das Caixinhas) ---
+                        let reinfVal = (d.reinf || '-').toUpperCase();
+                        let isReinfFilled = reinfVal !== '-' && reinfVal.trim() !== '';
+                        let bgReinfTd = "bg-green-50/20"; // default se não tiver valor
+                        
+                        if (vlr > 50000) {
+                            // Mensal (Urgente) -> Vermelho se vazio, Verde se preenchido
+                            bgReinfTd = isReinfFilled ? "bg-emerald-200/50" : "bg-red-100";
+                        } else if (vlr > 0 || d.antec === 'S/M') {
+                            // Trimestral -> Amarelo se vazio, Verde se preenchido
+                            bgReinfTd = isReinfFilled ? "bg-emerald-200/50" : "bg-amber-100";
+                        }
+
+                        let cReinfText = isReinfFilled ? 'text-emerald-800 font-black' : 'text-slate-400';
+                        // ------------------------------------------------
 
                         row += `
                             <td class="${bgAntec} font-black ${fontAntec} align-middle">
@@ -2148,8 +2175,8 @@
                             <td class="align-middle">
                                 <input type="text" class="cell-input ${cLancado}" value="${d.lancado}" onchange="window.atualizarCelulaManual('${cli.id}', '${m}', 'lancado', this, '${d.lancado}')">
                             </td>
-                            <td class="bg-green-50/20 align-middle">
-                                <input type="text" class="cell-input text-emerald-700 uppercase" value="${d.reinf}" onchange="window.atualizarCelulaManual('${cli.id}', '${m}', 'reinf', this, '${d.reinf}')">
+                            <td class="${bgReinfTd} align-middle transition-colors">
+                                <input type="text" class="cell-input ${cReinfText} uppercase" value="${d.reinf}" onchange="window.atualizarCelulaManual('${cli.id}', '${m}', 'reinf', this, '${d.reinf}')">
                             </td>`;
                     }
                 });
