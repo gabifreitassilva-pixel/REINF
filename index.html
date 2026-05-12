@@ -2193,11 +2193,29 @@
             let htmlAlteracoesPopup = '';
             let htmlAlertas50kPopup = '';
             let htmlNovosPopup = '';
+            let htmlFaltantesPopup = '';
             
             let logAlteracoesValores = [];
             let logNovosClientes = [];
+            let logFaltantes = [];
             
             let chavesImportadasNoMes = new Set();
+
+            // DETEÇÃO DINÂMICA DE COLUNAS (ANTECIPAÇÃO E FOLHA)
+            let colIndexAntec = -1;
+            let colIndexFolha = -1;
+            
+            for(let i=0; i<Math.min(10, linhas.length); i++) {
+                let colunas = linhas[i].toUpperCase().split('\t');
+                let foundA = colunas.findIndex(c => c.includes('ANTEC'));
+                if (foundA !== -1) {
+                    colIndexAntec = foundA;
+                    // Procura coluna da folha (se não achar pelo nome, assume que é a coluna a seguir à antecipação)
+                    let foundF = colunas.findIndex(c => c.includes('FOLHA') || c.includes('LANÇADO') || c.includes('LANCADO'));
+                    colIndexFolha = (foundF !== -1) ? foundF : foundA + 1;
+                    break;
+                }
+            }
 
             linhas.forEach(linha => {
                 if (linha.toUpperCase().includes('INTEGRAÇOES')) return;
@@ -2301,14 +2319,24 @@
                 
                 chavesImportadasNoMes.add(cli.id);
 
-                let antStr1 = cols[offset + 11 + colShift]?.trim();
-                let antStr2 = cols[offset + 11]?.trim();
-                let ant = antStr1 || antStr2 || '-';
-                
-                // NOVA CAPTURA: Lançado na Folha (geralmente a coluna a seguir à antecipação, 12 ou 13)
-                let lancStr1 = cols[offset + 12 + colShift]?.trim();
-                let lancStr2 = cols[offset + 12]?.trim();
-                let lancImport = lancStr1 || lancStr2 || '';
+                let ant = '-';
+                let lancImport = '';
+
+                // SE ACHOU A COLUNA PELO NOME "ANTEC", USA O ÍNDICE EXATO. SENÃO, USA O FALLBACK ANTIGO.
+                if (colIndexAntec !== -1) {
+                    ant = cols[colIndexAntec]?.trim() || '-';
+                    if (colIndexFolha !== -1) {
+                        lancImport = cols[colIndexFolha]?.trim() || '';
+                    }
+                } else {
+                    let antStr1 = cols[offset + 11 + colShift]?.trim();
+                    let antStr2 = cols[offset + 11]?.trim();
+                    ant = antStr1 || antStr2 || '-';
+                    
+                    let lancStr1 = cols[offset + 12 + colShift]?.trim();
+                    let lancStr2 = cols[offset + 12]?.trim();
+                    lancImport = lancStr1 || lancStr2 || '';
+                }
                 
                 let old = cli.mensal[mesRef];
                 let oldAntec = old?.antec || '-';
