@@ -94,6 +94,19 @@
         </div>
     </div>
 
+    <!-- Modal Admin -->
+    <div id="modalAdmin" class="fixed inset-0 bg-slate-900 bg-opacity-80 flex justify-center items-center z-[110] hidden px-4">
+        <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-sm text-center border-t-4 border-red-600">
+            <h2 class="text-xl font-black mb-2 text-slate-800 uppercase tracking-tight">Modo Administrador</h2>
+            <p class="text-xs text-slate-500 mb-4 font-medium">Digite a senha para habilitar a exclusão de registros.</p>
+            <input type="password" id="adminPasswordInput" class="w-full border-2 border-slate-200 p-3 rounded-lg mb-4 text-center font-bold text-lg focus:border-red-500 outline-none" placeholder="****">
+            <div class="flex gap-2">
+                <button onclick="document.getElementById('modalAdmin').classList.add('hidden')" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-black px-4 py-2 rounded-lg w-1/3 transition-all uppercase">Cancelar</button>
+                <button onclick="window.validarAdmin()" class="bg-red-600 hover:bg-red-700 text-white font-black px-4 py-2 rounded-lg w-2/3 shadow-lg transition-all uppercase">Desbloquear</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal de Configuração do Gist -->
     <div id="modalGist" class="fixed inset-0 bg-slate-900 bg-opacity-80 flex justify-center items-center z-[100] hidden px-4">
         <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-md text-center border-t-4 border-emerald-600 relative">
@@ -142,10 +155,19 @@
                     </h3>
                     <ul id="listaAlertas50kModal" class="text-[11px] font-mono text-slate-700 space-y-1.5 list-disc pl-4"></ul>
                 </div>
+                <!-- Bloco de Faltantes na Planilha -->
+                <div id="blocoFaltantesModal" class="hidden">
+                    <h3 class="text-[11px] font-black text-orange-600 uppercase border-b border-orange-200 pb-1 mb-2 tracking-widest flex items-center justify-between">
+                        <span>⚠️ Ausentes na Importação <span id="badgeCountFaltantes" class="bg-orange-200 text-orange-800 px-2 py-0.5 rounded-full text-[9px] ml-1">0</span></span>
+                        <button onclick="window.imprimirRelatorioImportacao('faltantes')" class="bg-white text-orange-700 px-2 py-0.5 rounded border border-orange-200 hover:bg-orange-50 flex items-center gap-1 shadow-sm font-bold tracking-widest text-[9px] transition-colors" title="Imprimir Relatório">🖨️ IMPRIMIR</button>
+                    </h3>
+                    <p class="text-[9px] text-slate-400 mb-2 italic">As empresas abaixo constam no seu Cadastro, mas não foram encontradas na planilha importada agora.</p>
+                    <ul id="listaFaltantesModal" class="text-[10px] font-mono text-slate-600 space-y-1 list-disc pl-4 max-h-40 overflow-y-auto"></ul>
+                </div>
                 <!-- Bloco de Clientes Novos/Não Cadastrados (Cadastros Faltantes) -->
                 <div id="blocoNovosModal" class="hidden">
-                    <h3 class="text-[11px] font-black text-blue-600 uppercase border-b border-blue-200 pb-1 mb-2 tracking-widest flex justify-between items-center">
-                        <span>✨ Cadastros Faltantes (Novos na Planilha)</span>
+                    <h3 class="text-[11px] font-black text-blue-600 uppercase border-b border-blue-200 pb-1 mb-2 tracking-widest mt-2 flex justify-between items-center">
+                        <span>✨ Cadastros Novos na Planilha (Faltam Cad.)</span>
                         <button onclick="window.imprimirRelatorioImportacao('novos')" class="bg-white text-blue-700 px-2 py-0.5 rounded border border-blue-200 hover:bg-blue-50 flex items-center gap-1 shadow-sm font-bold tracking-widest text-[9px] transition-colors" title="Imprimir Relatório">🖨️ IMPRIMIR</button>
                     </h3>
                     <p class="text-[9px] text-slate-400 mb-2 italic">Estas empresas vieram na importação mas não estavam no seu Cadastro. Foram adicionadas automaticamente.</p>
@@ -299,11 +321,12 @@
                 <button onclick="togglePainel('painelHistorico')" class="text-slate-400 hover:text-black text-2xl font-light leading-none">&times;</button>
             </div>
             <div class="flex flex-wrap border-b border-slate-200 text-[8px] font-black uppercase text-center bg-white cursor-pointer flex-shrink-0">
-                <div id="tabLogImportacao" onclick="window.setLogTab('importacao')" class="flex-1 py-2.5 text-blue-600 border-b-2 border-blue-600 bg-blue-50 transition-colors">Import</div>
-                <div id="tabLogModificacoes" onclick="window.setLogTab('modificacoes')" class="flex-1 py-2.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 border-b-2 border-transparent transition-colors">Modif.</div>
-                <div id="tabLogNovos" onclick="window.setLogTab('novos')" class="flex-1 py-2.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 border-b-2 border-transparent transition-colors" title="Cadastros Faltantes (Novos)">Faltam Cad.</div>
-                <div id="tabLogPlanilhas" onclick="window.setLogTab('planilhas')" class="flex-1 py-2.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 border-b-2 border-transparent transition-colors">Salvos</div>
-                <div id="tabLogExtratos" onclick="window.setLogTab('extratos')" class="flex-1 py-2.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 border-b-2 border-transparent transition-colors">Extratos</div>
+                <div id="tabLogImportacao" onclick="window.setLogTab('importacao')" class="w-1/3 py-2.5 text-blue-600 border-b-2 border-blue-600 bg-blue-50 transition-colors">Import</div>
+                <div id="tabLogModificacoes" onclick="window.setLogTab('modificacoes')" class="w-1/3 py-2.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 border-b-2 border-transparent transition-colors">Modif.</div>
+                <div id="tabLogFaltantes" onclick="window.setLogTab('faltantes')" class="w-1/3 py-2.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 border-b-2 border-transparent transition-colors">Faltam Cad.</div>
+                <div id="tabLogNovos" onclick="window.setLogTab('novos')" class="w-1/3 py-2.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 border-b-2 border-transparent transition-colors">Novos</div>
+                <div id="tabLogPlanilhas" onclick="window.setLogTab('planilhas')" class="w-1/3 py-2.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 border-b-2 border-transparent transition-colors">Salvos</div>
+                <div id="tabLogExtratos" onclick="window.setLogTab('extratos')" class="w-1/3 py-2.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 border-b-2 border-transparent transition-colors">Extratos</div>
             </div>
             <div class="p-3 overflow-y-auto flex-grow bg-slate-50 font-mono" id="conteudoHistorico"></div>
             <div class="p-3 border-t border-slate-200 text-center bg-white flex-shrink-0">
@@ -394,19 +417,30 @@
                 document.getElementById('btnAdmin').innerHTML = '🔐 Admin';
                 window.renderTable();
             } else {
-                let pass = prompt("Digite a senha do Administrador:");
-                if(pass === 'admin') {
-                    window.isAdmin = true;
-                    document.getElementById('btnAdmin').classList.replace('bg-slate-100', 'bg-red-100');
-                    document.getElementById('btnAdmin').classList.replace('text-slate-500', 'text-red-700');
-                    document.getElementById('btnAdmin').innerHTML = '🔓 ADMIN ATIVO';
-                    alert("Modo Administrador ativado! Agora você pode excluir linhas diretamente na Tabela Principal.");
-                    window.renderTable();
-                } else if(pass !== null) {
-                    alert("Senha incorreta!");
-                }
+                document.getElementById('adminPasswordInput').value = '';
+                document.getElementById('modalAdmin').classList.remove('hidden');
+                document.getElementById('adminPasswordInput').focus();
             }
         };
+
+        window.validarAdmin = function() {
+            let pass = document.getElementById('adminPasswordInput').value;
+            if(pass === '05583070') {
+                window.isAdmin = true;
+                document.getElementById('modalAdmin').classList.add('hidden');
+                document.getElementById('btnAdmin').classList.replace('bg-slate-100', 'bg-red-100');
+                document.getElementById('btnAdmin').classList.replace('text-slate-500', 'text-red-700');
+                document.getElementById('btnAdmin').innerHTML = '🔓 ADMIN ATIVO';
+                alert("Modo Administrador ativado! Agora você pode excluir linhas diretamente na Tabela Principal.");
+                window.renderTable();
+            } else {
+                alert("Senha incorreta!");
+            }
+        };
+
+        document.getElementById('adminPasswordInput').addEventListener('keypress', function(e){
+            if(e.key === 'Enter') window.validarAdmin();
+        });
 
         // ==========================================
         // GITHUB GIST E PERSISTÊNCIA LOCAL
@@ -912,8 +946,11 @@
             } else if (tipo === '50k') {
                 titulo = 'Relatório de Distribuição > 50 Mil (Atenção IR)';
                 listaId = 'listaAlertas50kModal';
+            } else if (tipo === 'faltantes') {
+                titulo = 'Relatório de Clientes Faltantes (Sem Movimento)';
+                listaId = 'listaFaltantesModal';
             } else if (tipo === 'novos') {
-                titulo = 'Relatório de Cadastros Faltantes (Novos Clientes na Planilha)';
+                titulo = 'Relatório de Novos Clientes na Planilha (Sem Cadastro Prévio)';
                 listaId = 'listaNovosModal';
             }
 
@@ -1400,13 +1437,13 @@
 
         window.setLogTab = function(tab) {
             window.currentLogTab = tab;
-            const tabs = ['importacao', 'modificacoes', 'novos', 'planilhas', 'extratos'];
+            const tabs = ['importacao', 'modificacoes', 'faltantes', 'novos', 'planilhas', 'extratos'];
             tabs.forEach(t => {
                 const el = document.getElementById('tabLog' + t.charAt(0).toUpperCase() + t.slice(1));
                 if(t === tab) {
-                    el.className = "flex-1 py-2.5 text-blue-600 border-b-2 border-blue-600 bg-blue-50 transition-colors";
+                    el.className = "w-1/3 py-2.5 text-blue-600 border-b-2 border-blue-600 bg-blue-50 transition-colors";
                 } else {
-                    el.className = "flex-1 py-2.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 border-b-2 border-transparent transition-colors";
+                    el.className = "w-1/3 py-2.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 border-b-2 border-transparent transition-colors";
                 }
             });
             window.renderHistorico();
@@ -1474,6 +1511,7 @@
             const logsFiltrados = window.appState.historicoGeral.filter(reg => {
                 if (window.currentLogTab === 'importacao') return reg.tipo === 'importacao_resumo';
                 if (window.currentLogTab === 'modificacoes') return reg.tipo === 'modificacao' || reg.tipo === 'edicao';
+                if (window.currentLogTab === 'faltantes') return reg.tipo === 'faltante';
                 if (window.currentLogTab === 'novos') return reg.tipo === 'novo_cliente';
                 return false;
             });
@@ -2362,6 +2400,16 @@
                     reinf: old?.reinf || '-' 
                 };
             });
+            
+            let countFaltantes = 0;
+            
+            window.appState.clientes.forEach(cli => {
+                if (!chavesImportadasNoMes.has(cli.id)) {
+                    countFaltantes++;
+                    htmlFaltantesPopup += `<li><b>${cli.razao}</b> ${cli.contato ? `(${cli.contato})` : ''}</li>`;
+                    logFaltantes.push(`<span class="text-red-500 font-bold">FALTANTE:</span> <b>${cli.razao}</b> não veio na importação de ${mesRef}.`);
+                }
+            });
 
             // SALVA LOGS POR CATEGORIA PARA OS TABS FUNCIONAREM CORRETAMENTE
             if (logAlteracoesValores.length > 0) {
@@ -2369,6 +2417,9 @@
             }
             if (logNovosClientes.length > 0) {
                 window.appState.historicoGeral.push({ tipo: 'novo_cliente', data: dataAtual, usuario: window.appState.currentUser, mes: mesRef, alteracoes: logNovosClientes });
+            }
+            if (logFaltantes.length > 0) {
+                window.appState.historicoGeral.push({ tipo: 'faltante', data: dataAtual, usuario: window.appState.currentUser, mes: mesRef, alteracoes: logFaltantes });
             }
 
             window.appState.historicoGeral.push({ 
@@ -2390,10 +2441,13 @@
             const listaAlt = document.getElementById('listaAlteracoesModal');
             const lista50k = document.getElementById('listaAlertas50kModal');
             const listaNovos = document.getElementById('listaNovosModal');
+            const listaFalt = document.getElementById('listaFaltantesModal');
             
             const blocoAlt = document.getElementById('blocoAlteracoesModal');
             const bloco50k = document.getElementById('blocoAlertas50kModal');
             const blocoNovos = document.getElementById('blocoNovosModal');
+            const blocoFalt = document.getElementById('blocoFaltantesModal');
+            const badgeFalt = document.getElementById('badgeCountFaltantes');
 
             let abrirModal = false;
 
@@ -2408,6 +2462,13 @@
                 bloco50k.classList.remove('hidden');
                 abrirModal = true;
             } else { bloco50k.classList.add('hidden'); }
+
+            if (htmlFaltantesPopup !== '') {
+                listaFalt.innerHTML = htmlFaltantesPopup;
+                badgeFalt.innerText = countFaltantes;
+                blocoFalt.classList.remove('hidden');
+                abrirModal = true;
+            } else { blocoFalt.classList.add('hidden'); }
 
             if (htmlNovosPopup !== '') {
                 listaNovos.innerHTML = htmlNovosPopup;
