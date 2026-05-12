@@ -350,10 +350,17 @@
 
         <!-- Painel Classificacao Reinf -->
         <div id="painelClassificacao" class="painel-lateral painel-oculto absolute top-0 right-0 h-full w-[600px] max-w-full bg-white shadow-2xl border-l border-slate-200 z-50 flex flex-col">
-            <div class="p-4 bg-blue-50 border-b border-blue-200 flex justify-between items-center">
+            <div class="p-4 bg-blue-50 border-b border-blue-200 flex justify-between items-center flex-shrink-0">
                 <h2 class="text-sm font-black text-blue-900 uppercase tracking-tighter">Classificação Reinf e Previsão</h2>
                 <button onclick="togglePainel('painelClassificacao')" class="text-slate-400 hover:text-black text-2xl font-light leading-none">&times;</button>
             </div>
+            
+            <!-- ABAS DO PAINEL REINF -->
+            <div class="flex flex-wrap border-b border-slate-200 text-[8px] font-black uppercase text-center bg-white cursor-pointer flex-shrink-0">
+                <div id="tabReinfPrevisao" onclick="window.setReinfTab('previsao')" class="w-1/2 py-2.5 text-blue-600 border-b-2 border-blue-600 bg-blue-50 transition-colors">Previsão e Valores</div>
+                <div id="tabReinfEntregas" onclick="window.setReinfTab('entregas')" class="w-1/2 py-2.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 border-b-2 border-transparent transition-colors">Status de Entregas</div>
+            </div>
+
             <div class="p-4 bg-slate-50 flex-shrink-0 border-b">
                 <label class="text-[9px] font-bold text-slate-500 uppercase">Selecione os Meses para Análise:</label>
                 <div id="containerMesesReinf" class="flex flex-wrap gap-2 mt-2">
@@ -1637,6 +1644,21 @@
         // ==========================================
         // CÁLCULO DE IR E CLASSIFICAÇÃO MULTI-MÊS COM IMPRESSÃO (TABELA DINÂMICA)
         // ==========================================
+        window.currentReinfTab = 'previsao';
+
+        window.setReinfTab = function(tab) {
+            window.currentReinfTab = tab;
+            ['previsao', 'entregas'].forEach(t => {
+                const el = document.getElementById('tabReinf' + t.charAt(0).toUpperCase() + t.slice(1));
+                if(t === tab) {
+                    el.className = "w-1/2 py-2.5 text-blue-600 border-b-2 border-blue-600 bg-blue-50 transition-colors";
+                } else {
+                    el.className = "w-1/2 py-2.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 border-b-2 border-transparent transition-colors";
+                }
+            });
+            window.renderClassificacao();
+        };
+
         window.renderFiltroReinf = function() {
             const container = document.getElementById('containerMesesReinf');
             if(!container) return;
@@ -1667,130 +1689,311 @@
                 return;
             }
 
-            let dadosAgrupadosMensal = {};
-            let dadosAgrupadosTrimestral = {};
-            let mesesMensal = new Set();
-            let mesesTrimestral = new Set();
-            let contMensal = 0;
-            let contTrimestral = 0;
+            if (window.currentReinfTab === 'previsao') {
+                let dadosAgrupadosMensal = {};
+                let dadosAgrupadosTrimestral = {};
+                let mesesMensal = new Set();
+                let mesesTrimestral = new Set();
+                let contMensal = 0;
+                let contTrimestral = 0;
 
-            window.appState.clientes.forEach(cli => {
-                let chave = cli.id;
+                window.appState.clientes.forEach(cli => {
+                    let chave = cli.id;
+                    
+                    mesesSelecionados.forEach(mes => {
+                        if (cli.mensal[mes]) {
+                            let vlr = window.parseCurrency(cli.mensal[mes].antec);
+                            
+                            // Lógica Mensal (> 50k)
+                            if (vlr > 50000) {
+                                if (!dadosAgrupadosMensal[chave]) dadosAgrupadosMensal[chave] = { razao: cli.razao, contato: cli.contato, meses: {} };
+                                let ir = vlr * 0.10;
+                                dadosAgrupadosMensal[chave].meses[mes] = {
+                                    antec: cli.mensal[mes].antec,
+                                    ir: ir.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'})
+                                };
+                                mesesMensal.add(mes);
+                                contMensal++;
+                            } 
+                            // Lógica Trimestral (até 50k)
+                            else if (vlr > 0 || cli.mensal[mes].antec === 'S/M') {
+                                if (!dadosAgrupadosTrimestral[chave]) dadosAgrupadosTrimestral[chave] = { razao: cli.razao, contato: cli.contato, meses: {} };
+                                dadosAgrupadosTrimestral[chave].meses[mes] = {
+                                    antec: cli.mensal[mes].antec
+                                };
+                                mesesTrimestral.add(mes);
+                                contTrimestral++;
+                            }
+                        }
+                    });
+                });
+
+                let listaEmpresasMensal = Object.values(dadosAgrupadosMensal).sort((a, b) => a.razao.localeCompare(b.razao));
+                let listaEmpresasTrimestral = Object.values(dadosAgrupadosTrimestral).sort((a, b) => a.razao.localeCompare(b.razao));
                 
-                mesesSelecionados.forEach(mes => {
-                    if (cli.mensal[mes]) {
-                        let vlr = window.parseCurrency(cli.mensal[mes].antec);
-                        
-                        // Lógica Mensal (> 50k)
-                        if (vlr > 50000) {
-                            if (!dadosAgrupadosMensal[chave]) dadosAgrupadosMensal[chave] = { razao: cli.razao, contato: cli.contato, meses: {} };
-                            let ir = vlr * 0.10;
-                            dadosAgrupadosMensal[chave].meses[mes] = {
-                                antec: cli.mensal[mes].antec,
-                                ir: ir.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'})
-                            };
-                            mesesMensal.add(mes);
-                            contMensal++;
-                        } 
-                        // Lógica Trimestral (até 50k)
-                        else if (vlr > 0 || cli.mensal[mes].antec === 'S/M') {
-                            if (!dadosAgrupadosTrimestral[chave]) dadosAgrupadosTrimestral[chave] = { razao: cli.razao, contato: cli.contato, meses: {} };
-                            dadosAgrupadosTrimestral[chave].meses[mes] = {
-                                antec: cli.mensal[mes].antec
-                            };
-                            mesesTrimestral.add(mes);
-                            contTrimestral++;
+                let sortedMesesMensal = Array.from(mesesMensal).sort((a, b) => {
+                    let [ma, ya] = a.split('/'); let [mb, yb] = b.split('/');
+                    return new Date(ya, ma-1) - new Date(yb, mb-1);
+                });
+                let sortedMesesTrimestral = Array.from(mesesTrimestral).sort((a, b) => {
+                    let [ma, ya] = a.split('/'); let [mb, yb] = b.split('/');
+                    return new Date(ya, ma-1) - new Date(yb, mb-1);
+                });
+
+                container.innerHTML = `
+                    <div class="mb-6">
+                        <div class="bg-red-600 text-white text-[10px] font-black p-2 rounded shadow-md uppercase mb-2 flex justify-between items-center">
+                            <span>Envio Mensal (>50k): ${contMensal} ocorrências</span>
+                            <button onclick="window.imprimirClassificacao('mensal')" class="bg-white text-red-600 px-2 py-0.5 rounded hover:bg-red-50 flex items-center gap-1 shadow-sm font-bold tracking-widest text-[9px] transition-colors" title="Imprimir Relatório Mensal">
+                                🖨️ IMPRIMIR
+                            </button>
+                        </div>
+                        <div class="overflow-x-auto bg-white rounded shadow-sm border border-red-100">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="bg-red-50 text-red-900 text-[9px] uppercase border-b border-red-200">
+                                        <th class="p-2 border-r border-red-100">Razão Social</th>
+                                        <th class="p-2 border-r border-red-100">Contato</th>
+                                        ${sortedMesesMensal.map(m => `<th class="p-2 border-r border-red-100 text-center">${m}</th>`).join('')}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${listaEmpresasMensal.map(emp => `
+                                        <tr class="border-b border-slate-100 hover:bg-slate-50">
+                                            <td class="p-2 border-r border-slate-100 text-[9px] font-bold text-slate-800">${emp.razao}</td>
+                                            <td class="p-2 border-r border-slate-100 text-[9px] text-slate-500">${emp.contato || '-'}</td>
+                                            ${sortedMesesMensal.map(m => {
+                                                let d = emp.meses[m];
+                                                if(d) return `<td class="p-2 border-r border-slate-100 text-center align-top">
+                                                    <div class="font-bold text-slate-900 mb-0.5">${d.antec}</div>
+                                                    <div class="text-[8px] bg-red-100 text-red-800 font-bold px-1 rounded inline-block">IR: ${d.ir}</div>
+                                                </td>`;
+                                                return `<td class="p-2 border-r border-slate-100 text-center text-slate-300">-</td>`;
+                                            }).join('')}
+                                        </tr>
+                                    `).join('')}
+                                    ${listaEmpresasMensal.length === 0 ? `<tr><td colspan="10" class="p-4 text-center text-[9px] text-slate-400 italic">Nenhum dado mensal.</td></tr>` : ''}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="bg-emerald-600 text-white text-[10px] font-black p-2 rounded shadow-md uppercase mb-2 flex justify-between items-center">
+                            <span>Envio Trimestral (até 50k/SM): ${contTrimestral} ocorrências</span>
+                            <button onclick="window.imprimirClassificacao('trimestral')" class="bg-white text-emerald-700 px-2 py-0.5 rounded hover:bg-emerald-50 flex items-center gap-1 shadow-sm font-bold tracking-widest text-[9px] transition-colors" title="Imprimir Relatório Trimestral">
+                                🖨️ IMPRIMIR
+                            </button>
+                        </div>
+                        <div class="overflow-x-auto bg-white rounded shadow-sm border border-emerald-100">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="bg-emerald-50 text-emerald-900 text-[9px] uppercase border-b border-emerald-200">
+                                        <th class="p-2 border-r border-red-100">Razão Social</th>
+                                        <th class="p-2 border-r border-red-100">Contato</th>
+                                        ${sortedMesesTrimestral.map(m => `<th class="p-2 border-r border-red-100 text-center">${m}</th>`).join('')}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${listaEmpresasTrimestral.map(emp => `
+                                        <tr class="border-b border-slate-100 hover:bg-slate-50">
+                                            <td class="p-2 border-r border-slate-100 text-[9px] font-bold text-slate-800">${emp.razao}</td>
+                                            <td class="p-2 border-r border-slate-100 text-[9px] text-slate-500">${emp.contato || '-'}</td>
+                                            ${sortedMesesTrimestral.map(m => {
+                                                let d = emp.meses[m];
+                                                if(d) return `<td class="p-2 border-r border-slate-100 text-center font-bold text-emerald-800 align-middle">${d.antec}</td>`;
+                                                return `<td class="p-2 border-r border-slate-100 text-center text-slate-300">-</td>`;
+                                            }).join('')}
+                                        </tr>
+                                    `).join('')}
+                                    ${listaEmpresasTrimestral.length === 0 ? `<tr><td colspan="10" class="p-4 text-center text-[9px] text-slate-400 italic">Nenhum dado trimestral.</td></tr>` : ''}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            } else if (window.currentReinfTab === 'entregas') {
+                let listaTodos = [...window.appState.clientes].sort((a, b) => a.razao.localeCompare(b.razao));
+                
+                let sortedMeses = [...mesesSelecionados].sort((a, b) => {
+                    let [ma, ya] = a.split('/'); let [mb, yb] = b.split('/');
+                    return new Date(ya, ma-1) - new Date(yb, mb-1);
+                });
+
+                let htmlEntregas = `
+                    <div class="mb-6">
+                        <div class="bg-indigo-600 text-white text-[10px] font-black p-2 rounded shadow-md uppercase mb-2 flex justify-between items-center">
+                            <span>Status Geral de Entregas REINF</span>
+                            <button onclick="window.imprimirRelatorioEntregas()" class="bg-white text-indigo-600 px-2 py-0.5 rounded hover:bg-indigo-50 flex items-center gap-1 shadow-sm font-bold tracking-widest text-[9px] transition-colors" title="Imprimir Relatório de Entregas">
+                                🖨️ IMPRIMIR
+                            </button>
+                        </div>
+                        <div class="overflow-x-auto bg-white rounded shadow-sm border border-indigo-100">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="bg-indigo-50 text-indigo-900 text-[9px] uppercase border-b border-indigo-200">
+                                        <th class="p-2 border-r border-indigo-100">Razão Social</th>
+                                        ${sortedMeses.map(m => `<th class="p-2 border-r border-indigo-100 text-center">${m}</th>`).join('')}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${listaTodos.map(emp => {
+                                        let tdMeses = sortedMeses.map(m => {
+                                            let d = emp.mensal[m];
+                                            if (!d || (!d.antec && d.antec !== 'S/M' && d.antec !== '0')) {
+                                                return `<td class="p-2 border-r border-slate-100 text-center text-slate-300">-</td>`;
+                                            }
+                                            let vlr = window.parseCurrency(d.antec);
+                                            let isMensal = vlr > 50000;
+                                            let isTrimestral = (vlr > 0 && vlr <= 50000) || d.antec === 'S/M';
+                                            let reinfVal = (d.reinf || '').toUpperCase();
+                                            let isEntregue = reinfVal !== '-' && reinfVal.trim() !== '';
+
+                                            if (!isMensal && !isTrimestral) {
+                                                 return `<td class="p-2 border-r border-slate-100 text-center text-slate-300">-</td>`;
+                                            }
+
+                                            let badgeClass = '';
+                                            let text = '';
+                                            if (isEntregue) {
+                                                badgeClass = 'bg-emerald-100 text-emerald-800 border-emerald-300';
+                                                text = `✅ ${isMensal ? 'MENSAL' : 'TRIM.'}`;
+                                            } else {
+                                                if (isMensal) {
+                                                    badgeClass = 'bg-red-100 text-red-800 border-red-300';
+                                                    text = `❌ PEND. MENSAL`;
+                                                } else {
+                                                    badgeClass = 'bg-amber-100 text-amber-800 border-amber-300';
+                                                    text = `⏳ PEND. TRIM.`;
+                                                }
+                                            }
+
+                                            return `<td class="p-2 border-r border-slate-100 text-center align-middle">
+                                                <div class="text-[8px] font-black px-1.5 py-0.5 rounded border shadow-sm inline-block ${badgeClass}">${text}</div>
+                                            </td>`;
+                                        }).join('');
+
+                                        return `
+                                            <tr class="border-b border-slate-100 hover:bg-slate-50">
+                                                <td class="p-2 border-r border-slate-100 text-[9px] font-bold text-slate-800" title="${emp.contato || ''}">${emp.razao}</td>
+                                                ${tdMeses}
+                                            </tr>
+                                        `;
+                                    }).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+                container.innerHTML = htmlEntregas;
+            }
+        };
+
+        window.imprimirRelatorioEntregas = function() {
+            const containerCheckboxes = document.getElementById('containerMesesReinf');
+            let mesesSelecionados = Array.from(containerCheckboxes.querySelectorAll('input:checked')).map(cb => cb.value);
+
+            if (mesesSelecionados.length === 0) {
+                alert('Nenhum mês selecionado para impressão.');
+                return;
+            }
+
+            let listaTodos = [...window.appState.clientes].sort((a, b) => a.razao.localeCompare(b.razao));
+            
+            let sortedMeses = [...mesesSelecionados].sort((a, b) => {
+                let [ma, ya] = a.split('/'); let [mb, yb] = b.split('/');
+                return new Date(ya, ma-1) - new Date(yb, mb-1);
+            });
+
+            let thMeses = sortedMeses.map(m => `<th style="padding: 8px; border: 1px solid #c7d2fe; text-align: center; width: 100px;">${m}</th>`).join('');
+            
+            let trEmpresas = listaTodos.map(emp => {
+                let tdMeses = sortedMeses.map(m => {
+                    let d = emp.mensal[m];
+                    if (!d || (!d.antec && d.antec !== 'S/M' && d.antec !== '0')) {
+                        return `<td style="padding: 8px; border: 1px solid #c7d2fe; text-align: center; color: #ccc;">-</td>`;
+                    }
+                    let vlr = window.parseCurrency(d.antec);
+                    let isMensal = vlr > 50000;
+                    let isTrimestral = (vlr > 0 && vlr <= 50000) || d.antec === 'S/M';
+                    let reinfVal = (d.reinf || '').toUpperCase();
+                    let isEntregue = reinfVal !== '-' && reinfVal.trim() !== '';
+
+                    if (!isMensal && !isTrimestral) {
+                         return `<td style="padding: 8px; border: 1px solid #c7d2fe; text-align: center; color: #ccc;">-</td>`;
+                    }
+
+                    let styleText = '';
+                    let text = '';
+                    if (isEntregue) {
+                        styleText = 'color: #065f46; background-color: #d1fae5; border-color: #6ee7b7;';
+                        text = `✅ ${isMensal ? 'MENSAL' : 'TRIM.'}`;
+                    } else {
+                        if (isMensal) {
+                            styleText = 'color: #991b1b; background-color: #fee2e2; border-color: #fca5a5;';
+                            text = `❌ PEND. MENSAL`;
+                        } else {
+                            styleText = 'color: #92400e; background-color: #fef3c7; border-color: #fcd34d;';
+                            text = `⏳ PEND. TRIM.`;
                         }
                     }
-                });
-            });
 
-            let listaEmpresasMensal = Object.values(dadosAgrupadosMensal).sort((a, b) => a.razao.localeCompare(b.razao));
-            let listaEmpresasTrimestral = Object.values(dadosAgrupadosTrimestral).sort((a, b) => a.razao.localeCompare(b.razao));
-            
-            let sortedMesesMensal = Array.from(mesesMensal).sort((a, b) => {
-                let [ma, ya] = a.split('/'); let [mb, yb] = b.split('/');
-                return new Date(ya, ma-1) - new Date(yb, mb-1);
-            });
-            let sortedMesesTrimestral = Array.from(mesesTrimestral).sort((a, b) => {
-                let [ma, ya] = a.split('/'); let [mb, yb] = b.split('/');
-                return new Date(ya, ma-1) - new Date(yb, mb-1);
-            });
+                    return `<td style="padding: 8px; border: 1px solid #c7d2fe; text-align: center;">
+                        <span style="font-size: 10px; font-weight: bold; padding: 3px 6px; border-radius: 4px; border-width: 1px; border-style: solid; display: inline-block; ${styleText}">${text}</span>
+                    </td>`;
+                }).join('');
 
-            // UI do Painel Classificação em formato de Tabela Dinâmica
-            container.innerHTML = `
-                <div class="mb-6">
-                    <div class="bg-red-600 text-white text-[10px] font-black p-2 rounded shadow-md uppercase mb-2 flex justify-between items-center">
-                        <span>Envio Mensal (>50k): ${contMensal} ocorrências</span>
-                        <button onclick="window.imprimirClassificacao('mensal')" class="bg-white text-red-600 px-2 py-0.5 rounded hover:bg-red-50 flex items-center gap-1 shadow-sm font-bold tracking-widest text-[9px] transition-colors" title="Imprimir Relatório Mensal">
-                            🖨️ IMPRIMIR
-                        </button>
-                    </div>
-                    <div class="overflow-x-auto bg-white rounded shadow-sm border border-red-100">
-                        <table class="w-full text-left border-collapse">
-                            <thead>
-                                <tr class="bg-red-50 text-red-900 text-[9px] uppercase border-b border-red-200">
-                                    <th class="p-2 border-r border-red-100">Razão Social</th>
-                                    <th class="p-2 border-r border-red-100">Contato</th>
-                                    ${sortedMesesMensal.map(m => `<th class="p-2 border-r border-red-100 text-center">${m}</th>`).join('')}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${listaEmpresasMensal.map(emp => `
-                                    <tr class="border-b border-slate-100 hover:bg-slate-50">
-                                        <td class="p-2 border-r border-slate-100 text-[9px] font-bold text-slate-800">${emp.razao}</td>
-                                        <td class="p-2 border-r border-slate-100 text-[9px] text-slate-500">${emp.contato || '-'}</td>
-                                        ${sortedMesesMensal.map(m => {
-                                            let d = emp.meses[m];
-                                            if(d) return `<td class="p-2 border-r border-slate-100 text-center align-top">
-                                                <div class="font-bold text-slate-900 mb-0.5">${d.antec}</div>
-                                                <div class="text-[8px] bg-red-100 text-red-800 font-bold px-1 rounded inline-block">IR: ${d.ir}</div>
-                                            </td>`;
-                                            return `<td class="p-2 border-r border-slate-100 text-center text-slate-300">-</td>`;
-                                        }).join('')}
-                                    </tr>
-                                `).join('')}
-                                ${listaEmpresasMensal.length === 0 ? `<tr><td colspan="10" class="p-4 text-center text-[9px] text-slate-400 italic">Nenhum dado mensal.</td></tr>` : ''}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+                return `<tr>
+                    <td style="padding: 8px; border: 1px solid #c7d2fe; font-weight: bold; font-size: 12px; color: #333;">${emp.razao}</td>
+                    ${tdMeses}
+                </tr>`;
+            }).join('');
 
-                <div>
-                    <div class="bg-emerald-600 text-white text-[10px] font-black p-2 rounded shadow-md uppercase mb-2 flex justify-between items-center">
-                        <span>Envio Trimestral (até 50k/SM): ${contTrimestral} ocorrências</span>
-                        <button onclick="window.imprimirClassificacao('trimestral')" class="bg-white text-emerald-700 px-2 py-0.5 rounded hover:bg-emerald-50 flex items-center gap-1 shadow-sm font-bold tracking-widest text-[9px] transition-colors" title="Imprimir Relatório Trimestral">
-                            🖨️ IMPRIMIR
-                        </button>
-                    </div>
-                    <div class="overflow-x-auto bg-white rounded shadow-sm border border-emerald-100">
-                        <table class="w-full text-left border-collapse">
-                            <thead>
-                                <tr class="bg-emerald-50 text-emerald-900 text-[9px] uppercase border-b border-emerald-200">
-                                    <th class="p-2 border-r border-red-100">Razão Social</th>
-                                    <th class="p-2 border-r border-red-100">Contato</th>
-                                    ${sortedMesesTrimestral.map(m => `<th class="p-2 border-r border-red-100 text-center">${m}</th>`).join('')}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${listaEmpresasTrimestral.map(emp => `
-                                    <tr class="border-b border-slate-100 hover:bg-slate-50">
-                                        <td class="p-2 border-r border-slate-100 text-[9px] font-bold text-slate-800">${emp.razao}</td>
-                                        <td class="p-2 border-r border-slate-100 text-[9px] text-slate-500">${emp.contato || '-'}</td>
-                                        ${sortedMesesTrimestral.map(m => {
-                                            let d = emp.meses[m];
-                                            if(d) return `<td class="p-2 border-r border-slate-100 text-center font-bold text-emerald-800 align-middle">${d.antec}</td>`;
-                                            return `<td class="p-2 border-r border-slate-100 text-center text-slate-300">-</td>`;
-                                        }).join('')}
-                                    </tr>
-                                `).join('')}
-                                ${listaEmpresasTrimestral.length === 0 ? `<tr><td colspan="10" class="p-4 text-center text-[9px] text-slate-400 italic">Nenhum dado trimestral.</td></tr>` : ''}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+            let htmlConteudo = `
+                <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+                    <thead>
+                        <tr style="background-color: #e0e7ff; color: #3730a3; text-align: left;">
+                            <th style="padding: 8px; border: 1px solid #c7d2fe;">Razão Social</th>
+                            ${thMeses}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${trEmpresas}
+                    </tbody>
+                </table>
             `;
-        };
+
+            const janelaImpressao = window.open('', '_blank');
+            janelaImpressao.document.write(`
+                <html>
+                <head>
+                    <title>Relatório de Entregas REINF</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; padding: 20px; }
+                        h1 { font-size: 18px; color: #333; text-transform: uppercase; margin-bottom: 5px; }
+                        .header { border-bottom: 2px solid #ccc; padding-bottom: 10px; margin-bottom: 20px; }
+                        td, th { font-size: 12px; }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <h1>Status Geral de Entregas REINF</h1>
+                        <p style="font-size: 11px; color: #666; margin: 0;">Gerado em: ${new Date().toLocaleString('pt-BR')} | <strong>Planilha de Integrações</strong></p>
+                    </div>
+                    ${htmlConteudo}
+                    <script>
+                        window.onload = function() { 
+                            setTimeout(function() {
+                                window.print(); 
+                                window.close();
+                            }, 500);
+                        };
+                    <\/script>
+                </body>
+                </html>
+            `);
+            janelaImpressao.document.close();
+        }
 
         window.imprimirClassificacao = function(tipo) {
             const containerCheckboxes = document.getElementById('containerMesesReinf');
