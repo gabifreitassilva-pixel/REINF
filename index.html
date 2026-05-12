@@ -1736,9 +1736,9 @@
                         <table class="w-full text-left border-collapse">
                             <thead>
                                 <tr class="bg-emerald-50 text-emerald-900 text-[9px] uppercase border-b border-emerald-200">
-                                    <th class="p-2 border-r border-emerald-100">Razão Social</th>
-                                    <th class="p-2 border-r border-emerald-100">Contato</th>
-                                    ${sortedMesesTrimestral.map(m => `<th class="p-2 border-r border-emerald-100 text-center">${m}</th>`).join('')}
+                                    <th class="p-2 border-r border-red-100">Razão Social</th>
+                                    <th class="p-2 border-r border-red-100">Contato</th>
+                                    ${sortedMesesTrimestral.map(m => `<th class="p-2 border-r border-red-100 text-center">${m}</th>`).join('')}
                                 </tr>
                             </thead>
                             <tbody>
@@ -2256,26 +2256,15 @@
             
             let chavesImportadasNoMes = new Set();
 
-            // DETEÇÃO DINÂMICA DE COLUNAS (ANTECIPAÇÃO E FOLHA)
+            // DETEÇÃO DINÂMICA DE COLUNA (ANTECIPAÇÃO)
             let colIndexAntec = -1;
-            let colIndexFolha = -1;
             
             // Varre as primeiras linhas para achar os nomes corretos das colunas
             for(let i=0; i<Math.min(30, linhas.length); i++) {
                 let colunas = linhas[i].toUpperCase().split('\t');
-                
-                // Procura Antecipação
                 let foundA = colunas.findIndex(c => c.includes('ANTEC'));
                 if (foundA !== -1 && colIndexAntec === -1) colIndexAntec = foundA;
-
-                // Procura Lançado na Folha (com limpeza de acentos e espaços)
-                let foundF = colunas.findIndex(c => {
-                    let text = c.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, ' ').trim();
-                    return text === 'LANCADO NA FOLHA' || text.includes('LANCADO NA FOLHA') || text === 'FOLHA';
-                });
-                if (foundF !== -1 && colIndexFolha === -1) colIndexFolha = foundF;
-                
-                if (colIndexAntec !== -1 && colIndexFolha !== -1) break;
+                if (colIndexAntec !== -1) break;
             }
 
             linhas.forEach(linha => {
@@ -2324,7 +2313,6 @@
 
                 // --- COLETA DE VALORES ---
                 let ant = '-';
-                let lancImport = '-';
 
                 // Busca Antecipação pelo índice dinâmico ou fixo (fallback)
                 if (colIndexAntec !== -1) {
@@ -2333,42 +2321,26 @@
                     ant = cols[offset + 11]?.trim() || '-';
                 }
 
-                // Busca Lançado na Folha pelo índice dinâmico EXATO
-                if (colIndexFolha !== -1) {
-                    let rawFolha = (cols[colIndexFolha] || '').trim().toUpperCase();
-                    // Captura literal do que está lá (OK, NT ou branco)
-                    if (rawFolha === 'OK' || rawFolha === 'NT') {
-                        lancImport = rawFolha;
-                    } else if (rawFolha === '' || rawFolha === 'FALSE') {
-                        lancImport = '-';
-                    } else {
-                        // Caso venha algo diferente mas contenha as palavras chave
-                        if (rawFolha.includes('OK')) lancImport = 'OK';
-                        else if (rawFolha.includes('NT')) lancImport = 'NT';
-                        else lancImport = '-';
-                    }
-                }
-
                 let old = cli.mensal[mesRef];
                 let oldAntec = old?.antec || '-';
-                let oldLancado = old?.lancado || '-';
+                let oldLancado = old?.lancado || '-'; // Mantém o que já está preenchido no sistema
 
                 // Alertas de 50k
                 if (window.parseCurrency(ant) > 50000) {
                     htmlAlertas50kPopup += `<li><b>${cli.razao}</b> - R$ ${ant}</li>`;
                 }
 
-                // Logs de alteração de valor
+                // Logs de alteração de valor de antecipação
                 if (old && oldAntec !== '-' && oldAntec !== ant && ant !== '-') {
                     htmlAlteracoesPopup += `<li><b>${cli.razao}</b>: R$ ${oldAntec} ➔ R$ ${ant}</li>`;
                     logAlteracoesValores.push(`<span class="text-amber-500 font-bold">VALOR:</span> <b>${cli.razao}</b> | R$ ${oldAntec} ➔ R$ ${ant}`);
                 }
 
                 // --- SALVAMENTO DOS DADOS NO MÊS ---
-                // Agora lancImport substitui o que estava lá, permitindo inclusive limpar o campo (blank)
+                // Importamos apenas a Antecipação. A coluna Lançado na Folha (FOLHA) e REINF ficam como estão.
                 cli.mensal[mesRef] = { 
                     antec: ant, 
-                    lancado: lancImport, 
+                    lancado: oldLancado, 
                     reinf: old?.reinf || '-' 
                 };
             });
