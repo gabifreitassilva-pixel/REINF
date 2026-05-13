@@ -80,11 +80,16 @@
         }
         .cell-input:focus { background: white; box-shadow: inset 0 0 0 1px #3b82f6; }
 
-        /* DESTAQUE DE LINHA SELECIONADA (Clique) */
+        /* DESTAQUE DE LINHA SELECIONADA (Clique) - Tom Laranja Forte e Nítido */
         .linha-selecionada td {
-            background-color: #ffedd5 !important; /* Laranja clarinho */
-            border-top: 1px solid #fb923c !important; 
-            border-bottom: 1px solid #fb923c !important;
+            background-color: #fed7aa !important; /* Laranja/Pesêssego forte */
+            border-top: 2px solid #ea580c !important; /* Borda Laranja vibrante */
+            border-bottom: 2px solid #ea580c !important;
+            color: #111827 !important; /* Texto mais escuro para contraste */
+        }
+        
+        .linha-selecionada input, .linha-selecionada select {
+            color: #0f172a !important;
         }
     </style>
 </head>
@@ -1248,28 +1253,29 @@
 
                 // 1. Busca por CNPJ exato
                 if (cnpjNum.length === 14) {
-                    cliExistente = window.appState.clientes.find(c => window.getNumbers(c.cnpj) === cnpjNum && (c.contato || '').toUpperCase() === contato);
-                    
-                    if (!cliExistente && contato === '') {
-                        let clientesVinculados = window.appState.clientes.filter(c => window.getNumbers(c.cnpj) === cnpjNum);
-                        if(clientesVinculados.length > 0) {
-                            clientesVinculados.forEach(v => {
-                                if(atividade) v.atividade = atividade;
-                                if(regime) v.regime = regime;
-                                if(whatsapp && !v.whatsapp) v.whatsapp = whatsapp;
-                            });
-                            atualizados++;
-                            return; 
+                    let candidates = window.appState.clientes.filter(c => window.getNumbers(c.cnpj) === cnpjNum);
+                    if (candidates.length === 1) {
+                        cliExistente = candidates[0];
+                    } else if (candidates.length > 1) {
+                        cliExistente = candidates.find(c => (c.contato || '').toUpperCase() === contato);
+                        if (!cliExistente) {
+                            cliExistente = candidates.find(c => window.normalizeStr(c.contato) === window.normalizeStr(contato));
                         }
+                        if (!cliExistente && contato === '') {
+                            cliExistente = candidates.find(c => !c.contato || c.contato.trim() === '') || candidates[0];
+                        }
+                        if (!cliExistente) cliExistente = candidates[0]; // fallback
                     }
                 }
 
-                // 2. Busca Inteligente por Nome 
+                // 2. Busca Inteligente por Nome caso CNPJ falhe
                 if (!cliExistente && nome) {
-                    cliExistente = window.appState.clientes.find(c => 
-                        window.isSameCompanyByName(c.razao, nome) && 
-                        (c.contato || '').toUpperCase() === contato
-                    );
+                    let candidates = window.appState.clientes.filter(c => window.isSameCompanyByName(c.razao, nome));
+                    if (candidates.length === 1) {
+                        cliExistente = candidates[0];
+                    } else if (candidates.length > 1) {
+                        cliExistente = candidates.find(c => (c.contato || '').toUpperCase() === contato) || candidates[0];
+                    }
                 }
 
                 if (cliExistente) {
@@ -1757,6 +1763,8 @@
                                 </thead>
                                 <tbody>
                                     ${listaTodos.map(emp => {
+                                        let hasDataInAnyMonth = false;
+                                        
                                         let tdMeses = sortedMeses.map(m => {
                                             let d = emp.mensal[m];
                                             if (!d) return `<td class="p-2 border-r border-slate-100 text-center align-middle"></td>`;
@@ -1768,14 +1776,16 @@
                                                 return `<td class="p-2 border-r border-slate-100 text-center align-middle"></td>`;
                                             }
                                             
-                                            let isMensal = reinfVal.includes('MENSAL');
+                                            hasDataInAnyMonth = true;
                                             let displayVal = d.antec !== '-' && d.antec !== '' ? d.antec : 'S/M';
 
                                             return `<td class="p-2 border-r border-slate-100 text-center align-middle bg-emerald-50/30">
                                                 <div class="text-[10px] font-black text-emerald-700">${displayVal}</div>
-                                                <div class="text-[7px] text-emerald-500 font-bold uppercase">✅ ${isMensal ? 'MENSAL' : 'TRIM'}</div>
+                                                <div class="text-[7px] text-emerald-500 font-bold uppercase">✅ Entregue</div>
                                             </td>`;
                                         }).join('');
+
+                                        if(!hasDataInAnyMonth) return '';
 
                                         return `
                                             <tr class="border-b border-slate-100 hover:bg-slate-50">
@@ -1812,6 +1822,8 @@
             let thMeses = sortedMeses.map(m => `<th style="padding: 8px; border: 1px solid #c7d2fe; text-align: center; width: 100px;">${m}</th>`).join('');
             
             let trEmpresas = listaTodos.map(emp => {
+                let hasDataInAnyMonth = false;
+                
                 let tdMeses = sortedMeses.map(m => {
                     let d = emp.mensal[m];
                     if (!d) return `<td style="padding: 8px; border: 1px solid #c7d2fe; text-align: center;"></td>`;
@@ -1823,14 +1835,16 @@
                         return `<td style="padding: 8px; border: 1px solid #c7d2fe; text-align: center;"></td>`;
                     }
                     
-                    let isMensal = reinfVal.includes('MENSAL');
+                    hasDataInAnyMonth = true;
                     let displayVal = d.antec !== '-' && d.antec !== '' ? d.antec : 'S/M';
 
                     return `<td style="padding: 8px; border: 1px solid #c7d2fe; text-align: center; background-color: #ecfdf5;">
                         <span style="font-size: 11px; font-weight: bold; color: #065f46;">${displayVal}</span><br>
-                        <span style="font-size: 8px; color: #10b981;">✅ ${isMensal ? 'MENSAL OK' : 'TRIM OK'}</span>
+                        <span style="font-size: 8px; color: #10b981;">✅ ENTREGUE</span>
                     </td>`;
                 }).join('');
+
+                if(!hasDataInAnyMonth) return '';
 
                 return `<tr>
                     <td style="padding: 8px; border: 1px solid #c7d2fe; font-weight: bold; font-size: 12px; color: #333;">${emp.razao}</td>
@@ -2157,16 +2171,18 @@
 
             tbody.innerHTML = list.length === 0 ? `<tr><td colspan="100" class="text-center py-20 text-slate-300 uppercase font-black italic tracking-widest">Nenhum dado</td></tr>` : 
             list.map(cli => {
-                // NOVIDADE: Linha verde se TODOS os REINFs devidos estiverem OK. Linha amarela se não houver NENHUM dado nos meses visíveis (Faltante).
+                // NOVIDADE: Linha verde se TODOS os REINFs devidos estiverem OK. Linha clareada se for faltante.
                 let allReinfOk = true;
                 let hasAnyValue = false;
                 let hasVisibleMonths = false;
+                let isImported = false;
                 
                 window.appState.meses.forEach(m => {
                     if (window.appState.mesesConfig[m]?.visible) {
                         hasVisibleMonths = true;
                         let d = cli.mensal[m];
                         if (d) {
+                            isImported = true;
                             let vlr = window.parseCurrency(d.antec);
                             let antecText = (d.antec || '').trim().toUpperCase();
                             let r = d.reinf ? d.reinf.toUpperCase() : '';
@@ -2185,9 +2201,9 @@
                 // Fundo da linha base
                 let trBgClass = 'bg-white hover:bg-slate-50';
                 
-                if (hasVisibleMonths && !hasAnyValue) {
-                    // Cliente está no cadastro mas não veio na importação dos meses visíveis (FALTANTE)
-                    trBgClass = 'bg-yellow-100 hover:bg-yellow-200 border-yellow-300';
+                if (hasVisibleMonths && !isImported) {
+                    // Cliente está no cadastro mas não tem absolutamente NENHUM dado nos meses visíveis (FALTANTE na Importação)
+                    trBgClass = 'bg-gray-50 text-gray-400 opacity-60 hover:opacity-100 hover:bg-gray-100'; 
                 } else if (hasAnyValue && allReinfOk) {
                     // Cliente com todas as entregas OK
                     trBgClass = 'bg-emerald-100 hover:bg-emerald-200 border-emerald-200';
@@ -2211,11 +2227,11 @@
 
                 let row = `<tr id="row-${cli.id}" onclick="window.selectRow('${cli.id}')" class="${trBgClass} border-b border-slate-100 transition-colors cursor-pointer">
                     ${window.isAdmin ? `<td class="col-fixed-del align-middle"><button onclick="window.excluirLinhaMainTable('${cli.id}'); event.stopPropagation();" class="text-red-500 hover:text-red-700 font-black text-xs">&times;</button></td>` : ''}
-                    <td class="col-fixed-razao font-black text-slate-800 uppercase tracking-tighter" title="${cli.razao}">${cli.razao}</td>
+                    <td class="col-fixed-razao font-black uppercase tracking-tighter" title="${cli.razao}">${cli.razao}</td>
                     <td class="col-fixed-cnpj font-mono text-blue-700 tracking-tighter">${cli.cnpj}</td>
-                    <td class="col-fixed-contato text-slate-500 uppercase" title="${cli.contato}">${cli.contato}</td>
-                    <td class="col-fixed-atividade text-slate-500 uppercase" title="${cli.atividade || ''}">${cli.atividade || ''}</td>
-                    <td class="col-fixed-regime font-black text-slate-600 uppercase">${cli.regime || ''}</td>
+                    <td class="col-fixed-contato uppercase" title="${cli.contato}">${cli.contato}</td>
+                    <td class="col-fixed-atividade uppercase" title="${cli.atividade || ''}">${cli.atividade || ''}</td>
+                    <td class="col-fixed-regime font-black uppercase">${cli.regime || ''}</td>
                     <td class="col-fixed-extratos align-middle">
                         <div class="flex items-center justify-center h-full gap-1.5">
                             <button onclick="window.cobrarManual('${cli.id}'); event.stopPropagation();" class="transition-all text-[10px] rounded p-1 flex-shrink-0 border ${classManual}" title="${cli.dataCobranca && isManual ? 'Cobrado Manualmente em ' + cli.dataCobranca + ' (Clique para editar)' : 'Informar data de cobrança manual'}">📅</button>
@@ -2251,7 +2267,7 @@
                         let reinfVal = (d.reinf || '-').toUpperCase();
                         let isReinfOk = reinfVal.includes('OK');
                         let bgReinfTd = isReinfOk ? "bg-emerald-100" : "bg-transparent";
-                        let cReinfText = isReinfOk ? 'text-emerald-800 font-black' : 'text-slate-400 font-bold';
+                        let cReinfText = isReinfOk ? 'text-emerald-800 font-black' : 'font-bold';
                         // ------------------------------------------------
 
                         row += `
@@ -2312,21 +2328,20 @@
             let val = el.value.trim().toUpperCase();
             
             if (cli && val !== old) {
-                // Ensure month object exists if it's a "faltante" we are modifying
+                // Assegura que o objeto do mês exista se a empresa for "faltante" na importação
                 if (!cli.mensal[mes]) {
                     cli.mensal[mes] = { antec: '-', lancado: '-', reinf: '-' };
                 }
 
                 // === LÓGICA INTELIGENTE AUTO-PREENCHIMENTO REINF ===
                 if (campo === 'reinf' && val.includes('OK')) {
-                    // Verifica se o mês onde deu OK é Mês de Fechamento de Trimestre
                     let [mStr, yStr] = mes.split('/');
                     let mNum = parseInt(mStr, 10);
                     let yNum = parseInt(yStr, 10);
                     let targets = [];
                     let isTriggerMonth = false;
 
-                    // Mapeia os 3 meses anteriores ao mês de entrega
+                    // Mapeia os 3 meses anteriores ao mês de entrega do trimestre
                     if (mNum === 4) { targets = [`01/${yStr}`, `02/${yStr}`, `03/${yStr}`]; isTriggerMonth = true; }
                     else if (mNum === 7) { targets = [`04/${yStr}`, `05/${yStr}`, `06/${yStr}`]; isTriggerMonth = true; }
                     else if (mNum === 10) { targets = [`07/${yStr}`, `08/${yStr}`, `09/${yStr}`]; isTriggerMonth = true; }
@@ -2339,43 +2354,45 @@
                         val = 'MENSAL OK';
                     } else {
                         if (isTriggerMonth) {
-                            val = ''; // O mês trigger (ex: Abril) que não passou de 50k NÃO é baixado agora.
+                            val = ''; // O mês trigger (ex: Abril) que não passou de 50k NÃO é baixado. Volta pra vazio.
                         } else {
-                            val = 'TRIM OK'; // Default para mês solto que <= 50k
+                            val = 'TRIM OK'; // Default para mês solto que for <= 50k e você der OK manual
                         }
                     }
                     cli.mensal[mes].reinf = val;
 
                     let alteradosTrim = false;
-                    targets.forEach(t => {
-                        // Cria o mês faltante se não existir para poder dar o OK do trimestre nele
-                        if (!cli.mensal[t]) {
-                            cli.mensal[t] = { antec: '-', lancado: '-', reinf: '-' };
-                        }
-                        
-                        let tVlr = window.parseCurrency(cli.mensal[t].antec);
-                        let antecText = (cli.mensal[t].antec || '').trim().toUpperCase();
-                        
-                        if (tVlr > 50000) {
-                            cli.mensal[t].reinf = 'MENSAL OK';
+                    
+                    // Vai dar a baixa de trimestre SEMPRE se a pessoa clicou num mês trigger (ex: abril)
+                    if (isTriggerMonth) {
+                        targets.forEach(t => {
+                            if (!cli.mensal[t]) {
+                                cli.mensal[t] = { antec: '-', lancado: '-', reinf: '-' };
+                            }
+                            
+                            let tVlr = window.parseCurrency(cli.mensal[t].antec);
+                            
+                            // A IN da Receita manda baixar como TRIM OK tudo que for <=50k no trimestre anterior
+                            if (tVlr > 50000) {
+                                cli.mensal[t].reinf = 'MENSAL OK';
+                            } else {
+                                cli.mensal[t].reinf = 'TRIM OK'; // Cobre valor 0, sem lucro, ausentes e <=50k.
+                            }
                             alteradosTrim = true;
-                        } else if (tVlr > 0 || (antecText !== '-' && antecText !== '')) {
-                            // Se for <=50k, ou S/M, ou Faltante/Texto (exceto vazio/-), ganha TRIM OK
-                            cli.mensal[t].reinf = 'TRIM OK';
-                            alteradosTrim = true;
-                        }
-                    });
+                        });
+                    }
                     
                     if(alteradosTrim) {
+                         alert(`Trimestre anterior (${targets.join(', ')}) finalizado com sucesso!`);
                          window.appState.historicoGeral.push({
                             tipo: 'edicao',
                             data: new Date().toLocaleString('pt-BR'),
                             usuario: window.appState.currentUser, mes: mes,
-                            alteracoes: [`<span class="text-emerald-600 font-bold">AUTO-PREENCHIMENTO REINF:</span> <b>${cli.razao}</b> - Trimestre anterior preenchido automaticamente.`]
+                            alteracoes: [`<span class="text-emerald-600 font-bold">AUTO-PREENCHIMENTO REINF:</span> <b>${cli.razao}</b> - Trimestre anterior finalizado.`]
                         });
                     }
                 } else {
-                    // Atualização padrão para quem não digitou "OK" ou limpou a célula
+                    // Atualização padrão para quem não digitou "OK" ou apagou a célula
                     cli.mensal[mes][campo] = val;
                 }
 
@@ -2494,19 +2511,28 @@
                 qtdImportadas++;
 
                 let cli = null;
-                // Busca por CNPJ ou Nome
+                // Busca por CNPJ ou Nome (Nova lógica reforçada)
                 if (cnpjNum.length === 14) {
-                    cli = window.appState.clientes.find(c => window.getNumbers(c.cnpj) === cnpjNum && (c.contato || '').toUpperCase() === contato);
-                    if (!cli) {
-                        let cliSemContato = window.appState.clientes.find(c => window.getNumbers(c.cnpj) === cnpjNum && (!c.contato || c.contato.trim() === ''));
-                        if (cliSemContato) cli = cliSemContato;
+                    let candidates = window.appState.clientes.filter(c => window.getNumbers(c.cnpj) === cnpjNum);
+                    if (candidates.length === 1) {
+                        cli = candidates[0]; // Ignora pequenas diferenças no nome se o CNPJ é o mesmo e só tem 1
+                    } else if (candidates.length > 1) {
+                        cli = candidates.find(c => (c.contato || '').toUpperCase() === contato);
+                        if (!cli) cli = candidates.find(c => window.normalizeStr(c.contato) === window.normalizeStr(contato));
+                        if (!cli && contato === '') cli = candidates.find(c => !c.contato || c.contato.trim() === '') || candidates[0];
+                        if (!cli) cli = candidates[0]; // Evita duplicar se der erro
                     }
                 }
                 if (!cli && razao) {
-                    cli = window.appState.clientes.find(c => window.isSameCompanyByName(c.razao, razao) && ((c.contato || '').toUpperCase() === contato || (!c.contato || c.contato.trim() === '')));
+                    let candidates = window.appState.clientes.filter(c => window.isSameCompanyByName(c.razao, razao));
+                    if (candidates.length === 1) {
+                        cli = candidates[0];
+                    } else if (candidates.length > 1) {
+                        cli = candidates.find(c => (c.contato || '').toUpperCase() === contato) || candidates[0];
+                    }
                 }
 
-                // Cria novo se não achar
+                // Cria novo se não achar na base
                 if (!cli) {
                     cli = { 
                         id: window.generateId(), razao: razao, cnpj: cnpj || "S/ CNPJ", contato: contato, 
