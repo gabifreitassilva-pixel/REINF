@@ -2145,8 +2145,8 @@
             }
             thead.innerHTML = tr1 + tr2;
 
-            // APENAS MOSTRA NA TELA PRINCIPAL QUEM TEM DADOS FINANCEIROS (A menos que tenha uma obs ou recebimento)
-            let list = [...window.appState.clientes].filter(cli => Object.keys(cli.mensal).length > 0 || cli.obs || cli.dataRecebimento).sort((a, b) => {
+            // MOSTRA TODOS OS CLIENTES DO CADASTRO (Os sem dados nas planilhas importadas ficarão em amarelo)
+            let list = [...window.appState.clientes].sort((a, b) => {
                 let cmp = a.razao.localeCompare(b.razao);
                 if (cmp === 0) return (a.contato || '').localeCompare(b.contato || '');
                 return cmp;
@@ -2167,9 +2167,48 @@
 
             tbody.innerHTML = list.length === 0 ? `<tr><td colspan="100" class="text-center py-20 text-slate-300 uppercase font-black italic tracking-widest">Nenhum dado</td></tr>` : 
             list.map(cli => {
+                let optionsHtml = `<option value="" ${!cli.conta ? 'selected' : ''}>-</option>`;
+                let optionsArray = window.appState.opcoesConta || ['BANCO', 'CAIXA', 'PRESUNÇÃO'];
+                if (cli.conta && !optionsArray.includes(cli.conta)) {
+                     optionsHtml += `<option value="${cli.conta}" selected>${cli.conta} (Inativa)</option>`;
+                }
+                optionsArray.forEach(opt => {
+                    optionsHtml += `<option value="${opt}" ${cli.conta === opt ? 'selected' : ''}>${opt}</option>`;
+                });
 
-                // Fundo da linha base: sem verde forçado, bem neutra.
+                // NOVIDADE: Linha verde se TODOS os REINFs devidos estiverem OK. Linha amarela se não houver NENHUM dado nos meses visíveis (Faltante).
+                let allReinfOk = true;
+                let hasAnyValue = false;
+                let hasVisibleMonths = false;
+                
+                window.appState.meses.forEach(m => {
+                    if (window.appState.mesesConfig[m]?.visible) {
+                        hasVisibleMonths = true;
+                        let d = cli.mensal[m];
+                        if (d) {
+                            let vlr = window.parseCurrency(d.antec);
+                            let antecText = (d.antec || '').trim().toUpperCase();
+                            if (vlr > 0 || antecText === 'S/M' || (antecText !== '-' && antecText !== '')) {
+                                hasAnyValue = true;
+                                let r = d.reinf ? d.reinf.toUpperCase() : '';
+                                if (!r.includes('OK')) {
+                                    allReinfOk = false;
+                                }
+                            }
+                        }
+                    }
+                });
+
+                // Fundo da linha base
                 let trBgClass = 'bg-white hover:bg-slate-50';
+                
+                if (hasVisibleMonths && !hasAnyValue) {
+                    // Cliente está no cadastro mas não veio na importação dos meses visíveis (FALTANTE)
+                    trBgClass = 'bg-yellow-100 hover:bg-yellow-200 border-yellow-300';
+                } else if (hasAnyValue && allReinfOk) {
+                    // Cliente com todas as entregas OK
+                    trBgClass = 'bg-emerald-100 hover:bg-emerald-200 border-emerald-200';
+                }
 
                 // Lógica de Cores dos Botões (Cinza quando inativo, Colorido quando usado)
                 let isManual = cli.tipoCobranca === 'manual';
