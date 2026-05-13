@@ -529,7 +529,7 @@
                         return !['RAZÃO SOCIAL', 'RAZAO SOCIAL', 'NOME', 'CLIENTE', 'EMPRESA', 'NOME DA EMPRESA', 'TITULO', 'CNPJ'].includes(r);
                     });
 
-                    // MIGRAÇÃO SEGURA PARA ID ÚNICO, OBSERVAÇÕES, WHATSAPP, E DATA DE ENTREGA REINF
+                    // MIGRAÇÃO SEGURA PARA ID ÚNICO, OBSERVAÇÕES, WHATSAPP, E DATA DE ENTREGA REINF E DCTF
                     window.appState.clientes.forEach(c => {
                         if (c.atividade === undefined) c.atividade = '';
                         if (c.obs === undefined) c.obs = '';
@@ -539,11 +539,14 @@
                         if (c.tipoCobranca === undefined) c.tipoCobranca = '';
                         if (!c.id) c.id = window.generateId();
                         
-                        // Garante estrutura mensal com data de entrega
+                        // Garante estrutura mensal com data de entrega e dctfweb
                         if (c.mensal) {
                             Object.keys(c.mensal).forEach(m => {
                                 if (c.mensal[m] && c.mensal[m].dataEntregaReinf === undefined) {
                                     c.mensal[m].dataEntregaReinf = '';
+                                }
+                                if (c.mensal[m] && c.mensal[m].dctfweb === undefined) {
+                                    c.mensal[m].dctfweb = false;
                                 }
                             });
                         }
@@ -724,6 +727,29 @@
             if(id === 'painelCadastro') {
                 window.renderListaCadastro();
             }
+        };
+
+        // ==========================================
+        // DCTF-WEB TOGGLE
+        // ==========================================
+        window.toggleDctfWeb = async function(id, mes, isChecked) {
+            let cli = window.appState.clientes.find(c => c.id === id);
+            if(!cli) return;
+            if(!cli.mensal[mes]) cli.mensal[mes] = { antec: '-', lancado: '-', reinf: '-', dataEntregaReinf: '', dctfweb: false };
+            
+            cli.mensal[mes].dctfweb = isChecked;
+
+            window.appState.historicoGeral.push({
+                tipo: 'edicao',
+                data: new Date().toLocaleString('pt-BR'),
+                usuario: window.appState.currentUser,
+                mes: mes,
+                alteracoes: [`<span class="text-indigo-600 font-bold">DCTF-WEB:</span> <b>${cli.razao}</b> - ${isChecked ? 'Marcada como Entregue' : 'Desmarcada'}.`]
+            });
+
+            await window.saveState();
+            window.renderClassificacao();
+            window.renderHistorico();
         };
 
         // ==========================================
@@ -1774,7 +1800,22 @@
                                     ${listaTodos.map(emp => {
                                         let tdMeses = sortedMeses.map(m => {
                                             let d = emp.mensal[m];
-                                            if (!d) return `<td class="p-2 border-r border-slate-100 text-center align-middle text-slate-300">-</td>`;
+                                            let [mStr] = m.split('/');
+                                            let isTrigger = ['01', '04', '07', '10'].includes(mStr);
+                                            
+                                            let dctfHtml = '';
+                                            if (isTrigger) {
+                                                let dctfChecked = d && d.dctfweb ? 'checked' : '';
+                                                let dctfColor = d && d.dctfweb ? 'text-indigo-600' : 'text-slate-400';
+                                                dctfHtml = `
+                                                    <label class="mt-1.5 pt-1 border-t border-slate-200/50 flex items-center justify-center gap-1 cursor-pointer hover:bg-black/5 rounded px-0.5 w-full">
+                                                        <input type="checkbox" ${dctfChecked} onchange="window.toggleDctfWeb('${emp.id}', '${m}', this.checked)" class="w-2.5 h-2.5 accent-indigo-600">
+                                                        <span class="text-[7px] font-black ${dctfColor} uppercase tracking-tighter">DCTF</span>
+                                                    </label>
+                                                `;
+                                            }
+
+                                            if (!d) return `<td class="p-2 border-r border-slate-100 text-center align-middle text-slate-300">- ${dctfHtml}</td>`;
                                             
                                             let reinfVal = (d.reinf || '').toUpperCase();
                                             let isEntregue = reinfVal.includes('OK');
@@ -1786,11 +1827,13 @@
                                                     <div class="text-[9px] font-black text-emerald-800">${reinfVal}</div>
                                                     <div class="text-[7px] text-emerald-500 font-bold uppercase">✅ Entregue</div>
                                                     ${dataEntr}
+                                                    ${dctfHtml}
                                                 </td>`;
                                             } else {
                                                 return `<td class="p-2 border-r border-slate-100 text-center align-middle ${displayVal !== '-' && displayVal !== 'S/M' && window.parseCurrency(displayVal) > 0 ? 'bg-orange-50' : ''}">
                                                     <div class="text-[9px] font-bold text-slate-600">${displayVal}</div>
                                                     <div class="text-[7px] text-orange-500 font-bold uppercase">⏳ Pendente</div>
+                                                    ${dctfHtml}
                                                 </td>`;
                                             }
                                         }).join('');
@@ -1832,7 +1875,18 @@
             let trEmpresas = listaTodos.map(emp => {
                 let tdMeses = sortedMeses.map(m => {
                     let d = emp.mensal[m];
-                    if (!d) return `<td style="padding: 6px; border: 1px solid #c7d2fe; text-align: center; color: #ccc;">-</td>`;
+                    let [mStr] = m.split('/');
+                    let isTrigger = ['01', '04', '07', '10'].includes(mStr);
+                    let dctfHtml = '';
+                    
+                    if (isTrigger) {
+                        let isDctfOk = d && d.dctfweb;
+                        dctfHtml = `<div style="margin-top: 4px; padding-top: 4px; border-top: 1px solid #ccc; font-size: 8px; font-weight: bold; color: ${isDctfOk ? '#4f46e5' : '#888'};">
+                            ${isDctfOk ? '☑ DCTF-Web' : '☐ DCTF-Web'}
+                        </div>`;
+                    }
+
+                    if (!d) return `<td style="padding: 6px; border: 1px solid #c7d2fe; text-align: center; color: #ccc;">- ${dctfHtml}</td>`;
                     
                     let reinfVal = (d.reinf || '').toUpperCase();
                     let isEntregue = reinfVal.includes('OK');
@@ -1844,11 +1898,13 @@
                             <span style="font-size: 11px; font-weight: bold; color: #065f46;">${reinfVal}</span><br>
                             <span style="font-size: 8px; color: #10b981; font-weight: bold;">✅ ENTREGUE</span>
                             ${dataEntr}
+                            ${dctfHtml}
                         </td>`;
                     } else {
                         return `<td style="padding: 6px; border: 1px solid #c7d2fe; text-align: center;">
                             <span style="font-size: 11px; color: #555; font-weight: bold;">${displayVal}</span><br>
                             <span style="font-size: 8px; color: #f97316; font-weight: bold;">⏳ PENDENTE</span>
+                            ${dctfHtml}
                         </td>`;
                     }
                 }).join('');
@@ -2339,7 +2395,7 @@
             if (cli && val !== old) {
                 // Assegura que o objeto do mês exista se a empresa for "faltante" na importação
                 if (!cli.mensal[mes]) {
-                    cli.mensal[mes] = { antec: '-', lancado: '-', reinf: '-', dataEntregaReinf: '' };
+                    cli.mensal[mes] = { antec: '-', lancado: '-', reinf: '-', dataEntregaReinf: '', dctfweb: false };
                 }
 
                 let dataAtual = new Date().toLocaleDateString('pt-BR');
@@ -2388,7 +2444,7 @@
                         if (isTriggerMonth) {
                             targets.forEach(t => {
                                 if (!cli.mensal[t]) {
-                                    cli.mensal[t] = { antec: '-', lancado: '-', reinf: '-', dataEntregaReinf: '' };
+                                    cli.mensal[t] = { antec: '-', lancado: '-', reinf: '-', dataEntregaReinf: '', dctfweb: false };
                                 }
                                 
                                 let tVlr = window.parseCurrency(cli.mensal[t].antec);
@@ -2600,7 +2656,8 @@
                     antec: ant, 
                     lancado: oldLancado, 
                     reinf: old?.reinf || '-',
-                    dataEntregaReinf: old?.dataEntregaReinf || ''
+                    dataEntregaReinf: old?.dataEntregaReinf || '',
+                    dctfweb: old?.dctfweb || false
                 };
             });
             
