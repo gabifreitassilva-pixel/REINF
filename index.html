@@ -537,13 +537,12 @@
                         if (c.dataCobranca === undefined) c.dataCobranca = '';
                         if (c.dataRecebimento === undefined) c.dataRecebimento = '';
                         if (c.tipoCobranca === undefined) c.tipoCobranca = '';
+                        if (c.presuncao === undefined) c.presuncao = false;
                         if (!c.id) c.id = window.generateId();
                         
                         if (c.mensal) {
                             Object.keys(c.mensal).forEach(m => {
-                                // Limpeza de propriedades velhas que não usamos mais
                                 delete c.mensal[m].dataEntregaReinf;
-                                
                                 if (c.mensal[m] && c.mensal[m].dctfweb === undefined) {
                                     c.mensal[m].dctfweb = false;
                                 }
@@ -1303,6 +1302,23 @@
             janelaImpressao.document.close();
         };
 
+        window.togglePresuncao = async function(id, isChecked) {
+            let cli = window.appState.clientes.find(c => c.id === id);
+            if(cli) {
+                cli.presuncao = isChecked;
+                window.appState.historicoGeral.push({
+                    tipo: 'edicao',
+                    data: new Date().toLocaleString('pt-BR'),
+                    usuario: window.appState.currentUser,
+                    mes: 'CADASTRO',
+                    alteracoes: [`<span class="text-indigo-600 font-bold">PRESUNÇÃO:</span> <b>${cli.razao}</b> - ${isChecked ? 'Ativada (Valor de faturamento travado)' : 'Desativada'}.`]
+                });
+                await window.saveState();
+                window.renderListaCadastro();
+                window.renderTable();
+            }
+        };
+
         // ==========================================
         // CADASTRO DE CLIENTES (Inteligente e Editável com ID Único)
         // ==========================================
@@ -1310,7 +1326,7 @@
             window.appState.clientes.push({
                 id: window.generateId(),
                 razao: 'NOVA EMPRESA', cnpj: 'S/ CNPJ', contato: '', atividade: '', regime: '',
-                obs: '', whatsapp: '', dataCobranca: '', dataRecebimento: '', tipoCobranca: '', mensal: {}
+                obs: '', whatsapp: '', dataCobranca: '', dataRecebimento: '', tipoCobranca: '', mensal: {}, presuncao: false
             });
             window.appState.historicoGeral.push({
                 tipo: 'edicao',
@@ -1332,7 +1348,7 @@
                     id: window.generateId(),
                     razao: cliBase.razao, cnpj: cliBase.cnpj,
                     contato: 'NOVO SÓCIO', regime: cliBase.regime, atividade: cliBase.atividade,
-                    obs: cliBase.obs, whatsapp: cliBase.whatsapp, dataCobranca: cliBase.dataCobranca, dataRecebimento: cliBase.dataRecebimento, tipoCobranca: cliBase.tipoCobranca, mensal: {}
+                    obs: cliBase.obs, whatsapp: cliBase.whatsapp, dataCobranca: cliBase.dataCobranca, dataRecebimento: cliBase.dataRecebimento, tipoCobranca: cliBase.tipoCobranca, mensal: {}, presuncao: cliBase.presuncao || false
                 });
                 window.appState.historicoGeral.push({
                     tipo: 'edicao',
@@ -1469,7 +1485,7 @@
                     window.appState.clientes.push({
                         id: window.generateId(),
                         razao: nome, cnpj: cnpj, contato: contato, atividade: atividade, regime: regime,
-                        obs: '', whatsapp: whatsapp, dataCobranca: '', dataRecebimento: '', tipoCobranca: '', mensal: {} 
+                        obs: '', whatsapp: whatsapp, dataCobranca: '', dataRecebimento: '', tipoCobranca: '', mensal: {}, presuncao: false
                     });
                     novos++;
                 }
@@ -1524,9 +1540,13 @@
                         <input type="text" value="${valCnpj}" class="text-[9px] font-mono text-indigo-600 font-bold bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none w-1/3" placeholder="CNPJ" title="CNPJ" onchange="window.editarClienteCadastro('${cli.id}', 'cnpj', this)">
                         <input type="text" value="${valContato}" class="text-[9px] text-slate-500 bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none w-2/3" placeholder="Sócio / Contato" title="Contato" onchange="window.editarClienteCadastro('${cli.id}', 'contato', this)">
                     </div>
-                    <div class="flex w-full mt-1 border-t border-slate-50 pt-1.5 gap-2">
+                    <div class="flex w-full mt-1 border-t border-slate-50 pt-1.5 gap-2 items-center">
                         <input type="text" value="${valAtividade}" class="text-[8px] text-slate-400 bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none w-1/3 uppercase font-bold" placeholder="ATIVIDADE" title="Atividade" onchange="window.editarClienteCadastro('${cli.id}', 'atividade', this)">
                         <input type="text" value="${valRegime}" class="text-[8px] text-slate-400 bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none w-1/3 uppercase font-bold" placeholder="REGIME" title="Regime" onchange="window.editarClienteCadastro('${cli.id}', 'regime', this)">
+                        <label class="flex items-center gap-1 cursor-pointer hover:bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200 ml-auto flex-shrink-0" title="Não sobrescrever valor na importação">
+                            <input type="checkbox" ${cli.presuncao ? 'checked' : ''} onchange="window.togglePresuncao('${cli.id}', this.checked)" class="w-3 h-3 accent-indigo-600">
+                            <span class="text-[8px] font-black ${cli.presuncao ? 'text-indigo-700' : 'text-slate-500'} uppercase tracking-tight">PRESUNÇÃO 🔒</span>
+                        </label>
                     </div>
                     <div class="flex w-full mt-1 border-t border-slate-50 pt-1.5 gap-2">
                         <input type="text" value="${valWhatsapp}" class="text-[9px] text-slate-500 bg-transparent border-b border-transparent hover:border-slate-300 focus:border-emerald-500 outline-none w-1/2" placeholder="Link/Telefone WhatsApp" title="WhatsApp" onchange="window.editarClienteCadastro('${cli.id}', 'whatsapp', this)">
@@ -1678,14 +1698,16 @@
             window.currentDisplayedLogs = [...logsFiltrados].reverse();
 
             container.innerHTML = window.currentDisplayedLogs.map((reg, idx) => `
-                <div class="mb-3 bg-white p-2.5 rounded-lg border border-slate-200 text-[10px] shadow-sm relative">
-                    <button onclick="window.imprimirLogHistorico(${idx})" class="absolute top-2 right-2 bg-white text-slate-500 hover:text-blue-600 border border-slate-200 hover:bg-blue-50 px-1.5 py-0.5 rounded shadow-sm flex items-center gap-1 font-bold tracking-widest text-[8px] transition-colors" title="Imprimir este Log">🖨️ IMPRIMIR</button>
-                    <div class="flex justify-between items-center border-b border-slate-100 mb-2 pb-1.5 pr-16">
-                        <span class="text-blue-600 font-black uppercase tracking-tight">${reg.usuario}</span>
-                        <div class="text-right leading-none">
-                            <span class="text-slate-400 font-bold block">${reg.mes}</span>
-                            <span class="text-slate-300 text-[8px]">${reg.data}</span>
+                <div class="mb-3 bg-white p-2.5 rounded-lg border border-slate-200 text-[10px] shadow-sm flex flex-col">
+                    <div class="flex justify-between items-start border-b border-slate-100 mb-2 pb-1.5 gap-2">
+                        <div class="flex flex-col gap-0.5">
+                            <span class="text-blue-600 font-black uppercase tracking-tight">${reg.usuario}</span>
+                            <span class="text-slate-400 font-bold leading-none block">${reg.mes}</span>
+                            <span class="text-slate-300 text-[8px] leading-none block">${reg.data}</span>
                         </div>
+                        <button onclick="window.imprimirLogHistorico(${idx})" class="bg-white text-slate-500 hover:text-blue-600 border border-slate-200 hover:bg-blue-50 px-1.5 py-1 rounded shadow-sm flex items-center gap-1 font-bold tracking-widest text-[8px] transition-colors flex-shrink-0" title="Imprimir este Log">
+                            🖨️ IMPRIMIR
+                        </button>
                     </div>
                     <div class="max-h-60 overflow-y-auto pr-1">
                         ${reg.alteracoes.map(a => `<div class="text-slate-700 py-0.5 leading-tight">• ${a}</div>`).join('')}
@@ -2390,9 +2412,11 @@
                 
                 let classRec = isRec ? 'bg-emerald-100 text-emerald-600 shadow-sm border-emerald-300' : 'bg-slate-100 text-slate-400 grayscale opacity-50 hover:grayscale-0 hover:opacity-100 hover:text-emerald-500 hover:border-emerald-300 border-slate-200';
 
+                let iconePresuncao = cli.presuncao ? ' <span class="text-[9px] text-amber-500" title="Cálculo por Presunção (Valor Travado)">🔒</span>' : '';
+
                 let row = `<tr id="row-${cli.id}" onclick="window.selectRow('${cli.id}')" class="${trBgClass} border-b border-slate-100 transition-colors cursor-pointer">
                     ${window.isAdmin ? `<td class="col-fixed-del align-middle"><button onclick="window.excluirLinhaMainTable('${cli.id}'); event.stopPropagation();" class="text-red-500 hover:text-red-700 font-black text-xs">&times;</button></td>` : ''}
-                    <td class="col-fixed-razao font-black uppercase tracking-tighter" title="${cli.razao}">${cli.razao}</td>
+                    <td class="col-fixed-razao font-black uppercase tracking-tighter" title="${cli.razao}">${cli.razao}${iconePresuncao}</td>
                     <td class="col-fixed-cnpj font-mono text-blue-700 tracking-tighter">${cli.cnpj}</td>
                     <td class="col-fixed-contato uppercase" title="${cli.contato}">${cli.contato}</td>
                     <td class="col-fixed-atividade uppercase" title="${cli.atividade || ''}">${cli.atividade || ''}</td>
@@ -2414,23 +2438,20 @@
                         let d = cli.mensal[m] || { antec: '-', lancado: '-', reinf: '-', dctfweb: false };
                         let cLancado = d.lancado.toUpperCase() === 'OK' ? 'text-blue-600 font-black' : (d.lancado.toUpperCase() === 'NT' ? 'text-emerald-600 font-black' : 'text-slate-400');
                         
+                        // --- DECLARAÇÕES (REINF e DCTF) NA TELA PRINCIPAL ---
+                        let reinfVal = (d.reinf || '-').toUpperCase();
+                        let reinfChecked = reinfVal.includes('OK');
+                        let dctfChecked = !!d.dctfweb;
+
                         let vlr = window.parseCurrency(d.antec);
                         let bgAntec = "bg-transparent";
-                        let bgFolha = "bg-transparent";
-                        let bgDeclTd = "bg-transparent";
                         let fontAntec = "text-slate-900";
                         let badgeHtml = "";
                         
                         let antecText = (d.antec || '').trim().toUpperCase();
 
-                        let reinfVal = (d.reinf || '-').toUpperCase();
-                        let reinfChecked = reinfVal.includes('OK');
-                        let dctfChecked = !!d.dctfweb;
-
                         if (reinfChecked) {
                             bgAntec = "bg-emerald-100";
-                            bgFolha = "bg-emerald-100";
-                            bgDeclTd = dctfChecked ? "bg-emerald-200" : "bg-emerald-100";
                             fontAntec = "text-emerald-800";
                             if (vlr > 50000) {
                                 badgeHtml = `<div class="text-[8px] bg-emerald-600 text-white rounded px-1.5 mt-0.5 inline-block font-black tracking-widest leading-tight shadow-sm">MENSAL >50k</div>`;
@@ -2438,8 +2459,6 @@
                                 badgeHtml = `<div class="text-[8px] bg-emerald-500 text-white rounded px-1.5 mt-0.5 inline-block font-black tracking-widest leading-tight shadow-sm">TRIMESTRAL</div>`;
                             }
                         } else {
-                            if (dctfChecked) bgDeclTd = "bg-indigo-50";
-
                             if (vlr > 50000) {
                                 bgAntec = "bg-red-50"; fontAntec = "text-red-700";
                                 badgeHtml = `<div class="text-[8px] bg-red-600 text-white rounded px-1.5 mt-0.5 inline-block font-black tracking-widest leading-tight shadow-sm">MENSAL >50k</div>`;
@@ -2448,6 +2467,8 @@
                                 badgeHtml = `<div class="text-[8px] bg-slate-400 text-white rounded px-1.5 mt-0.5 inline-block font-black tracking-widest leading-tight shadow-sm">TRIMESTRAL</div>`;
                             }
                         }
+
+                        let bgDeclTd = (reinfChecked && dctfChecked) ? "bg-emerald-100" : (reinfChecked || dctfChecked ? "bg-emerald-50" : "bg-transparent");
 
                         let htmlDeclaracoes = `
                             <div class="flex flex-col gap-1 items-start justify-center text-left mx-auto w-fit py-0.5">
@@ -2467,7 +2488,7 @@
                                 <div>${d.antec}</div>
                                 ${badgeHtml}
                             </td>
-                            <td class="${bgFolha} align-middle transition-colors">
+                            <td class="bg-transparent align-middle transition-colors">
                                 <input type="text" class="cell-input ${cLancado}" value="${d.lancado}" onchange="window.atualizarCelulaManual('${cli.id}', '${m}', 'lancado', this, '${d.lancado}')" onclick="event.stopPropagation()">
                             </td>
                             <td class="${bgDeclTd} align-middle transition-colors relative" style="min-width: 80px;">
@@ -2665,7 +2686,7 @@
                 if (!cli) {
                     cli = { 
                         id: window.generateId(), razao: razao, cnpj: cnpj || "S/ CNPJ", contato: contato, 
-                        regime: '', atividade: '', obs: '', whatsapp: '', dataCobranca: '', dataRecebimento: '', tipoCobranca: '', mensal: {} 
+                        regime: '', atividade: '', obs: '', whatsapp: '', dataCobranca: '', dataRecebimento: '', tipoCobranca: '', mensal: {}, presuncao: false 
                     };
                     window.appState.clientes.push(cli);
                     htmlNovosPopup += `<li><b>${razao}</b> - <i class="text-slate-400">CNPJ: ${cnpj}</i></li>`;
@@ -2688,13 +2709,18 @@
                 let oldAntec = old?.antec || '-';
                 let oldLancado = old?.lancado || '-'; // Mantém o que já está preenchido no sistema
 
+                // TRAVAR VALOR SE FOR PRESUNÇÃO
+                if (cli.presuncao) {
+                    ant = oldAntec; // Sempre ignora Excel e mantém o que tá na memória (seja manual ou vazio)
+                }
+
                 // Alertas de 50k
-                if (window.parseCurrency(ant) > 50000) {
+                if (window.parseCurrency(ant) > 50000 && !cli.presuncao) {
                     htmlAlertas50kPopup += `<li><b>${cli.razao}</b> - R$ ${ant}</li>`;
                 }
 
                 // Logs de alteração de valor de antecipação
-                if (old && oldAntec !== '-' && oldAntec !== ant && ant !== '-') {
+                if (old && oldAntec !== '-' && oldAntec !== ant && ant !== '-' && !cli.presuncao) {
                     htmlAlteracoesPopup += `<li><b>${cli.razao}</b>: R$ ${oldAntec} ➔ R$ ${ant}</li>`;
                     logAlteracoesValores.push(`<span class="text-amber-500 font-bold">VALOR:</span> <b>${cli.razao}</b> | R$ ${oldAntec} ➔ R$ ${ant}`);
                 }
