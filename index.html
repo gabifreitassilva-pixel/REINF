@@ -797,20 +797,26 @@
 
             let msg = `Olá ${firstName}, tudo bem?\nEstamos organizando os arquivos para a contabilidade da empresa *${targetCli.razao}* e sentimos falta dos extratos bancários de *${mesesStr}*.\n\nSe puder disponibilizar por aqui, já consigo deixar tudo engatilhado para que o pessoal do contábil dê continuidade na contabilização.`;
 
-            // Tentativa de cópia moderna e fallback seguro
+            // Tentativa de cópia síncrona garantida para iFrames (Como o Canvas)
+            let copiado = false;
             try {
-                if (navigator.clipboard && window.isSecureContext) {
-                    await navigator.clipboard.writeText(msg);
-                } else {
-                    const el = document.createElement('textarea');
-                    el.value = msg;
-                    document.body.appendChild(el);
-                    el.select();
-                    document.execCommand('copy');
-                    document.body.removeChild(el);
-                }
+                const el = document.createElement('textarea');
+                el.value = msg;
+                el.setAttribute('readonly', '');
+                el.style.position = 'fixed';
+                el.style.left = '-9999px';
+                document.body.appendChild(el);
+                el.select();
+                el.setSelectionRange(0, 99999);
+                copiado = document.execCommand('copy');
+                document.body.removeChild(el);
             } catch(e) {
-                console.warn("Erro ao tentar copiar texto: ", e);
+                console.warn("Erro ao tentar copiar via execCommand: ", e);
+            }
+
+            // Fallback para API moderna caso execCommand falhe, mas é assíncrono
+            if (!copiado && navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(msg).catch(e => console.warn("Erro no clipboard API: ", e));
             }
 
             let link = targetCli.whatsapp.trim();
@@ -1730,40 +1736,41 @@
                                 </thead>
                                 <tbody>
                                     ${listaTodos.map(emp => {
+                                        let hasDataInAnyMonth = false;
+                                        
                                         let tdMeses = sortedMeses.map(m => {
                                             let d = emp.mensal[m];
                                             if (!d || (!d.antec && d.antec !== 'S/M' && d.antec !== '0')) {
-                                                return `<td class="p-2 border-r border-slate-100 text-center text-slate-300">-</td>`;
+                                                return `<td class="p-2 border-r border-slate-100 text-center align-middle"></td>`;
                                             }
+                                            
                                             let vlr = window.parseCurrency(d.antec);
                                             let isMensal = vlr > 50000;
-                                            let isTrimestral = (vlr > 0 && vlr <= 50000) || d.antec === 'S/M';
+                                            
+                                            // Qualquer texto que não seja '-', ou valor > 0 deve ser interpretado.
+                                            let antecText = d.antec.trim().toUpperCase();
+                                            let isTrimestral = (vlr > 0 && vlr <= 50000) || (antecText !== '-' && antecText !== '');
+                                            
                                             let reinfVal = (d.reinf || '').toUpperCase();
                                             let isEntregue = reinfVal.includes('OK');
 
                                             if (!isMensal && !isTrimestral) {
-                                                 return `<td class="p-2 border-r border-slate-100 text-center text-slate-300">-</td>`;
+                                                 return `<td class="p-2 border-r border-slate-100 text-center align-middle"></td>`;
                                             }
+                                            
+                                            hasDataInAnyMonth = true;
 
-                                            let badgeClass = '';
-                                            let text = '';
                                             if (isEntregue) {
-                                                badgeClass = 'bg-emerald-100 text-emerald-800 border-emerald-300';
-                                                text = `✅ ${reinfVal.includes('MENSAL') ? 'MENSAL OK' : 'TRIM OK'}`;
+                                                return `<td class="p-2 border-r border-slate-100 text-center align-middle bg-emerald-50/30">
+                                                    <div class="text-[10px] font-black text-emerald-700">${d.antec}</div>
+                                                    <div class="text-[7px] text-emerald-500 font-bold uppercase">✅ Entregue</div>
+                                                </td>`;
                                             } else {
-                                                if (isMensal) {
-                                                    badgeClass = 'bg-red-100 text-red-800 border-red-300';
-                                                    text = `❌ PEND. MENSAL`;
-                                                } else {
-                                                    badgeClass = 'bg-amber-100 text-amber-800 border-amber-300';
-                                                    text = `⏳ PEND. TRIM.`;
-                                                }
+                                                return `<td class="p-2 border-r border-slate-100 text-center align-middle"></td>`;
                                             }
-
-                                            return `<td class="p-2 border-r border-slate-100 text-center align-middle">
-                                                <div class="text-[8px] font-black px-1.5 py-0.5 rounded border shadow-sm inline-block ${badgeClass}">${text}</div>
-                                            </td>`;
                                         }).join('');
+
+                                        if(!hasDataInAnyMonth) return '';
 
                                         return `
                                             <tr class="border-b border-slate-100 hover:bg-slate-50">
@@ -1800,40 +1807,40 @@
             let thMeses = sortedMeses.map(m => `<th style="padding: 8px; border: 1px solid #c7d2fe; text-align: center; width: 100px;">${m}</th>`).join('');
             
             let trEmpresas = listaTodos.map(emp => {
+                let hasDataInAnyMonth = false;
+                
                 let tdMeses = sortedMeses.map(m => {
                     let d = emp.mensal[m];
                     if (!d || (!d.antec && d.antec !== 'S/M' && d.antec !== '0')) {
-                        return `<td style="padding: 8px; border: 1px solid #c7d2fe; text-align: center; color: #ccc;">-</td>`;
+                        return `<td style="padding: 8px; border: 1px solid #c7d2fe; text-align: center;"></td>`;
                     }
+                    
                     let vlr = window.parseCurrency(d.antec);
                     let isMensal = vlr > 50000;
-                    let isTrimestral = (vlr > 0 && vlr <= 50000) || d.antec === 'S/M';
+                    
+                    let antecText = d.antec.trim().toUpperCase();
+                    let isTrimestral = (vlr > 0 && vlr <= 50000) || (antecText !== '-' && antecText !== '');
+                    
                     let reinfVal = (d.reinf || '').toUpperCase();
                     let isEntregue = reinfVal.includes('OK');
 
                     if (!isMensal && !isTrimestral) {
-                         return `<td style="padding: 8px; border: 1px solid #c7d2fe; text-align: center; color: #ccc;">-</td>`;
+                         return `<td style="padding: 8px; border: 1px solid #c7d2fe; text-align: center;"></td>`;
                     }
+                    
+                    hasDataInAnyMonth = true;
 
-                    let styleText = '';
-                    let text = '';
                     if (isEntregue) {
-                        styleText = 'color: #065f46; background-color: #d1fae5; border-color: #6ee7b7;';
-                        text = `✅ ${reinfVal.includes('MENSAL') ? 'MENSAL OK' : 'TRIM OK'}`;
+                        return `<td style="padding: 8px; border: 1px solid #c7d2fe; text-align: center; background-color: #ecfdf5;">
+                            <span style="font-size: 11px; font-weight: bold; color: #065f46;">${d.antec}</span><br>
+                            <span style="font-size: 8px; color: #10b981;">✅ ENTREGUE</span>
+                        </td>`;
                     } else {
-                        if (isMensal) {
-                            styleText = 'color: #991b1b; background-color: #fee2e2; border-color: #fca5a5;';
-                            text = `❌ PEND. MENSAL`;
-                        } else {
-                            styleText = 'color: #92400e; background-color: #fef3c7; border-color: #fcd34d;';
-                            text = `⏳ PEND. TRIM.`;
-                        }
+                        return `<td style="padding: 8px; border: 1px solid #c7d2fe; text-align: center;"></td>`;
                     }
-
-                    return `<td style="padding: 8px; border: 1px solid #c7d2fe; text-align: center;">
-                        <span style="font-size: 10px; font-weight: bold; padding: 3px 6px; border-radius: 4px; border-width: 1px; border-style: solid; display: inline-block; ${styleText}">${text}</span>
-                    </td>`;
                 }).join('');
+
+                if(!hasDataInAnyMonth) return '';
 
                 return `<tr>
                     <td style="padding: 8px; border: 1px solid #c7d2fe; font-weight: bold; font-size: 12px; color: #333;">${emp.razao}</td>
@@ -2304,10 +2311,12 @@
                         // Só auto-preenche se existir dado financeiro real para o mês alvo
                         if (cli.mensal[t] && cli.mensal[t].antec && cli.mensal[t].antec !== '-') {
                             let tVlr = window.parseCurrency(cli.mensal[t].antec);
+                            let antecText = cli.mensal[t].antec.trim().toUpperCase();
+                            
                             if (tVlr > 50000) {
                                 cli.mensal[t].reinf = 'MENSAL OK';
                                 alteradosTrim = true;
-                            } else if (tVlr > 0 || cli.mensal[t].antec === 'S/M') {
+                            } else if (tVlr > 0 || (antecText !== '-' && antecText !== '')) {
                                 cli.mensal[t].reinf = 'TRIM OK';
                                 alteradosTrim = true;
                             }
