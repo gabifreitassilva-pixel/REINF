@@ -121,7 +121,7 @@
     <div id="modalAdmin" class="fixed inset-0 bg-slate-900 bg-opacity-80 flex justify-center items-center z-[110] hidden px-4">
         <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-sm text-center border-t-4 border-red-600">
             <h2 class="text-xl font-black mb-2 text-slate-800 uppercase tracking-tight">Modo Administrador</h2>
-            <p class="text-xs text-slate-500 mb-4 font-medium">Digite a senha para habilitar a exclusão e limpeza de registros.</p>
+            <p class="text-xs text-slate-500 mb-4 font-medium">Digite a senha para habilitar a edição manual e exclusão de registros.</p>
             <input type="password" id="adminPasswordInput" class="w-full border-2 border-slate-200 p-3 rounded-lg mb-4 text-center font-bold text-lg focus:border-red-500 outline-none" placeholder="****">
             <div class="flex gap-2">
                 <button onclick="document.getElementById('modalAdmin').classList.add('hidden')" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-black px-4 py-2 rounded-lg w-1/3 transition-all uppercase">Cancelar</button>
@@ -479,7 +479,7 @@
                 document.getElementById('btnAdmin').classList.replace('bg-slate-100', 'bg-red-100');
                 document.getElementById('btnAdmin').classList.replace('text-slate-500', 'text-red-700');
                 document.getElementById('btnAdmin').innerHTML = '🔓 ADMIN ATIVO';
-                alert("Modo Administrador ativado! Agora você pode usar as funções de exclusão e limpeza de registros.");
+                alert("Modo Administrador ativado! Agora você pode usar as funções de exclusão e edição manual de valores da planilha.");
                 window.renderTable();
             } else {
                 alert("Senha incorreta!");
@@ -855,8 +855,37 @@
         };
 
         // ==========================================
-        // DECLARAÇÕES: REINF, DCTF-WEB E FOLHA
+        // DECLARAÇÕES: REINF, DCTF-WEB E FOLHA E EDIÇÃO MANUAL DE ANTECIPAÇÃO
         // ==========================================
+
+        window.atualizarAntecManual = async function(id, mes, el, old) {
+            if (!window.isAdmin) return alert("Ação restrita! Ative o Modo Admin no topo da tela para alterar valores manualmente.");
+            let cli = window.appState.clientes.find(c => c.id === id);
+            let val = el.value.trim();
+            if(!val) val = '-';
+            
+            if (cli && val !== old) {
+                if (!cli.mensal[mes]) {
+                    cli.mensal[mes] = { antec: '-', lancado: '-', reinf: '-', dctfweb: false };
+                }
+                
+                cli.mensal[mes].antec = val;
+                el.value = val;
+                el.setAttribute('onchange', `window.atualizarAntecManual('${id}', '${mes}', this, '${val}')`);
+
+                window.appState.historicoGeral.push({
+                    tipo: 'edicao',
+                    data: new Date().toLocaleString('pt-BR'),
+                    usuario: window.appState.currentUser, mes: mes,
+                    alteracoes: [`<span class="text-amber-600 font-bold">EDIÇÃO DE VALOR (ADMIN):</span> <b>${cli.razao} (${cli.contato})</b> - Antecipação alterada de '${old}' para '${val}'`]
+                });
+                
+                await window.saveState(); 
+                window.renderHistorico();
+                window.renderTable(); 
+                window.renderClassificacao();
+            }
+        };
         
         window.toggleLancado = async function(id, mes, isChecked) {
             if (window.isVisitante) return alert("Modo Visitante: Acesso apenas para visualização.");
@@ -2709,9 +2738,13 @@
                             </div>
                         `;
 
+                        let contentAntec = window.isAdmin ? 
+                            `<input type="text" class="w-full bg-transparent text-center font-black ${fontAntec} outline-none focus:bg-white focus:ring-1 focus:ring-blue-500 rounded p-0.5 cell-input" value="${d.antec}" onchange="window.atualizarAntecManual('${cli.id}', '${m}', this, '${d.antec}')" onclick="event.stopPropagation()">` : 
+                            `<div>${d.antec}</div>`;
+
                         row += `
-                            <td class="${bgAntec} font-black ${fontAntec} align-middle transition-colors">
-                                <div>${d.antec}</div>
+                            <td class="${bgAntec} align-middle transition-colors">
+                                ${contentAntec}
                                 ${badgeHtml}
                             </td>
                             <td class="bg-transparent align-middle transition-colors cursor-pointer hover:bg-black/5" onclick="window.toggleLancado('${cli.id}', '${m}', ${d.lancado !== 'OK'}); event.stopPropagation();">
