@@ -79,6 +79,13 @@
             font-size: 9px;
         }
         .cell-input:focus { background: white; box-shadow: inset 0 0 0 1px #3b82f6; }
+
+        /* DESTAQUE DE LINHA SELECIONADA (Clique) */
+        .linha-selecionada td {
+            background-color: #ffedd5 !important; /* Laranja clarinho */
+            border-top: 1px solid #fb923c !important; 
+            border-bottom: 1px solid #fb923c !important;
+        }
     </style>
 </head>
 <body class="font-sans overflow-hidden">
@@ -400,6 +407,19 @@
 
         window.generateId = function() {
             return 'cli_' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
+        };
+
+        // Seleção de Linhas (Visual)
+        window.selectedRowId = null;
+        window.selectRow = function(id) {
+            document.querySelectorAll('#tabelaCorpo tr').forEach(tr => {
+                tr.classList.remove('linha-selecionada');
+            });
+            window.selectedRowId = id;
+            let newRow = document.getElementById('row-' + id);
+            if (newRow) {
+                newRow.classList.add('linha-selecionada');
+            }
         };
 
         // Variáveis de Estado da Aplicação
@@ -755,8 +775,8 @@
             window.executarCobrancaWhatsapp(cli.id);
         };
 
-        // Função que realmente copia a mensagem e abre o WhatsApp (ativada pelo clique)
-        window.executarCobrancaWhatsapp = async function(targetId) {
+        // Função que realmente copia a mensagem e abre o WhatsApp (ativada pelo clique de forma 100% síncrona para não ser bloqueada pelo browser)
+        window.executarCobrancaWhatsapp = function(targetId) {
             // Fecha o modal caso ele esteja aberto
             document.getElementById('modalSocioWhatsapp').classList.add('hidden');
 
@@ -803,7 +823,7 @@
                 const el = document.createElement('textarea');
                 el.value = msg;
                 el.setAttribute('readonly', '');
-                el.style.position = 'fixed';
+                el.style.position = 'absolute';
                 el.style.left = '-9999px';
                 document.body.appendChild(el);
                 el.select();
@@ -853,9 +873,10 @@
                 alteracoes: [`<span class="text-emerald-600 font-bold">COBRANÇA WHATSAPP:</span> <b>${targetCli.razao}</b> - Mensagem de cobrança enviada.`]
             });
 
-            await window.saveState();
-            window.renderTable();
-            window.renderHistorico();
+            window.saveState().then(() => {
+                window.renderTable();
+                window.renderHistorico();
+            });
             
             alert(`A mensagem de cobrança para ${firstName} foi copiada!\n(Pressione Ctrl+V no WhatsApp para colar e enviar)`);
         };
@@ -1736,41 +1757,25 @@
                                 </thead>
                                 <tbody>
                                     ${listaTodos.map(emp => {
-                                        let hasDataInAnyMonth = false;
-                                        
                                         let tdMeses = sortedMeses.map(m => {
                                             let d = emp.mensal[m];
-                                            if (!d || (!d.antec && d.antec !== 'S/M' && d.antec !== '0')) {
-                                                return `<td class="p-2 border-r border-slate-100 text-center align-middle"></td>`;
-                                            }
-                                            
-                                            let vlr = window.parseCurrency(d.antec);
-                                            let isMensal = vlr > 50000;
-                                            
-                                            // Qualquer texto que não seja '-', ou valor > 0 deve ser interpretado.
-                                            let antecText = d.antec.trim().toUpperCase();
-                                            let isTrimestral = (vlr > 0 && vlr <= 50000) || (antecText !== '-' && antecText !== '');
+                                            if (!d) return `<td class="p-2 border-r border-slate-100 text-center align-middle"></td>`;
                                             
                                             let reinfVal = (d.reinf || '').toUpperCase();
                                             let isEntregue = reinfVal.includes('OK');
 
-                                            if (!isMensal && !isTrimestral) {
-                                                 return `<td class="p-2 border-r border-slate-100 text-center align-middle"></td>`;
-                                            }
-                                            
-                                            hasDataInAnyMonth = true;
-
-                                            if (isEntregue) {
-                                                return `<td class="p-2 border-r border-slate-100 text-center align-middle bg-emerald-50/30">
-                                                    <div class="text-[10px] font-black text-emerald-700">${d.antec}</div>
-                                                    <div class="text-[7px] text-emerald-500 font-bold uppercase">✅ Entregue</div>
-                                                </td>`;
-                                            } else {
+                                            if (!isEntregue) {
                                                 return `<td class="p-2 border-r border-slate-100 text-center align-middle"></td>`;
                                             }
-                                        }).join('');
+                                            
+                                            let isMensal = reinfVal.includes('MENSAL');
+                                            let displayVal = d.antec !== '-' && d.antec !== '' ? d.antec : 'S/M';
 
-                                        if(!hasDataInAnyMonth) return '';
+                                            return `<td class="p-2 border-r border-slate-100 text-center align-middle bg-emerald-50/30">
+                                                <div class="text-[10px] font-black text-emerald-700">${displayVal}</div>
+                                                <div class="text-[7px] text-emerald-500 font-bold uppercase">✅ ${isMensal ? 'MENSAL' : 'TRIM'}</div>
+                                            </td>`;
+                                        }).join('');
 
                                         return `
                                             <tr class="border-b border-slate-100 hover:bg-slate-50">
@@ -1807,40 +1812,25 @@
             let thMeses = sortedMeses.map(m => `<th style="padding: 8px; border: 1px solid #c7d2fe; text-align: center; width: 100px;">${m}</th>`).join('');
             
             let trEmpresas = listaTodos.map(emp => {
-                let hasDataInAnyMonth = false;
-                
                 let tdMeses = sortedMeses.map(m => {
                     let d = emp.mensal[m];
-                    if (!d || (!d.antec && d.antec !== 'S/M' && d.antec !== '0')) {
-                        return `<td style="padding: 8px; border: 1px solid #c7d2fe; text-align: center;"></td>`;
-                    }
-                    
-                    let vlr = window.parseCurrency(d.antec);
-                    let isMensal = vlr > 50000;
-                    
-                    let antecText = d.antec.trim().toUpperCase();
-                    let isTrimestral = (vlr > 0 && vlr <= 50000) || (antecText !== '-' && antecText !== '');
+                    if (!d) return `<td style="padding: 8px; border: 1px solid #c7d2fe; text-align: center;"></td>`;
                     
                     let reinfVal = (d.reinf || '').toUpperCase();
                     let isEntregue = reinfVal.includes('OK');
 
-                    if (!isMensal && !isTrimestral) {
-                         return `<td style="padding: 8px; border: 1px solid #c7d2fe; text-align: center;"></td>`;
-                    }
-                    
-                    hasDataInAnyMonth = true;
-
-                    if (isEntregue) {
-                        return `<td style="padding: 8px; border: 1px solid #c7d2fe; text-align: center; background-color: #ecfdf5;">
-                            <span style="font-size: 11px; font-weight: bold; color: #065f46;">${d.antec}</span><br>
-                            <span style="font-size: 8px; color: #10b981;">✅ ENTREGUE</span>
-                        </td>`;
-                    } else {
+                    if (!isEntregue) {
                         return `<td style="padding: 8px; border: 1px solid #c7d2fe; text-align: center;"></td>`;
                     }
-                }).join('');
+                    
+                    let isMensal = reinfVal.includes('MENSAL');
+                    let displayVal = d.antec !== '-' && d.antec !== '' ? d.antec : 'S/M';
 
-                if(!hasDataInAnyMonth) return '';
+                    return `<td style="padding: 8px; border: 1px solid #c7d2fe; text-align: center; background-color: #ecfdf5;">
+                        <span style="font-size: 11px; font-weight: bold; color: #065f46;">${displayVal}</span><br>
+                        <span style="font-size: 8px; color: #10b981;">✅ ${isMensal ? 'MENSAL OK' : 'TRIM OK'}</span>
+                    </td>`;
+                }).join('');
 
                 return `<tr>
                     <td style="padding: 8px; border: 1px solid #c7d2fe; font-weight: bold; font-size: 12px; color: #333;">${emp.razao}</td>
@@ -2167,15 +2157,6 @@
 
             tbody.innerHTML = list.length === 0 ? `<tr><td colspan="100" class="text-center py-20 text-slate-300 uppercase font-black italic tracking-widest">Nenhum dado</td></tr>` : 
             list.map(cli => {
-                let optionsHtml = `<option value="" ${!cli.conta ? 'selected' : ''}>-</option>`;
-                let optionsArray = window.appState.opcoesConta || ['BANCO', 'CAIXA', 'PRESUNÇÃO'];
-                if (cli.conta && !optionsArray.includes(cli.conta)) {
-                     optionsHtml += `<option value="${cli.conta}" selected>${cli.conta} (Inativa)</option>`;
-                }
-                optionsArray.forEach(opt => {
-                    optionsHtml += `<option value="${opt}" ${cli.conta === opt ? 'selected' : ''}>${opt}</option>`;
-                });
-
                 // NOVIDADE: Linha verde se TODOS os REINFs devidos estiverem OK. Linha amarela se não houver NENHUM dado nos meses visíveis (Faltante).
                 let allReinfOk = true;
                 let hasAnyValue = false;
@@ -2188,9 +2169,11 @@
                         if (d) {
                             let vlr = window.parseCurrency(d.antec);
                             let antecText = (d.antec || '').trim().toUpperCase();
-                            if (vlr > 0 || antecText === 'S/M' || (antecText !== '-' && antecText !== '')) {
+                            let r = d.reinf ? d.reinf.toUpperCase() : '';
+                            
+                            // Para considerar que a linha tem valor, ou ela tem dinheiro (>0), ou tem texto na antecipação que não seja traço/vazio, ou o próprio REINF já tem "OK" (indicando que foi resolvido).
+                            if (vlr > 0 || antecText === 'S/M' || (antecText !== '-' && antecText !== '') || r.includes('OK')) {
                                 hasAnyValue = true;
-                                let r = d.reinf ? d.reinf.toUpperCase() : '';
                                 if (!r.includes('OK')) {
                                     allReinfOk = false;
                                 }
@@ -2210,6 +2193,11 @@
                     trBgClass = 'bg-emerald-100 hover:bg-emerald-200 border-emerald-200';
                 }
 
+                // Linha selecionada visualmente
+                if (cli.id === window.selectedRowId) {
+                    trBgClass += ' linha-selecionada';
+                }
+
                 // Lógica de Cores dos Botões (Cinza quando inativo, Colorido quando usado)
                 let isManual = cli.tipoCobranca === 'manual';
                 let isWhats = cli.tipoCobranca === 'whatsapp';
@@ -2221,8 +2209,8 @@
                 
                 let classRec = isRec ? 'bg-emerald-100 text-emerald-600 shadow-sm border-emerald-300' : 'bg-slate-100 text-slate-400 grayscale opacity-50 hover:grayscale-0 hover:opacity-100 hover:text-emerald-500 hover:border-emerald-300 border-slate-200';
 
-                let row = `<tr class="${trBgClass} border-b border-slate-100 transition-colors">
-                    ${window.isAdmin ? `<td class="col-fixed-del align-middle"><button onclick="window.excluirLinhaMainTable('${cli.id}')" class="text-red-500 hover:text-red-700 font-black text-xs">&times;</button></td>` : ''}
+                let row = `<tr id="row-${cli.id}" onclick="window.selectRow('${cli.id}')" class="${trBgClass} border-b border-slate-100 transition-colors cursor-pointer">
+                    ${window.isAdmin ? `<td class="col-fixed-del align-middle"><button onclick="window.excluirLinhaMainTable('${cli.id}'); event.stopPropagation();" class="text-red-500 hover:text-red-700 font-black text-xs">&times;</button></td>` : ''}
                     <td class="col-fixed-razao font-black text-slate-800 uppercase tracking-tighter" title="${cli.razao}">${cli.razao}</td>
                     <td class="col-fixed-cnpj font-mono text-blue-700 tracking-tighter">${cli.cnpj}</td>
                     <td class="col-fixed-contato text-slate-500 uppercase" title="${cli.contato}">${cli.contato}</td>
@@ -2230,13 +2218,13 @@
                     <td class="col-fixed-regime font-black text-slate-600 uppercase">${cli.regime || ''}</td>
                     <td class="col-fixed-extratos align-middle">
                         <div class="flex items-center justify-center h-full gap-1.5">
-                            <button onclick="window.cobrarManual('${cli.id}')" class="transition-all text-[10px] rounded p-1 flex-shrink-0 border ${classManual}" title="${cli.dataCobranca && isManual ? 'Cobrado Manualmente em ' + cli.dataCobranca + ' (Clique para editar)' : 'Informar data de cobrança manual'}">📅</button>
+                            <button onclick="window.cobrarManual('${cli.id}'); event.stopPropagation();" class="transition-all text-[10px] rounded p-1 flex-shrink-0 border ${classManual}" title="${cli.dataCobranca && isManual ? 'Cobrado Manualmente em ' + cli.dataCobranca + ' (Clique para editar)' : 'Informar data de cobrança manual'}">📅</button>
                             
-                            <button onclick="window.cobrarWhatsApp('${cli.id}')" class="transition-all text-[10px] rounded p-1 flex-shrink-0 border ${classWhats}" title="${cli.dataCobranca && isWhats ? 'Mensagem Whatsapp gerada em ' + cli.dataCobranca : 'Cobrar Extratos via WhatsApp (Atualiza data para hoje)'}">
+                            <button onclick="window.cobrarWhatsApp('${cli.id}'); event.stopPropagation();" class="transition-all text-[10px] rounded p-1 flex-shrink-0 border ${classWhats}" title="${cli.dataCobranca && isWhats ? 'Mensagem Whatsapp gerada em ' + cli.dataCobranca : 'Cobrar Extratos via WhatsApp (Atualiza data para hoje)'}">
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" class="w-3 h-3 fill-current"><path d="M380.9 97.1C339 55.1 283.2 32 223.9 32c-122.4 0-222 99.6-222 222 0 39.1 10.2 77.3 29.6 111L0 480l117.7-30.9c32.4 17.7 68.9 27 106.1 27h.1c122.3 0 224.1-99.6 224.1-222 0-59.3-23.2-115-65.1-157zM223.9 414.8c-33.2 0-65.8-8.9-94-25.7l-6.7-4-69.8 18.3L72 334.2l-4.4-7c-18.5-29.4-28.2-63.3-28.2-98.2 0-101.7 82.8-184.5 184.6-184.5 49.3 0 95.6 19.2 130.4 54.1 34.8 34.9 56.2 81.2 56.1 130.5 0 101.8-84.9 184.6-186.6 184.6zm101.2-138.2c-5.5-2.8-32.8-16.2-37.9-18-5.1-1.9-8.8-2.8-12.5 2.8-3.7 5.6-14.3 18-17.6 21.8-3.2 3.7-6.5 4.2-12 1.4-32.6-16.3-54-29.1-75.5-66-5.7-9.8 5.7-9.1 16.3-30.3 1.8-3.7 .9-6.9-.5-9.7-1.4-2.8-12.5-30.1-17.1-41.2-4.5-10.8-9.1-9.3-12.5-9.5-3.2-.2-6.9-.2-10.6-.2-3.7 0-9.7 1.4-14.8 6.9-5.1 5.6-19.4 19-19.4 46.3 0 27.3 19.9 53.7 22.6 57.4 2.8 3.7 39.1 59.7 94.8 83.8 35.2 15.2 49 16.5 66.6 13.9 10.7-1.6 32.8-13.4 37.4-26.4 4.6-13 4.6-24.1 3.2-26.4-1.3-2.5-5-3.9-10.5-6.6z"/></svg>
                             </button>
                             
-                            <button onclick="window.marcarExtratoRecebido('${cli.id}')" class="transition-all text-[10px] rounded p-1 flex-shrink-0 border ${classRec}" title="${cli.dataRecebimento ? 'Recebido em ' + cli.dataRecebimento + ' (Clique para desmarcar)' : 'Marcar como Recebido'}">✅</button>
+                            <button onclick="window.marcarExtratoRecebido('${cli.id}'); event.stopPropagation();" class="transition-all text-[10px] rounded p-1 flex-shrink-0 border ${classRec}" title="${cli.dataRecebimento ? 'Recebido em ' + cli.dataRecebimento + ' (Clique para desmarcar)' : 'Marcar como Recebido'}">✅</button>
                         </div>
                     </td>`;
                 
@@ -2250,10 +2238,11 @@
                         let fontAntec = "text-slate-900";
                         let badgeHtml = "";
                         
+                        let antecText = (d.antec || '').trim().toUpperCase();
                         if (vlr > 50000) {
                             bgAntec = "bg-red-50"; fontAntec = "text-red-700";
                             badgeHtml = `<div class="text-[8px] bg-red-600 text-white rounded px-1.5 mt-0.5 inline-block font-black tracking-widest leading-tight shadow-sm">MENSAL >50k</div>`;
-                        } else if (vlr > 0 || d.antec === 'S/M') {
+                        } else if (vlr > 0 || antecText === 'S/M' || (antecText !== '-' && antecText !== '')) {
                             bgAntec = "bg-emerald-50"; fontAntec = "text-emerald-800";
                             badgeHtml = `<div class="text-[8px] bg-emerald-500 text-white rounded px-1.5 mt-0.5 inline-block font-black tracking-widest leading-tight shadow-sm">TRIMESTRAL</div>`;
                         }
@@ -2271,10 +2260,10 @@
                                 ${badgeHtml}
                             </td>
                             <td class="align-middle">
-                                <input type="text" class="cell-input ${cLancado}" value="${d.lancado}" onchange="window.atualizarCelulaManual('${cli.id}', '${m}', 'lancado', this, '${d.lancado}')">
+                                <input type="text" class="cell-input ${cLancado}" value="${d.lancado}" onchange="window.atualizarCelulaManual('${cli.id}', '${m}', 'lancado', this, '${d.lancado}')" onclick="event.stopPropagation()">
                             </td>
                             <td class="${bgReinfTd} align-middle transition-colors">
-                                <input type="text" class="cell-input ${cReinfText} uppercase" value="${d.reinf}" onchange="window.atualizarCelulaManual('${cli.id}', '${m}', 'reinf', this, '${d.reinf}')">
+                                <input type="text" class="cell-input ${cReinfText} uppercase" value="${d.reinf}" onchange="window.atualizarCelulaManual('${cli.id}', '${m}', 'reinf', this, '${d.reinf}')" onclick="event.stopPropagation()">
                             </td>`;
                     }
                 });
@@ -2322,43 +2311,58 @@
             let cli = window.appState.clientes.find(c => c.id === id);
             let val = el.value.trim().toUpperCase();
             
-            if (cli && cli.mensal[mes] && val !== old) {
-                
+            if (cli && val !== old) {
+                // Ensure month object exists if it's a "faltante" we are modifying
+                if (!cli.mensal[mes]) {
+                    cli.mensal[mes] = { antec: '-', lancado: '-', reinf: '-' };
+                }
+
                 // === LÓGICA INTELIGENTE AUTO-PREENCHIMENTO REINF ===
                 if (campo === 'reinf' && val.includes('OK')) {
-                    // 1. Atualiza o próprio mês em que digitou OK (Mensal ou Trim)
-                    let vlrCurrent = window.parseCurrency(cli.mensal[mes].antec);
-                    if (vlrCurrent > 50000) val = 'MENSAL OK';
-                    else val = 'TRIM OK'; // Default para o que é <= 50k
-                    
-                    cli.mensal[mes].reinf = val;
-                    
-                    // 2. Verifica se o mês onde deu OK é Mês de Fechamento de Trimestre
+                    // Verifica se o mês onde deu OK é Mês de Fechamento de Trimestre
                     let [mStr, yStr] = mes.split('/');
                     let mNum = parseInt(mStr, 10);
                     let yNum = parseInt(yStr, 10);
                     let targets = [];
+                    let isTriggerMonth = false;
 
                     // Mapeia os 3 meses anteriores ao mês de entrega
-                    if (mNum === 4) targets = [`01/${yStr}`, `02/${yStr}`, `03/${yStr}`];
-                    else if (mNum === 7) targets = [`04/${yStr}`, `05/${yStr}`, `06/${yStr}`];
-                    else if (mNum === 10) targets = [`07/${yStr}`, `08/${yStr}`, `09/${yStr}`];
-                    else if (mNum === 1) targets = [`10/${yNum-1}`, `11/${yNum-1}`, `12/${yNum-1}`];
+                    if (mNum === 4) { targets = [`01/${yStr}`, `02/${yStr}`, `03/${yStr}`]; isTriggerMonth = true; }
+                    else if (mNum === 7) { targets = [`04/${yStr}`, `05/${yStr}`, `06/${yStr}`]; isTriggerMonth = true; }
+                    else if (mNum === 10) { targets = [`07/${yStr}`, `08/${yStr}`, `09/${yStr}`]; isTriggerMonth = true; }
+                    else if (mNum === 1) { targets = [`10/${yNum-1}`, `11/${yNum-1}`, `12/${yNum-1}`]; isTriggerMonth = true; }
+
+                    let vlrCurrent = window.parseCurrency(cli.mensal[mes].antec);
+                    let isCurrentMensal = vlrCurrent > 50000;
+
+                    if (isCurrentMensal) {
+                        val = 'MENSAL OK';
+                    } else {
+                        if (isTriggerMonth) {
+                            val = ''; // O mês trigger (ex: Abril) que não passou de 50k NÃO é baixado agora.
+                        } else {
+                            val = 'TRIM OK'; // Default para mês solto que <= 50k
+                        }
+                    }
+                    cli.mensal[mes].reinf = val;
 
                     let alteradosTrim = false;
                     targets.forEach(t => {
-                        // Só auto-preenche se existir dado financeiro real para o mês alvo
-                        if (cli.mensal[t] && cli.mensal[t].antec && cli.mensal[t].antec !== '-') {
-                            let tVlr = window.parseCurrency(cli.mensal[t].antec);
-                            let antecText = cli.mensal[t].antec.trim().toUpperCase();
-                            
-                            if (tVlr > 50000) {
-                                cli.mensal[t].reinf = 'MENSAL OK';
-                                alteradosTrim = true;
-                            } else if (tVlr > 0 || (antecText !== '-' && antecText !== '')) {
-                                cli.mensal[t].reinf = 'TRIM OK';
-                                alteradosTrim = true;
-                            }
+                        // Cria o mês faltante se não existir para poder dar o OK do trimestre nele
+                        if (!cli.mensal[t]) {
+                            cli.mensal[t] = { antec: '-', lancado: '-', reinf: '-' };
+                        }
+                        
+                        let tVlr = window.parseCurrency(cli.mensal[t].antec);
+                        let antecText = (cli.mensal[t].antec || '').trim().toUpperCase();
+                        
+                        if (tVlr > 50000) {
+                            cli.mensal[t].reinf = 'MENSAL OK';
+                            alteradosTrim = true;
+                        } else if (tVlr > 0 || (antecText !== '-' && antecText !== '')) {
+                            // Se for <=50k, ou S/M, ou Faltante/Texto (exceto vazio/-), ganha TRIM OK
+                            cli.mensal[t].reinf = 'TRIM OK';
+                            alteradosTrim = true;
                         }
                     });
                     
@@ -2371,7 +2375,7 @@
                         });
                     }
                 } else {
-                    // Atualização padrão para quem não digitou "OK"
+                    // Atualização padrão para quem não digitou "OK" ou limpou a célula
                     cli.mensal[mes][campo] = val;
                 }
 
@@ -2387,7 +2391,7 @@
                     tipo: 'edicao',
                     data: new Date().toLocaleString('pt-BR'),
                     usuario: window.appState.currentUser, mes: mes,
-                    alteracoes: [`<span class="text-blue-600 font-bold">EDIÇÃO MANUAL:</span> <b>${cli.razao} (${cli.contato})</b> - ${campo.toUpperCase()} mudou para '${val}'`]
+                    alteracoes: [`<span class="text-blue-600 font-bold">EDIÇÃO MANUAL:</span> <b>${cli.razao} (${cli.contato})</b> - ${campo.toUpperCase()} mudou para '${val || 'Vazio'}'`]
                 });
                 
                 window.saveState(); 
