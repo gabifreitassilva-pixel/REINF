@@ -1114,6 +1114,66 @@
         };
 
         // ==========================================
+        // IMPRESSÃO DE LOGS INDIVIDUAIS
+        // ==========================================
+        window.imprimirLogHistorico = function(idx) {
+            const reg = window.currentDisplayedLogs[idx];
+            if (!reg) return;
+
+            let titulo = 'Relatório de Log';
+            if (reg.tipo === 'modificacao' || reg.tipo === 'edicao') titulo = 'Relatório de Modificações / Alterações';
+            if (reg.tipo === 'faltante') titulo = 'Relatório de Clientes Faltantes (Ausentes na Importação)';
+            if (reg.tipo === 'novo_cliente') titulo = 'Relatório de Novos Clientes (Cadastros Novos)';
+            if (reg.tipo === 'importacao_resumo') titulo = 'Resumo da Importação';
+
+            let listaHTML = reg.alteracoes.map(a => `<li>${a}</li>`).join('');
+
+            const janelaImpressao = window.open('', '_blank');
+            janelaImpressao.document.write(`
+                <html>
+                <head>
+                    <title>${titulo}</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; padding: 20px; }
+                        h1 { font-size: 18px; color: #333; text-transform: uppercase; margin-bottom: 5px; }
+                        .header { border-bottom: 2px solid #ccc; padding-bottom: 10px; margin-bottom: 20px; }
+                        ul { list-style-type: none; padding-left: 0; }
+                        li { padding: 8px; border-bottom: 1px solid #eee; font-size: 13px; color: #444; }
+                        b { color: #111; font-size: 14px; }
+                        i { color: #666; font-size: 11px; }
+                        .text-slate-400 { color: #888; }
+                        .text-amber-500 { color: #f59e0b; }
+                        .text-red-500 { color: #ef4444; }
+                        .text-red-600 { color: #dc2626; }
+                        .text-indigo-600 { color: #4f46e5; }
+                        .text-blue-600 { color: #2563eb; }
+                        .text-emerald-600 { color: #059669; }
+                        .font-bold { font-weight: bold; }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <h1>${titulo} - Mês: ${reg.mes}</h1>
+                        <p style="font-size: 11px; color: #666; margin: 0;">Usuário: ${reg.usuario} | Data do Registo: ${reg.data} | <strong>Planilha de Integrações</strong></p>
+                    </div>
+                    <ul>
+                        ${listaHTML}
+                    </ul>
+                    <script>
+                        window.onload = function() { 
+                            setTimeout(function() {
+                                window.print(); 
+                                window.close();
+                            }, 500);
+                        };
+                    <\/script>
+                </body>
+                </html>
+            `);
+            janelaImpressao.document.close();
+        };
+
+        // ==========================================
         // IMPRESSÃO DOS RELATÓRIOS DO POPUP DE IMPORTAÇÃO
         // ==========================================
         window.imprimirRelatorioImportacao = function(tipo) {
@@ -1614,16 +1674,22 @@
                 container.innerHTML = `<p class="text-[9px] text-slate-400 text-center mt-10 uppercase font-bold tracking-widest">Nenhum registo nesta categoria</p>`;
                 return;
             }
-            container.innerHTML = [...logsFiltrados].reverse().map(reg => `
-                <div class="mb-3 bg-white p-2.5 rounded-lg border border-slate-200 text-[10px] shadow-sm">
-                    <div class="flex justify-between items-center border-b border-slate-100 mb-2 pb-1.5">
+            
+            window.currentDisplayedLogs = [...logsFiltrados].reverse();
+
+            container.innerHTML = window.currentDisplayedLogs.map((reg, idx) => `
+                <div class="mb-3 bg-white p-2.5 rounded-lg border border-slate-200 text-[10px] shadow-sm relative">
+                    <button onclick="window.imprimirLogHistorico(${idx})" class="absolute top-2 right-2 bg-white text-slate-500 hover:text-blue-600 border border-slate-200 hover:bg-blue-50 px-1.5 py-0.5 rounded shadow-sm flex items-center gap-1 font-bold tracking-widest text-[8px] transition-colors" title="Imprimir este Log">🖨️ IMPRIMIR</button>
+                    <div class="flex justify-between items-center border-b border-slate-100 mb-2 pb-1.5 pr-16">
                         <span class="text-blue-600 font-black uppercase tracking-tight">${reg.usuario}</span>
                         <div class="text-right leading-none">
                             <span class="text-slate-400 font-bold block">${reg.mes}</span>
                             <span class="text-slate-300 text-[8px]">${reg.data}</span>
                         </div>
                     </div>
-                    ${reg.alteracoes.map(a => `<div class="text-slate-700 py-0.5 leading-tight">• ${a}</div>`).join('')}
+                    <div class="max-h-60 overflow-y-auto pr-1">
+                        ${reg.alteracoes.map(a => `<div class="text-slate-700 py-0.5 leading-tight">• ${a}</div>`).join('')}
+                    </div>
                 </div>
             `).join('');
         };
