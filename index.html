@@ -2291,8 +2291,6 @@
 
             tbody.innerHTML = list.length === 0 ? `<tr><td colspan="100" class="text-center py-20 text-slate-300 uppercase font-black italic tracking-widest">Nenhum dado</td></tr>` : 
             list.map(cli => {
-                let allReinfOk = true;
-                let hasAnyValue = false;
                 let hasVisibleMonths = false;
                 let isImported = false;
                 
@@ -2302,16 +2300,6 @@
                         let d = cli.mensal[m];
                         if (d) {
                             isImported = true;
-                            let vlr = window.parseCurrency(d.antec);
-                            let antecText = (d.antec || '').trim().toUpperCase();
-                            let r = d.reinf ? d.reinf.toUpperCase() : '';
-                            
-                            if (vlr > 0 || antecText === 'S/M' || (antecText !== '-' && antecText !== '') || r.includes('OK')) {
-                                hasAnyValue = true;
-                                if (!r.includes('OK')) {
-                                    allReinfOk = false;
-                                }
-                            }
                         }
                     }
                 });
@@ -2320,8 +2308,6 @@
                 
                 if (hasVisibleMonths && !isImported) {
                     trBgClass = 'bg-gray-50 text-gray-400 opacity-60 hover:opacity-100 hover:bg-gray-100'; 
-                } else if (hasAnyValue && allReinfOk) {
-                    trBgClass = 'bg-emerald-100 hover:bg-emerald-200 border-emerald-200';
                 }
 
                 if (cli.id === window.selectedRowId) {
@@ -2362,20 +2348,23 @@
                         let d = cli.mensal[m] || { antec: '-', lancado: '-', reinf: '-', dctfweb: false };
                         let cLancado = d.lancado.toUpperCase() === 'OK' ? 'text-blue-600 font-black' : (d.lancado.toUpperCase() === 'NT' ? 'text-emerald-600 font-black' : 'text-slate-400');
                         
-                        // --- DECLARAÇÕES (REINF e DCTF) NA TELA PRINCIPAL ---
-                        let reinfVal = (d.reinf || '-').toUpperCase();
-                        let reinfChecked = reinfVal.includes('OK');
-                        let dctfChecked = !!d.dctfweb;
-
                         let vlr = window.parseCurrency(d.antec);
                         let bgAntec = "bg-transparent";
+                        let bgFolha = "bg-transparent";
+                        let bgDeclTd = "bg-transparent";
                         let fontAntec = "text-slate-900";
                         let badgeHtml = "";
                         
                         let antecText = (d.antec || '').trim().toUpperCase();
 
+                        let reinfVal = (d.reinf || '-').toUpperCase();
+                        let reinfChecked = reinfVal.includes('OK');
+                        let dctfChecked = !!d.dctfweb;
+
                         if (reinfChecked) {
                             bgAntec = "bg-emerald-100";
+                            bgFolha = "bg-emerald-100";
+                            bgDeclTd = dctfChecked ? "bg-emerald-200" : "bg-emerald-100";
                             fontAntec = "text-emerald-800";
                             if (vlr > 50000) {
                                 badgeHtml = `<div class="text-[8px] bg-emerald-600 text-white rounded px-1.5 mt-0.5 inline-block font-black tracking-widest leading-tight shadow-sm">MENSAL >50k</div>`;
@@ -2383,6 +2372,8 @@
                                 badgeHtml = `<div class="text-[8px] bg-emerald-500 text-white rounded px-1.5 mt-0.5 inline-block font-black tracking-widest leading-tight shadow-sm">TRIMESTRAL</div>`;
                             }
                         } else {
+                            if (dctfChecked) bgDeclTd = "bg-indigo-50";
+
                             if (vlr > 50000) {
                                 bgAntec = "bg-red-50"; fontAntec = "text-red-700";
                                 badgeHtml = `<div class="text-[8px] bg-red-600 text-white rounded px-1.5 mt-0.5 inline-block font-black tracking-widest leading-tight shadow-sm">MENSAL >50k</div>`;
@@ -2391,8 +2382,6 @@
                                 badgeHtml = `<div class="text-[8px] bg-slate-400 text-white rounded px-1.5 mt-0.5 inline-block font-black tracking-widest leading-tight shadow-sm">TRIMESTRAL</div>`;
                             }
                         }
-
-                        let bgDeclTd = (reinfChecked && dctfChecked) ? "bg-emerald-100" : (reinfChecked || dctfChecked ? "bg-emerald-50" : "bg-transparent");
 
                         let htmlDeclaracoes = `
                             <div class="flex flex-col gap-1 items-start justify-center text-left mx-auto w-fit py-0.5">
@@ -2408,11 +2397,11 @@
                         `;
 
                         row += `
-                            <td class="${bgAntec} font-black ${fontAntec} align-middle">
+                            <td class="${bgAntec} font-black ${fontAntec} align-middle transition-colors">
                                 <div>${d.antec}</div>
                                 ${badgeHtml}
                             </td>
-                            <td class="align-middle">
+                            <td class="${bgFolha} align-middle transition-colors">
                                 <input type="text" class="cell-input ${cLancado}" value="${d.lancado}" onchange="window.atualizarCelulaManual('${cli.id}', '${m}', 'lancado', this, '${d.lancado}')" onclick="event.stopPropagation()">
                             </td>
                             <td class="${bgDeclTd} align-middle transition-colors relative" style="min-width: 80px;">
