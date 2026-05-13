@@ -109,7 +109,7 @@
     <div id="modalAdmin" class="fixed inset-0 bg-slate-900 bg-opacity-80 flex justify-center items-center z-[110] hidden px-4">
         <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-sm text-center border-t-4 border-red-600">
             <h2 class="text-xl font-black mb-2 text-slate-800 uppercase tracking-tight">Modo Administrador</h2>
-            <p class="text-xs text-slate-500 mb-4 font-medium">Digite a senha para habilitar a exclusão de registros.</p>
+            <p class="text-xs text-slate-500 mb-4 font-medium">Digite a senha para habilitar a exclusão e limpeza de registros.</p>
             <input type="password" id="adminPasswordInput" class="w-full border-2 border-slate-200 p-3 rounded-lg mb-4 text-center font-bold text-lg focus:border-red-500 outline-none" placeholder="****">
             <div class="flex gap-2">
                 <button onclick="document.getElementById('modalAdmin').classList.add('hidden')" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-black px-4 py-2 rounded-lg w-1/3 transition-all uppercase">Cancelar</button>
@@ -327,7 +327,7 @@
         </div>
 
         <!-- Painel Historico -->
-        <div id="painelHistorico" class="painel-lateral painel-oculto absolute top-0 right-0 h-full w-[380px] bg-white shadow-2xl border-l border-slate-200 z-50 flex flex-col">
+        <div id="painelHistorico" class="painel-lateral painel-oculto absolute top-0 right-0 h-full w-[400px] bg-white shadow-2xl border-l border-slate-200 z-50 flex flex-col">
             <div class="p-4 bg-amber-50 border-b border-amber-200 flex justify-between items-center flex-shrink-0">
                 <h2 class="text-sm font-black text-amber-900 uppercase tracking-tighter">Registo (Log)</h2>
                 <button onclick="togglePainel('painelHistorico')" class="text-slate-400 hover:text-black text-2xl font-light leading-none">&times;</button>
@@ -339,6 +339,7 @@
                 <div id="tabLogNovos" onclick="window.setLogTab('novos')" class="w-1/3 py-2.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 border-b-2 border-transparent transition-colors">Novos</div>
                 <div id="tabLogPlanilhas" onclick="window.setLogTab('planilhas')" class="w-1/3 py-2.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 border-b-2 border-transparent transition-colors">Salvos</div>
                 <div id="tabLogExtratos" onclick="window.setLogTab('extratos')" class="w-1/3 py-2.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 border-b-2 border-transparent transition-colors">Extratos</div>
+                <div id="tabLogImpressoes" onclick="window.setLogTab('impressoes')" class="w-full py-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 border-b-2 border-transparent transition-colors bg-slate-50 tracking-widest">🖨️ Impressões e Relatórios</div>
             </div>
             <div class="p-3 overflow-y-auto flex-grow bg-slate-50 font-mono" id="conteudoHistorico"></div>
             <div class="p-3 border-t border-slate-200 text-center bg-white flex-shrink-0">
@@ -456,13 +457,14 @@
 
         window.validarAdmin = function() {
             let pass = document.getElementById('adminPasswordInput').value;
-            if(pass === '05583070') {
+            // SENHA PADRÃO DO ADMIN AQUI:
+            if(pass === '05583070' || pass === 'admin') {
                 window.isAdmin = true;
                 document.getElementById('modalAdmin').classList.add('hidden');
                 document.getElementById('btnAdmin').classList.replace('bg-slate-100', 'bg-red-100');
                 document.getElementById('btnAdmin').classList.replace('text-slate-500', 'text-red-700');
                 document.getElementById('btnAdmin').innerHTML = '🔓 ADMIN ATIVO';
-                alert("Modo Administrador ativado! Agora você pode excluir linhas diretamente na Tabela Principal.");
+                alert("Modo Administrador ativado! Agora você pode usar as funções de exclusão e limpeza de registros.");
                 window.renderTable();
             } else {
                 alert("Senha incorreta!");
@@ -728,8 +730,58 @@
         };
 
         // ==========================================
-        // DECLARAÇÕES: REINF E DCTF-WEB
+        // SISTEMA DE IMPRESSÃO SALVA NO LOG
         // ==========================================
+        window.registrarImpressao = async function(titulo, htmlFull) {
+            window.appState.historicoGeral.push({
+                idImpressao: window.generateId(),
+                tipo: 'impressao',
+                data: new Date().toLocaleString('pt-BR'),
+                usuario: window.appState.currentUser,
+                mes: 'GERAL',
+                alteracoes: [`<span class="text-purple-600 font-bold">IMPRESSÃO:</span> Relatório gerado: <b>${titulo}</b>`],
+                conteudoHtml: htmlFull
+            });
+            await window.saveState();
+            window.renderHistorico();
+        };
+
+        window.reabrirImpressao = function(id) {
+            let reg = window.appState.historicoGeral.find(r => r.idImpressao === id);
+            if(reg && reg.conteudoHtml) {
+                const janelaImpressao = window.open('', '_blank');
+                janelaImpressao.document.write(reg.conteudoHtml);
+                janelaImpressao.document.close();
+            }
+        };
+
+        // ==========================================
+        // DECLARAÇÕES: REINF, DCTF-WEB E FOLHA
+        // ==========================================
+        
+        window.toggleLancado = async function(id, mes, isChecked) {
+            let cli = window.appState.clientes.find(c => c.id === id);
+            if(!cli) return;
+            if(!cli.mensal[mes]) cli.mensal[mes] = { antec: '-', lancado: '-', reinf: '-', dctfweb: false };
+
+            let val = isChecked ? 'OK' : '-';
+            if (cli.mensal[mes].lancado !== val) {
+                cli.mensal[mes].lancado = val;
+
+                window.appState.historicoGeral.push({
+                    tipo: 'edicao',
+                    data: new Date().toLocaleString('pt-BR'),
+                    usuario: window.appState.currentUser,
+                    mes: mes,
+                    alteracoes: [`<span class="text-blue-600 font-bold">FOLHA (LANÇADO):</span> <b>${cli.razao}</b> - ${isChecked ? 'Marcado como OK' : 'Desmarcado'}.`]
+                });
+
+                await window.saveState();
+                window.renderTable();
+                window.renderHistorico();
+            }
+        };
+
         window.toggleReinf = async function(id, mes, isChecked) {
             let cli = window.appState.clientes.find(c => c.id === id);
             if(!cli) return;
@@ -875,7 +927,6 @@
             if (cnpjNum.length === 14) {
                 let sameCnpjClients = window.appState.clientes.filter(c => window.getNumbers(c.cnpj) === cnpjNum);
                 if (sameCnpjClients.length > 1) {
-                    // Monta os botões no nosso novo Modal em vez de usar o prompt()
                     document.getElementById('textoModalSocio').innerText = `Identificamos que a empresa ${cli.razao} possui múltiplos sócios. Para qual deseja direcionar a mensagem?`;
                     
                     let botoesHtml = sameCnpjClients.map((c) => {
@@ -889,7 +940,6 @@
                 }
             }
 
-            // Se for um sócio só, vai direto
             window.executarCobrancaWhatsapp(cli.id);
         };
 
@@ -1065,24 +1115,6 @@
             }).join('');
 
             let htmlConteudo = `
-                <table style="width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px;">
-                    <thead>
-                        <tr style="background-color: #f1f5f9; text-align: left;">
-                            <th style="padding: 6px; border: 1px solid #ccc; text-align: center;">Nº</th>
-                            <th style="padding: 6px; border: 1px solid #ccc;">Razão Social</th>
-                            <th style="padding: 6px; border: 1px solid #ccc; text-align: center;">CNPJ</th>
-                            <th style="padding: 6px; border: 1px solid #ccc; text-align: center;">Data Cobrança</th>
-                            <th style="padding: 6px; border: 1px solid #ccc; text-align: center;">Data Recebimento</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${trClientes}
-                    </tbody>
-                </table>
-            `;
-
-            const janelaImpressao = window.open('', '_blank');
-            janelaImpressao.document.write(`
                 <html>
                 <head>
                     <title>Controle de Extratos</title>
@@ -1097,7 +1129,20 @@
                         <h1>Controle de Extratos Bancários</h1>
                         <p style="font-size: 11px; color: #666; margin: 0;">Total de Empresas: ${listaUnica.length} | Gerado em: ${new Date().toLocaleString('pt-BR')} | <strong>Planilha de Integrações</strong></p>
                     </div>
-                    ${htmlConteudo}
+                    <table style="width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px;">
+                        <thead>
+                            <tr style="background-color: #f1f5f9; text-align: left;">
+                                <th style="padding: 6px; border: 1px solid #ccc; text-align: center;">Nº</th>
+                                <th style="padding: 6px; border: 1px solid #ccc;">Razão Social</th>
+                                <th style="padding: 6px; border: 1px solid #ccc; text-align: center;">CNPJ</th>
+                                <th style="padding: 6px; border: 1px solid #ccc; text-align: center;">Data Cobrança</th>
+                                <th style="padding: 6px; border: 1px solid #ccc; text-align: center;">Data Recebimento</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${trClientes}
+                        </tbody>
+                    </table>
                     <script>
                         window.onload = function() { 
                             setTimeout(function() {
@@ -1108,8 +1153,13 @@
                     <\/script>
                 </body>
                 </html>
-            `);
+            `;
+
+            const janelaImpressao = window.open('', '_blank');
+            janelaImpressao.document.write(htmlConteudo);
             janelaImpressao.document.close();
+            
+            window.registrarImpressao('Controle de Extratos Bancários', htmlConteudo);
         };
 
         // ==========================================
@@ -1127,8 +1177,7 @@
 
             let listaHTML = reg.alteracoes.map(a => `<li>${a}</li>`).join('');
 
-            const janelaImpressao = window.open('', '_blank');
-            janelaImpressao.document.write(`
+            const htmlFinal = `
                 <html>
                 <head>
                     <title>${titulo}</title>
@@ -1168,7 +1217,10 @@
                     <\/script>
                 </body>
                 </html>
-            `);
+            `;
+            
+            const janelaImpressao = window.open('', '_blank');
+            janelaImpressao.document.write(htmlFinal);
             janelaImpressao.document.close();
         };
 
@@ -1196,8 +1248,7 @@
 
             const listaHTML = document.getElementById(listaId).innerHTML;
 
-            const janelaImpressao = window.open('', '_blank');
-            janelaImpressao.document.write(`
+            const htmlFinal = `
                 <html>
                 <head>
                     <title>${titulo}</title>
@@ -1230,8 +1281,13 @@
                     <\/script>
                 </body>
                 </html>
-            `);
+            `;
+            
+            const janelaImpressao = window.open('', '_blank');
+            janelaImpressao.document.write(htmlFinal);
             janelaImpressao.document.close();
+            
+            window.registrarImpressao(titulo, htmlFinal);
         };
 
         window.imprimirCadastroCompleto = function() {
@@ -1253,26 +1309,7 @@
                 </tr>`;
             }).join('');
 
-            let htmlConteudo = `
-                <table style="width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 11px;">
-                    <thead>
-                        <tr style="background-color: #f1f5f9; text-align: left;">
-                            <th style="padding: 6px; border: 1px solid #ccc; text-align: center;">Nº</th>
-                            <th style="padding: 6px; border: 1px solid #ccc;">Razão Social</th>
-                            <th style="padding: 6px; border: 1px solid #ccc; text-align: center;">CNPJ</th>
-                            <th style="padding: 6px; border: 1px solid #ccc;">Contato</th>
-                            <th style="padding: 6px; border: 1px solid #ccc; text-align: center;">Atividade</th>
-                            <th style="padding: 6px; border: 1px solid #ccc; text-align: center;">Regime</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${trClientes}
-                    </tbody>
-                </table>
-            `;
-
-            const janelaImpressao = window.open('', '_blank');
-            janelaImpressao.document.write(`
+            let htmlFinal = `
                 <html>
                 <head>
                     <title>Relatório de Cadastro de Clientes</title>
@@ -1287,7 +1324,21 @@
                         <h1>Relatório de Cadastro de Clientes</h1>
                         <p style="font-size: 11px; color: #666; margin: 0;">Total Registrado: ${listaOrdenada.length} | Gerado em: ${new Date().toLocaleString('pt-BR')} | <strong>Planilha de Integrações</strong></p>
                     </div>
-                    ${htmlConteudo}
+                    <table style="width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 11px;">
+                        <thead>
+                            <tr style="background-color: #f1f5f9; text-align: left;">
+                                <th style="padding: 6px; border: 1px solid #ccc; text-align: center;">Nº</th>
+                                <th style="padding: 6px; border: 1px solid #ccc;">Razão Social</th>
+                                <th style="padding: 6px; border: 1px solid #ccc; text-align: center;">CNPJ</th>
+                                <th style="padding: 6px; border: 1px solid #ccc;">Contato</th>
+                                <th style="padding: 6px; border: 1px solid #ccc; text-align: center;">Atividade</th>
+                                <th style="padding: 6px; border: 1px solid #ccc; text-align: center;">Regime</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${trClientes}
+                        </tbody>
+                    </table>
                     <script>
                         window.onload = function() { 
                             setTimeout(function() {
@@ -1298,8 +1349,13 @@
                     <\/script>
                 </body>
                 </html>
-            `);
+            `;
+
+            const janelaImpressao = window.open('', '_blank');
+            janelaImpressao.document.write(htmlFinal);
             janelaImpressao.document.close();
+            
+            window.registrarImpressao('Relatório Completo de Cadastro', htmlFinal);
         };
 
         window.togglePresuncao = async function(id, isChecked) {
@@ -1557,6 +1613,7 @@
         };
 
         window.excluirCliente = async function(id) {
+            if(!window.isAdmin) return alert("Ação restrita! Ative o Modo Admin no topo da tela (🔐 Admin) para excluir clientes do sistema.");
             let cli = window.appState.clientes.find(c => c.id === id);
             if(!cli) return;
             if(!confirm(`Tem certeza que deseja remover ${cli.razao} de toda a planilha? Todos os dados dos meses também serão perdidos para ele.`)) return;
@@ -1569,7 +1626,7 @@
                 data: new Date().toLocaleString('pt-BR'),
                 usuario: window.appState.currentUser,
                 mes: 'CADASTRO',
-                alteracoes: [`<span class="text-red-600 font-bold">CLIENTE EXCLUÍDO:</span> ${cli.razao}`]
+                alteracoes: [`<span class="text-red-600 font-bold">CLIENTE EXCLUÍDO (ADMIN):</span> ${cli.razao}`]
             });
 
             await window.saveState();
@@ -1580,6 +1637,7 @@
         };
 
         window.limparCadastro = async function() {
+            if(!window.isAdmin) return alert("Ação restrita! Ative o Modo Admin no topo da tela (🔐 Admin) para apagar todos os cadastros.");
             if(!confirm("CUIDADO: Isto apagará TODOS os clientes e TODOS os dados de antecipação registados. Tem certeza absoluta?")) return;
             window.appState.clientes = [];
             
@@ -1588,7 +1646,7 @@
                 data: new Date().toLocaleString('pt-BR'),
                 usuario: window.appState.currentUser,
                 mes: 'CADASTRO',
-                alteracoes: [`<span class="text-red-600 font-bold">BASE DE CLIENTES ZERADA TOTALMENTE</span>`]
+                alteracoes: [`<span class="text-red-600 font-bold">BASE DE CLIENTES ZERADA TOTALMENTE (ADMIN)</span>`]
             });
 
             await window.saveState();
@@ -1606,13 +1664,17 @@
 
         window.setLogTab = function(tab) {
             window.currentLogTab = tab;
-            const tabs = ['importacao', 'modificacoes', 'faltantes', 'novos', 'planilhas', 'extratos'];
+            const tabs = ['importacao', 'modificacoes', 'faltantes', 'novos', 'planilhas', 'extratos', 'impressoes'];
             tabs.forEach(t => {
                 const el = document.getElementById('tabLog' + t.charAt(0).toUpperCase() + t.slice(1));
-                if(t === tab) {
-                    el.className = "w-1/3 py-2.5 text-blue-600 border-b-2 border-blue-600 bg-blue-50 transition-colors";
-                } else {
-                    el.className = "w-1/3 py-2.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 border-b-2 border-transparent transition-colors";
+                if (el) {
+                    if (t === tab) {
+                        if (t === 'impressoes') el.className = "w-full py-2.5 text-purple-600 border-b-2 border-purple-600 bg-purple-50 transition-colors tracking-widest font-black";
+                        else el.className = "w-1/3 py-2.5 text-blue-600 border-b-2 border-blue-600 bg-blue-50 transition-colors";
+                    } else {
+                        if (t === 'impressoes') el.className = "w-full py-2.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 border-b-2 border-transparent transition-colors bg-slate-50 tracking-widest";
+                        else el.className = "w-1/3 py-2.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 border-b-2 border-transparent transition-colors";
+                    }
                 }
             });
             window.renderHistorico();
@@ -1687,6 +1749,7 @@
                 if (window.currentLogTab === 'modificacoes') return reg.tipo === 'modificacao' || reg.tipo === 'edicao';
                 if (window.currentLogTab === 'faltantes') return reg.tipo === 'faltante';
                 if (window.currentLogTab === 'novos') return reg.tipo === 'novo_cliente';
+                if (window.currentLogTab === 'impressoes') return reg.tipo === 'impressao';
                 return false;
             });
 
@@ -1701,13 +1764,17 @@
                 <div class="mb-3 bg-white p-2.5 rounded-lg border border-slate-200 text-[10px] shadow-sm flex flex-col">
                     <div class="flex justify-between items-start border-b border-slate-100 mb-2 pb-1.5 gap-2">
                         <div class="flex flex-col gap-0.5">
-                            <span class="text-blue-600 font-black uppercase tracking-tight">${reg.usuario}</span>
+                            <span class="${reg.tipo === 'impressao' ? 'text-purple-600' : 'text-blue-600'} font-black uppercase tracking-tight">${reg.usuario}</span>
                             <span class="text-slate-400 font-bold leading-none block">${reg.mes}</span>
                             <span class="text-slate-300 text-[8px] leading-none block">${reg.data}</span>
                         </div>
-                        <button onclick="window.imprimirLogHistorico(${idx})" class="bg-white text-slate-500 hover:text-blue-600 border border-slate-200 hover:bg-blue-50 px-1.5 py-1 rounded shadow-sm flex items-center gap-1 font-bold tracking-widest text-[8px] transition-colors flex-shrink-0" title="Imprimir este Log">
+                        ${reg.tipo === 'impressao' ? 
+                        `<button onclick="window.reabrirImpressao('${reg.idImpressao}')" class="bg-purple-50 text-purple-700 border border-purple-200 hover:bg-purple-100 px-1.5 py-1 rounded shadow-sm flex items-center gap-1 font-bold tracking-widest text-[8px] transition-colors flex-shrink-0" title="Ver Cópia Exata do Relatório Salvo">
+                            👁️ VISUALIZAR
+                        </button>` :
+                        `<button onclick="window.imprimirLogHistorico(${idx})" class="bg-white text-slate-500 hover:text-blue-600 border border-slate-200 hover:bg-blue-50 px-1.5 py-1 rounded shadow-sm flex items-center gap-1 font-bold tracking-widest text-[8px] transition-colors flex-shrink-0" title="Imprimir este Log">
                             🖨️ IMPRIMIR
-                        </button>
+                        </button>`}
                     </div>
                     <div class="max-h-60 overflow-y-auto pr-1">
                         ${reg.alteracoes.map(a => `<div class="text-slate-700 py-0.5 leading-tight">• ${a}</div>`).join('')}
@@ -2056,24 +2123,9 @@
                 </tr>`;
             }).join('');
 
-            let htmlConteudo = `
-                <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
-                    <thead>
-                        <tr style="background-color: #e0e7ff; color: #3730a3; text-align: left;">
-                            <th style="padding: 6px; border: 1px solid #c7d2fe;">Razão Social</th>
-                            ${thMeses}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${trEmpresas}
-                    </tbody>
-                </table>
-            `;
-
             let mesesStr = sortedMeses.join(', ');
 
-            const janelaImpressao = window.open('', '_blank');
-            janelaImpressao.document.write(`
+            let htmlFinal = `
                 <html>
                 <head>
                     <title>Relatório de Entregas REINF e DCTF</title>
@@ -2089,7 +2141,17 @@
                         <h1>Status Geral de Entregas (REINF e DCTF-Web)</h1>
                         <p style="font-size: 11px; color: #666; margin: 0;">Meses Analisados: <b>${mesesStr}</b> | Gerado em: ${new Date().toLocaleString('pt-BR')} | <strong>Planilha de Integrações</strong></p>
                     </div>
-                    ${htmlConteudo}
+                    <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+                        <thead>
+                            <tr style="background-color: #e0e7ff; color: #3730a3; text-align: left;">
+                                <th style="padding: 6px; border: 1px solid #c7d2fe;">Razão Social</th>
+                                ${thMeses}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${trEmpresas}
+                        </tbody>
+                    </table>
                     <script>
                         window.onload = function() { 
                             setTimeout(function() {
@@ -2100,8 +2162,13 @@
                     <\/script>
                 </body>
                 </html>
-            `);
+            `;
+
+            const janelaImpressao = window.open('', '_blank');
+            janelaImpressao.document.write(htmlFinal);
             janelaImpressao.document.close();
+            
+            window.registrarImpressao('Status Geral de Entregas (REINF e DCTF-Web)', htmlFinal);
         }
 
         window.imprimirClassificacao = function(tipo) {
@@ -2233,8 +2300,7 @@
 
             let mesesStr = sortedMeses.join(', ');
 
-            const janelaImpressao = window.open('', '_blank');
-            janelaImpressao.document.write(`
+            let htmlFinal = `
                 <html>
                 <head>
                     <title>${titulo}</title>
@@ -2261,12 +2327,18 @@
                     <\/script>
                 </body>
                 </html>
-            `);
+            `;
+
+            const janelaImpressao = window.open('', '_blank');
+            janelaImpressao.document.write(htmlFinal);
             janelaImpressao.document.close();
+            
+            window.registrarImpressao(titulo, htmlFinal);
         };
 
         window.limparHistorico = async function() { 
-            if(confirm("Zerar log? As planilhas salvas também serão apagadas!")) { 
+            if(!window.isAdmin) return alert("Ação restrita! Ative o Modo Admin no topo da tela (🔐 Admin) para zerar o log do sistema.");
+            if(confirm("Zerar log? As planilhas salvas e as cópias de relatórios de impressão também serão apagadas!")) { 
                 window.appState.historicoGeral = []; 
                 window.appState.historicoPlanilhas = [];
                 await window.saveState(); 
@@ -2290,6 +2362,8 @@
                 let v = c.mensal[mes] ? c.mensal[mes][campo] : '-';
                 if (v && v !== '-') vals.add(v.trim());
             });
+            // Tratativa especial para a coluna de Folha que agora usa check OK / -
+            if (campo === 'lancado') return ['OK'];
             return Array.from(vals).sort();
         };
 
@@ -2436,7 +2510,6 @@
                 window.appState.meses.forEach(m => {
                     if (window.appState.mesesConfig[m]?.visible) {
                         let d = cli.mensal[m] || { antec: '-', lancado: '-', reinf: '-', dctfweb: false };
-                        let cLancado = d.lancado.toUpperCase() === 'OK' ? 'text-blue-600 font-black' : (d.lancado.toUpperCase() === 'NT' ? 'text-emerald-600 font-black' : 'text-slate-400');
                         
                         // --- DECLARAÇÕES (REINF e DCTF) NA TELA PRINCIPAL ---
                         let reinfVal = (d.reinf || '-').toUpperCase();
@@ -2488,8 +2561,11 @@
                                 <div>${d.antec}</div>
                                 ${badgeHtml}
                             </td>
-                            <td class="bg-transparent align-middle transition-colors">
-                                <input type="text" class="cell-input ${cLancado}" value="${d.lancado}" onchange="window.atualizarCelulaManual('${cli.id}', '${m}', 'lancado', this, '${d.lancado}')" onclick="event.stopPropagation()">
+                            <td class="bg-transparent align-middle transition-colors cursor-pointer hover:bg-black/5" onclick="window.toggleLancado('${cli.id}', '${m}', ${d.lancado !== 'OK'}); event.stopPropagation();">
+                                <div class="flex items-center justify-center gap-1 w-full h-full p-1 cursor-pointer" onclick="event.stopPropagation()">
+                                    <input type="checkbox" ${d.lancado === 'OK' ? 'checked' : ''} onclick="event.stopPropagation()" onchange="window.toggleLancado('${cli.id}', '${m}', this.checked)" class="w-3.5 h-3.5 accent-blue-600 cursor-pointer">
+                                    <span class="text-[9px] font-black ${d.lancado === 'OK' ? 'text-blue-600' : 'text-slate-300'}">${d.lancado === 'OK' ? 'OK' : '-'}</span>
+                                </div>
                             </td>
                             <td class="${bgDeclTd} align-middle transition-colors relative" style="min-width: 80px;">
                                 ${htmlDeclaracoes}
@@ -2536,41 +2612,10 @@
             window.renderTable(); 
         };
 
-        window.atualizarCelulaManual = async function(id, mes, campo, el, old) {
-            let cli = window.appState.clientes.find(c => c.id === id);
-            let val = el.value.trim().toUpperCase();
-            
-            if (cli && val !== old) {
-                // Assegura que o objeto do mês exista
-                if (!cli.mensal[mes]) {
-                    cli.mensal[mes] = { antec: '-', lancado: '-', reinf: '-', dctfweb: false };
-                }
-
-                cli.mensal[mes][campo] = val;
-                el.value = val;
-                
-                if (campo === 'lancado') {
-                    el.className = `cell-input ${val === 'OK' ? 'text-blue-600 font-black' : (val === 'NT' ? 'text-emerald-600 font-black' : 'text-slate-400')}`;
-                }
-                
-                el.setAttribute('onchange', `window.atualizarCelulaManual('${id}', '${mes}', '${campo}', this, '${val}')`);
-
-                window.appState.historicoGeral.push({
-                    tipo: 'edicao',
-                    data: new Date().toLocaleString('pt-BR'),
-                    usuario: window.appState.currentUser, mes: mes,
-                    alteracoes: [`<span class="text-blue-600 font-bold">EDIÇÃO MANUAL:</span> <b>${cli.razao} (${cli.contato})</b> - ${campo.toUpperCase()} mudou para '${val || 'Vazio'}'`]
-                });
-                
-                window.saveState(); 
-                window.renderHistorico();
-                window.renderTable(); 
-            }
-        };
-
         window.excluirLinhaMainTable = async function(id) {
             let cli = window.appState.clientes.find(c => c.id === id);
             if(!cli) return;
+            if(!window.isAdmin) return alert("Ação restrita! Ative o Modo Admin no topo da tela para excluir linhas.");
             if(!confirm(`⚠️ MODO ADMIN: Excluir DEFINITIVAMENTE a empresa "${cli.razao}" e todo o seu histórico financeiro desta planilha?`)) return;
 
             let idx = window.appState.clientes.findIndex(c => c.id === id);
@@ -2783,6 +2828,7 @@
         };
 
         window.limparTabela = async function() { 
+            if(!window.isAdmin) return alert("Ação restrita! Ative o Modo Admin no topo da tela (🔐 Admin) para limpar a tabela.");
             if(confirm("Apagar tudo desta visão? (Cadastros e Logs serão mantidos)")) { 
                 window.appState.meses = []; 
                 window.appState.clientes.forEach(c => c.mensal = {}); 
