@@ -347,7 +347,7 @@
         </div>
 
         <!-- Painel Classificacao Reinf -->
-        <div id="painelClassificacao" class="painel-lateral painel-oculto absolute top-0 right-0 h-full w-[600px] max-w-full bg-white shadow-2xl border-l border-slate-200 z-50 flex flex-col">
+        <div id="painelClassificacao" class="painel-lateral painel-oculto absolute top-0 right-0 h-full w-[800px] max-w-full bg-white shadow-2xl border-l border-slate-200 z-50 flex flex-col">
             <div class="p-4 bg-blue-50 border-b border-blue-200 flex justify-between items-center flex-shrink-0">
                 <h2 class="text-sm font-black text-blue-900 uppercase tracking-tighter">Classificação Reinf e Previsão</h2>
                 <button onclick="togglePainel('painelClassificacao')" class="text-slate-400 hover:text-black text-2xl font-light leading-none">&times;</button>
@@ -529,7 +529,7 @@
                         return !['RAZÃO SOCIAL', 'RAZAO SOCIAL', 'NOME', 'CLIENTE', 'EMPRESA', 'NOME DA EMPRESA', 'TITULO', 'CNPJ'].includes(r);
                     });
 
-                    // MIGRAÇÃO SEGURA PARA ID ÚNICO, OBSERVAÇÕES E WHATSAPP
+                    // MIGRAÇÃO SEGURA PARA ID ÚNICO, OBSERVAÇÕES, WHATSAPP, E DATA DE ENTREGA REINF
                     window.appState.clientes.forEach(c => {
                         if (c.atividade === undefined) c.atividade = '';
                         if (c.obs === undefined) c.obs = '';
@@ -538,6 +538,15 @@
                         if (c.dataRecebimento === undefined) c.dataRecebimento = '';
                         if (c.tipoCobranca === undefined) c.tipoCobranca = '';
                         if (!c.id) c.id = window.generateId();
+                        
+                        // Garante estrutura mensal com data de entrega
+                        if (c.mensal) {
+                            Object.keys(c.mensal).forEach(m => {
+                                if (c.mensal[m] && c.mensal[m].dataEntregaReinf === undefined) {
+                                    c.mensal[m].dataEntregaReinf = '';
+                                }
+                            });
+                        }
                     });
                 }
             }
@@ -780,9 +789,7 @@
             window.executarCobrancaWhatsapp(cli.id);
         };
 
-        // Função que realmente copia a mensagem e abre o WhatsApp (ativada pelo clique de forma 100% síncrona para não ser bloqueada pelo browser)
         window.executarCobrancaWhatsapp = function(targetId) {
-            // Fecha o modal caso ele esteja aberto
             document.getElementById('modalSocioWhatsapp').classList.add('hidden');
 
             let targetCli = window.appState.clientes.find(c => c.id === targetId);
@@ -822,7 +829,6 @@
 
             let msg = `Olá ${firstName}, tudo bem?\nEstamos organizando os arquivos para a contabilidade da empresa *${targetCli.razao}* e sentimos falta dos extratos bancários de *${mesesStr}*.\n\nSe puder disponibilizar por aqui, já consigo deixar tudo engatilhado para que o pessoal do contábil dê continuidade na contabilização.`;
 
-            // Tentativa de cópia síncrona garantida para iFrames (Como o Canvas)
             let copiado = false;
             try {
                 const el = document.createElement('textarea');
@@ -839,7 +845,6 @@
                 console.warn("Erro ao tentar copiar via execCommand: ", e);
             }
 
-            // Fallback para API moderna caso execCommand falhe, mas é assíncrono
             if (!copiado && navigator.clipboard && window.isSecureContext) {
                 navigator.clipboard.writeText(msg).catch(e => console.warn("Erro no clipboard API: ", e));
             }
@@ -898,17 +903,14 @@
             let novaData = '';
             if (!desmarcar) {
                 if (cli.tipoCobranca === 'whatsapp') {
-                    // Preenchimento automático pelo sistema quando foi cobrado via WhatsApp
                     novaData = dataAtual;
                 } else {
-                    // Cobrança manual ou sem cobrança: Pede a data do recebimento
                     novaData = prompt(`Informe a data em que o extrato de ${cli.razao} foi recebido:\n(Deixe a data de hoje ou altere se necessário)`, dataAtual);
-                    if (novaData === null) return; // Cancelou a operação
+                    if (novaData === null) return;
                     novaData = novaData.trim();
                 }
             }
 
-            // Atualiza a dataRecebimento de TODOS os sócios dessa empresa
             window.appState.clientes.forEach(c => {
                 if ((window.getNumbers(c.cnpj) === cnpjNum && cnpjNum.length === 14) || c.id === id) {
                     c.dataRecebimento = desmarcar ? '' : novaData;
@@ -916,7 +918,7 @@
             });
 
             window.appState.historicoGeral.push({
-                tipo: 'extrato_log', // Log não vai para 'Modificações'
+                tipo: 'extrato_log',
                 data: new Date().toLocaleString('pt-BR'),
                 usuario: window.appState.currentUser,
                 mes: 'GERAL',
@@ -934,7 +936,6 @@
                 return;
             }
 
-            // Agrupa por CNPJ ou nome para não imprimir a mesma empresa múltiplas vezes (devido a múltiplos sócios)
             let vistos = new Set();
             let listaUnica = window.appState.clientes.filter(cli => {
                 let num = window.getNumbers(cli.cnpj);
@@ -942,7 +943,12 @@
                 if (vistos.has(key)) return false;
                 vistos.add(key);
                 return true;
-            }).sort((a, b) => a.razao.localeCompare(b.razao));
+            }).sort((a, b) => {
+                const groupA = (a.dataCobranca && !a.dataRecebimento) ? 1 : (a.dataRecebimento ? 2 : 3);
+                const groupB = (b.dataCobranca && !b.dataRecebimento) ? 1 : (b.dataRecebimento ? 2 : 3);
+                if (groupA !== groupB) return groupA - groupB;
+                return a.razao.localeCompare(b.razao);
+            });
 
             let trClientes = listaUnica.map((cli, index) => {
                 return `<tr>
@@ -1246,12 +1252,10 @@
                 let atividade = colunas.length > 3 ? colunas[3].toUpperCase() : '';
                 let regime = colunas.length > 4 ? colunas[4].toUpperCase() : '';
                 
-                // O índice 5 antigamente era conta. Para manter a mesma leitura caso vc ainda cole planilhas com 7 colunas, pulamos a 5.
                 let whatsapp = colunas.length > 6 ? colunas[6] : (colunas.length === 6 && !colunas[5].toUpperCase().includes('CONTA') ? colunas[5] : '');
 
                 let cliExistente = null;
 
-                // 1. Busca por CNPJ exato
                 if (cnpjNum.length === 14) {
                     let candidates = window.appState.clientes.filter(c => window.getNumbers(c.cnpj) === cnpjNum);
                     if (candidates.length === 1) {
@@ -1264,11 +1268,10 @@
                         if (!cliExistente && contato === '') {
                             cliExistente = candidates.find(c => !c.contato || c.contato.trim() === '') || candidates[0];
                         }
-                        if (!cliExistente) cliExistente = candidates[0]; // fallback
+                        if (!cliExistente) cliExistente = candidates[0]; 
                     }
                 }
 
-                // 2. Busca Inteligente por Nome caso CNPJ falhe
                 if (!cliExistente && nome) {
                     let candidates = window.appState.clientes.filter(c => window.isSameCompanyByName(c.razao, nome));
                     if (candidates.length === 1) {
@@ -1458,13 +1461,18 @@
 
             if(window.currentLogTab === 'extratos') {
                 let cnpjsVistos = new Set();
-                let listaExtratos = [...window.appState.clientes].sort((a, b) => a.razao.localeCompare(b.razao)).filter(cli => {
+                let listaExtratos = [...window.appState.clientes].filter(cli => {
                     let num = window.getNumbers(cli.cnpj);
                     if(num.length === 14) {
                         if(cnpjsVistos.has(num)) return false;
                         cnpjsVistos.add(num);
                     }
                     return true;
+                }).sort((a, b) => {
+                    const groupA = (a.dataCobranca && !a.dataRecebimento) ? 1 : (a.dataRecebimento ? 2 : 3);
+                    const groupB = (b.dataCobranca && !b.dataRecebimento) ? 1 : (b.dataRecebimento ? 2 : 3);
+                    if (groupA !== groupB) return groupA - groupB;
+                    return a.razao.localeCompare(b.razao);
                 });
 
                 if (listaExtratos.length === 0) {
@@ -1738,6 +1746,7 @@
                     </div>
                 `;
             } else if (window.currentReinfTab === 'entregas') {
+                // RELATÓRIO COM TODOS OS CLIENTES DA BASE (Idêntico à tela central)
                 let listaTodos = [...window.appState.clientes].sort((a, b) => a.razao.localeCompare(b.razao));
                 
                 let sortedMeses = [...mesesSelecionados].sort((a, b) => {
@@ -1748,7 +1757,7 @@
                 let htmlEntregas = `
                     <div class="mb-6">
                         <div class="bg-indigo-600 text-white text-[10px] font-black p-2 rounded shadow-md uppercase mb-2 flex justify-between items-center">
-                            <span>Status Geral de Entregas REINF</span>
+                            <span>Status Geral de Entregas REINF (Toda a Base)</span>
                             <button onclick="window.imprimirRelatorioEntregas()" class="bg-white text-indigo-600 px-2 py-0.5 rounded hover:bg-indigo-50 flex items-center gap-1 shadow-sm font-bold tracking-widest text-[9px] transition-colors" title="Imprimir Relatório de Entregas">
                                 🖨️ IMPRIMIR
                             </button>
@@ -1757,39 +1766,38 @@
                             <table class="w-full text-left border-collapse">
                                 <thead>
                                     <tr class="bg-indigo-50 text-indigo-900 text-[9px] uppercase border-b border-indigo-200">
-                                        <th class="p-2 border-r border-indigo-100">Razão Social</th>
-                                        ${sortedMeses.map(m => `<th class="p-2 border-r border-indigo-100 text-center">${m}</th>`).join('')}
+                                        <th class="p-2 border-r border-indigo-100 min-w-[150px]">Razão Social</th>
+                                        ${sortedMeses.map(m => `<th class="p-2 border-r border-indigo-100 text-center min-w-[80px]">${m}</th>`).join('')}
                                     </tr>
                                 </thead>
                                 <tbody>
                                     ${listaTodos.map(emp => {
-                                        let hasDataInAnyMonth = false;
-                                        
                                         let tdMeses = sortedMeses.map(m => {
                                             let d = emp.mensal[m];
-                                            if (!d) return `<td class="p-2 border-r border-slate-100 text-center align-middle"></td>`;
+                                            if (!d) return `<td class="p-2 border-r border-slate-100 text-center align-middle text-slate-300">-</td>`;
                                             
                                             let reinfVal = (d.reinf || '').toUpperCase();
                                             let isEntregue = reinfVal.includes('OK');
-
-                                            if (!isEntregue) {
-                                                return `<td class="p-2 border-r border-slate-100 text-center align-middle"></td>`;
-                                            }
-                                            
-                                            hasDataInAnyMonth = true;
                                             let displayVal = d.antec !== '-' && d.antec !== '' ? d.antec : 'S/M';
+                                            let dataEntr = d.dataEntregaReinf ? `<div class="text-[7px] text-slate-500 font-bold mt-1">📅 ${d.dataEntregaReinf}</div>` : '';
 
-                                            return `<td class="p-2 border-r border-slate-100 text-center align-middle bg-emerald-50/30">
-                                                <div class="text-[10px] font-black text-emerald-700">${displayVal}</div>
-                                                <div class="text-[7px] text-emerald-500 font-bold uppercase">✅ Entregue</div>
-                                            </td>`;
+                                            if (isEntregue) {
+                                                return `<td class="p-2 border-r border-slate-100 text-center align-middle bg-emerald-50/30">
+                                                    <div class="text-[9px] font-black text-emerald-800">${reinfVal}</div>
+                                                    <div class="text-[7px] text-emerald-500 font-bold uppercase">✅ Entregue</div>
+                                                    ${dataEntr}
+                                                </td>`;
+                                            } else {
+                                                return `<td class="p-2 border-r border-slate-100 text-center align-middle ${displayVal !== '-' && displayVal !== 'S/M' && window.parseCurrency(displayVal) > 0 ? 'bg-orange-50' : ''}">
+                                                    <div class="text-[9px] font-bold text-slate-600">${displayVal}</div>
+                                                    <div class="text-[7px] text-orange-500 font-bold uppercase">⏳ Pendente</div>
+                                                </td>`;
+                                            }
                                         }).join('');
-
-                                        if(!hasDataInAnyMonth) return '';
 
                                         return `
                                             <tr class="border-b border-slate-100 hover:bg-slate-50">
-                                                <td class="p-2 border-r border-slate-100 text-[9px] font-bold text-slate-800" title="${emp.contato || ''}">${emp.razao}</td>
+                                                <td class="p-2 border-r border-slate-100 text-[9px] font-black text-slate-800 uppercase" title="${emp.razao}">${emp.razao}</td>
                                                 ${tdMeses}
                                             </tr>
                                         `;
@@ -1819,35 +1827,34 @@
                 return new Date(ya, ma-1) - new Date(yb, mb-1);
             });
 
-            let thMeses = sortedMeses.map(m => `<th style="padding: 8px; border: 1px solid #c7d2fe; text-align: center; width: 100px;">${m}</th>`).join('');
+            let thMeses = sortedMeses.map(m => `<th style="padding: 6px; border: 1px solid #c7d2fe; text-align: center; width: 100px;">${m}</th>`).join('');
             
             let trEmpresas = listaTodos.map(emp => {
-                let hasDataInAnyMonth = false;
-                
                 let tdMeses = sortedMeses.map(m => {
                     let d = emp.mensal[m];
-                    if (!d) return `<td style="padding: 8px; border: 1px solid #c7d2fe; text-align: center;"></td>`;
+                    if (!d) return `<td style="padding: 6px; border: 1px solid #c7d2fe; text-align: center; color: #ccc;">-</td>`;
                     
                     let reinfVal = (d.reinf || '').toUpperCase();
                     let isEntregue = reinfVal.includes('OK');
-
-                    if (!isEntregue) {
-                        return `<td style="padding: 8px; border: 1px solid #c7d2fe; text-align: center;"></td>`;
-                    }
-                    
-                    hasDataInAnyMonth = true;
                     let displayVal = d.antec !== '-' && d.antec !== '' ? d.antec : 'S/M';
+                    let dataEntr = d.dataEntregaReinf ? `<br><span style="font-size: 8px; color: #666;">📅 ${d.dataEntregaReinf}</span>` : '';
 
-                    return `<td style="padding: 8px; border: 1px solid #c7d2fe; text-align: center; background-color: #ecfdf5;">
-                        <span style="font-size: 11px; font-weight: bold; color: #065f46;">${displayVal}</span><br>
-                        <span style="font-size: 8px; color: #10b981;">✅ ENTREGUE</span>
-                    </td>`;
+                    if (isEntregue) {
+                        return `<td style="padding: 6px; border: 1px solid #c7d2fe; text-align: center; background-color: #ecfdf5;">
+                            <span style="font-size: 11px; font-weight: bold; color: #065f46;">${reinfVal}</span><br>
+                            <span style="font-size: 8px; color: #10b981; font-weight: bold;">✅ ENTREGUE</span>
+                            ${dataEntr}
+                        </td>`;
+                    } else {
+                        return `<td style="padding: 6px; border: 1px solid #c7d2fe; text-align: center;">
+                            <span style="font-size: 11px; color: #555; font-weight: bold;">${displayVal}</span><br>
+                            <span style="font-size: 8px; color: #f97316; font-weight: bold;">⏳ PENDENTE</span>
+                        </td>`;
+                    }
                 }).join('');
 
-                if(!hasDataInAnyMonth) return '';
-
                 return `<tr>
-                    <td style="padding: 8px; border: 1px solid #c7d2fe; font-weight: bold; font-size: 12px; color: #333;">${emp.razao}</td>
+                    <td style="padding: 6px; border: 1px solid #c7d2fe; font-weight: bold; font-size: 11px; color: #333;">${emp.razao}</td>
                     ${tdMeses}
                 </tr>`;
             }).join('');
@@ -1856,7 +1863,7 @@
                 <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
                     <thead>
                         <tr style="background-color: #e0e7ff; color: #3730a3; text-align: left;">
-                            <th style="padding: 8px; border: 1px solid #c7d2fe;">Razão Social</th>
+                            <th style="padding: 6px; border: 1px solid #c7d2fe;">Razão Social</th>
                             ${thMeses}
                         </tr>
                     </thead>
@@ -1875,7 +1882,7 @@
                         body { font-family: Arial, sans-serif; padding: 20px; }
                         h1 { font-size: 18px; color: #333; text-transform: uppercase; margin-bottom: 5px; }
                         .header { border-bottom: 2px solid #ccc; padding-bottom: 10px; margin-bottom: 20px; }
-                        td, th { font-size: 12px; }
+                        td, th { font-size: 11px; }
                     </style>
                 </head>
                 <body>
@@ -2171,7 +2178,7 @@
 
             tbody.innerHTML = list.length === 0 ? `<tr><td colspan="100" class="text-center py-20 text-slate-300 uppercase font-black italic tracking-widest">Nenhum dado</td></tr>` : 
             list.map(cli => {
-                // NOVIDADE: Linha verde se TODOS os REINFs devidos estiverem OK. Linha clareada se for faltante.
+                // Linha verde se TODOS os REINFs devidos estiverem OK. Linha clareada se for faltante.
                 let allReinfOk = true;
                 let hasAnyValue = false;
                 let hasVisibleMonths = false;
@@ -2214,7 +2221,7 @@
                     trBgClass += ' linha-selecionada';
                 }
 
-                // Lógica de Cores dos Botões (Cinza quando inativo, Colorido quando usado)
+                // Lógica de Cores dos Botões
                 let isManual = cli.tipoCobranca === 'manual';
                 let isWhats = cli.tipoCobranca === 'whatsapp';
                 let isRec = !!cli.dataRecebimento;
@@ -2246,7 +2253,7 @@
                 
                 window.appState.meses.forEach(m => {
                     if (window.appState.mesesConfig[m]?.visible) {
-                        let d = cli.mensal[m] || { antec: '-', lancado: '-', reinf: '-' };
+                        let d = cli.mensal[m] || { antec: '-', lancado: '-', reinf: '-', dataEntregaReinf: '' };
                         let cLancado = d.lancado.toUpperCase() === 'OK' ? 'text-blue-600 font-black' : (d.lancado.toUpperCase() === 'NT' ? 'text-emerald-600 font-black' : 'text-slate-400');
                         
                         let vlr = window.parseCurrency(d.antec);
@@ -2263,11 +2270,12 @@
                             badgeHtml = `<div class="text-[8px] bg-emerald-500 text-white rounded px-1.5 mt-0.5 inline-block font-black tracking-widest leading-tight shadow-sm">TRIMESTRAL</div>`;
                         }
 
-                        // --- NOVA LÓGICA REINF (Cores Neutras e OK em Verde) ---
+                        // --- LÓGICA REINF (Cores Neutras e OK em Verde) ---
                         let reinfVal = (d.reinf || '-').toUpperCase();
                         let isReinfOk = reinfVal.includes('OK');
                         let bgReinfTd = isReinfOk ? "bg-emerald-100" : "bg-transparent";
                         let cReinfText = isReinfOk ? 'text-emerald-800 font-black' : 'font-bold';
+                        let tagDataReinf = (isReinfOk && d.dataEntregaReinf) ? `<span class="absolute bottom-0 right-1 text-[7px] text-emerald-600 font-bold opacity-70 pointer-events-none">${d.dataEntregaReinf}</span>` : '';
                         // ------------------------------------------------
 
                         row += `
@@ -2278,8 +2286,9 @@
                             <td class="align-middle">
                                 <input type="text" class="cell-input ${cLancado}" value="${d.lancado}" onchange="window.atualizarCelulaManual('${cli.id}', '${m}', 'lancado', this, '${d.lancado}')" onclick="event.stopPropagation()">
                             </td>
-                            <td class="${bgReinfTd} align-middle transition-colors">
+                            <td class="${bgReinfTd} align-middle transition-colors relative">
                                 <input type="text" class="cell-input ${cReinfText} uppercase" value="${d.reinf}" onchange="window.atualizarCelulaManual('${cli.id}', '${m}', 'reinf', this, '${d.reinf}')" onclick="event.stopPropagation()">
+                                ${tagDataReinf}
                             </td>`;
                     }
                 });
@@ -2330,69 +2339,84 @@
             if (cli && val !== old) {
                 // Assegura que o objeto do mês exista se a empresa for "faltante" na importação
                 if (!cli.mensal[mes]) {
-                    cli.mensal[mes] = { antec: '-', lancado: '-', reinf: '-' };
+                    cli.mensal[mes] = { antec: '-', lancado: '-', reinf: '-', dataEntregaReinf: '' };
                 }
 
+                let dataAtual = new Date().toLocaleDateString('pt-BR');
+
                 // === LÓGICA INTELIGENTE AUTO-PREENCHIMENTO REINF ===
-                if (campo === 'reinf' && val.includes('OK')) {
-                    let [mStr, yStr] = mes.split('/');
-                    let mNum = parseInt(mStr, 10);
-                    let yNum = parseInt(yStr, 10);
-                    let targets = [];
-                    let isTriggerMonth = false;
+                if (campo === 'reinf') {
+                    let isNowOk = val.includes('OK');
+                    let wasOk = old.includes('OK');
+                    
+                    if (isNowOk && !wasOk) {
+                        cli.mensal[mes].dataEntregaReinf = dataAtual;
+                    } else if (!isNowOk) {
+                        cli.mensal[mes].dataEntregaReinf = ''; // Remove a data se tirou o OK
+                    }
 
-                    // Mapeia os 3 meses anteriores ao mês de entrega do trimestre
-                    if (mNum === 4) { targets = [`01/${yStr}`, `02/${yStr}`, `03/${yStr}`]; isTriggerMonth = true; }
-                    else if (mNum === 7) { targets = [`04/${yStr}`, `05/${yStr}`, `06/${yStr}`]; isTriggerMonth = true; }
-                    else if (mNum === 10) { targets = [`07/${yStr}`, `08/${yStr}`, `09/${yStr}`]; isTriggerMonth = true; }
-                    else if (mNum === 1) { targets = [`10/${yNum-1}`, `11/${yNum-1}`, `12/${yNum-1}`]; isTriggerMonth = true; }
+                    if (isNowOk) {
+                        let [mStr, yStr] = mes.split('/');
+                        let mNum = parseInt(mStr, 10);
+                        let yNum = parseInt(yStr, 10);
+                        let targets = [];
+                        let isTriggerMonth = false;
 
-                    let vlrCurrent = window.parseCurrency(cli.mensal[mes].antec);
-                    let isCurrentMensal = vlrCurrent > 50000;
+                        // Mapeia os 3 meses anteriores ao mês de entrega do trimestre
+                        if (mNum === 4) { targets = [`01/${yStr}`, `02/${yStr}`, `03/${yStr}`]; isTriggerMonth = true; }
+                        else if (mNum === 7) { targets = [`04/${yStr}`, `05/${yStr}`, `06/${yStr}`]; isTriggerMonth = true; }
+                        else if (mNum === 10) { targets = [`07/${yStr}`, `08/${yStr}`, `09/${yStr}`]; isTriggerMonth = true; }
+                        else if (mNum === 1) { targets = [`10/${yNum-1}`, `11/${yNum-1}`, `12/${yNum-1}`]; isTriggerMonth = true; }
 
-                    if (isCurrentMensal) {
-                        val = 'MENSAL OK';
-                    } else {
-                        if (isTriggerMonth) {
-                            val = ''; // O mês trigger (ex: Abril) que não passou de 50k NÃO é baixado. Volta pra vazio.
+                        let vlrCurrent = window.parseCurrency(cli.mensal[mes].antec);
+                        let isCurrentMensal = vlrCurrent > 50000;
+
+                        if (isCurrentMensal) {
+                            val = 'MENSAL OK';
                         } else {
-                            val = 'TRIM OK'; // Default para mês solto que for <= 50k e você der OK manual
+                            if (isTriggerMonth) {
+                                val = ''; // O mês trigger (ex: Abril) que não passou de 50k NÃO é baixado. Volta pra vazio.
+                                cli.mensal[mes].dataEntregaReinf = ''; // remove a data deste mes trigger q ficou vazio
+                            } else {
+                                val = 'TRIM OK'; // Default para mês solto que for <= 50k e você der OK manual
+                            }
+                        }
+                        
+                        let alteradosTrim = false;
+                        
+                        // Vai dar a baixa de trimestre SEMPRE se a pessoa clicou num mês trigger (ex: abril)
+                        if (isTriggerMonth) {
+                            targets.forEach(t => {
+                                if (!cli.mensal[t]) {
+                                    cli.mensal[t] = { antec: '-', lancado: '-', reinf: '-', dataEntregaReinf: '' };
+                                }
+                                
+                                let tVlr = window.parseCurrency(cli.mensal[t].antec);
+                                
+                                // A IN da Receita manda baixar como TRIM OK tudo que for <=50k no trimestre anterior
+                                if (tVlr > 50000) {
+                                    cli.mensal[t].reinf = 'MENSAL OK';
+                                } else {
+                                    cli.mensal[t].reinf = 'TRIM OK'; // Cobre valor 0, sem lucro, ausentes e <=50k.
+                                }
+                                cli.mensal[t].dataEntregaReinf = dataAtual; // Registra a data de entrega nestes meses baixados
+                                alteradosTrim = true;
+                            });
+                        }
+                        
+                        if(alteradosTrim) {
+                             alert(`Regra do Trimestre aplicada: Os meses ${targets.join(', ')} foram finalizados com sucesso!`);
+                             window.appState.historicoGeral.push({
+                                tipo: 'edicao',
+                                data: new Date().toLocaleString('pt-BR'),
+                                usuario: window.appState.currentUser, mes: mes,
+                                alteracoes: [`<span class="text-emerald-600 font-bold">AUTO-PREENCHIMENTO REINF:</span> <b>${cli.razao}</b> - Trimestre anterior finalizado.`]
+                            });
                         }
                     }
                     cli.mensal[mes].reinf = val;
-
-                    let alteradosTrim = false;
-                    
-                    // Vai dar a baixa de trimestre SEMPRE se a pessoa clicou num mês trigger (ex: abril)
-                    if (isTriggerMonth) {
-                        targets.forEach(t => {
-                            if (!cli.mensal[t]) {
-                                cli.mensal[t] = { antec: '-', lancado: '-', reinf: '-' };
-                            }
-                            
-                            let tVlr = window.parseCurrency(cli.mensal[t].antec);
-                            
-                            // A IN da Receita manda baixar como TRIM OK tudo que for <=50k no trimestre anterior
-                            if (tVlr > 50000) {
-                                cli.mensal[t].reinf = 'MENSAL OK';
-                            } else {
-                                cli.mensal[t].reinf = 'TRIM OK'; // Cobre valor 0, sem lucro, ausentes e <=50k.
-                            }
-                            alteradosTrim = true;
-                        });
-                    }
-                    
-                    if(alteradosTrim) {
-                         alert(`Trimestre anterior (${targets.join(', ')}) finalizado com sucesso!`);
-                         window.appState.historicoGeral.push({
-                            tipo: 'edicao',
-                            data: new Date().toLocaleString('pt-BR'),
-                            usuario: window.appState.currentUser, mes: mes,
-                            alteracoes: [`<span class="text-emerald-600 font-bold">AUTO-PREENCHIMENTO REINF:</span> <b>${cli.razao}</b> - Trimestre anterior finalizado.`]
-                        });
-                    }
                 } else {
-                    // Atualização padrão para quem não digitou "OK" ou apagou a célula
+                    // Atualização padrão para quem não digitou "OK" ou apagou a célula (Ex: LANCADO)
                     cli.mensal[mes][campo] = val;
                 }
 
@@ -2414,7 +2438,7 @@
                 window.saveState(); 
                 window.renderHistorico();
                 window.renderClassificacao();
-                window.renderTable(); // Re-renderiza para processar as cores atualizadas
+                window.renderTable(); // Re-renderiza para processar as cores e datas atualizadas
             }
         };
 
@@ -2575,7 +2599,8 @@
                 cli.mensal[mesRef] = { 
                     antec: ant, 
                     lancado: oldLancado, 
-                    reinf: old?.reinf || '-' 
+                    reinf: old?.reinf || '-',
+                    dataEntregaReinf: old?.dataEntregaReinf || ''
                 };
             });
             
