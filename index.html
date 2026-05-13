@@ -100,7 +100,16 @@
         <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-sm text-center border-t-4 border-blue-600">
             <h2 class="text-xl font-black mb-2 text-slate-800 uppercase tracking-tight">Acesso ao Sistema</h2>
             <p class="text-xs text-slate-500 mb-4 font-medium">Identifique-se para registrar suas alterações no log de auditoria.</p>
-            <input type="text" id="userNameInput" class="w-full border-2 border-slate-200 p-3 rounded-lg mb-4 text-center font-bold text-lg focus:border-blue-500 outline-none uppercase" placeholder="SEU NOME">
+            
+            <select id="userSelect" onchange="window.checkVisitante()" class="w-full border-2 border-slate-200 p-3 rounded-lg mb-4 text-center font-bold text-lg focus:border-blue-500 outline-none uppercase bg-slate-50">
+                <option value="">SELECIONE SEU NOME...</option>
+                <option value="GABRIELA">GABRIELA</option>
+                <option value="AMAURI">AMAURI</option>
+                <option value="VISITANTE">VISITANTE (DIGITAR NOME)</option>
+            </select>
+
+            <input type="text" id="userNameInput" class="w-full border-2 border-slate-200 p-3 rounded-lg mb-4 text-center font-bold text-lg focus:border-blue-500 outline-none uppercase hidden" placeholder="DIGITE SEU NOME">
+            
             <button onclick="window.salvarUsuario()" class="bg-blue-600 hover:bg-blue-700 text-white font-black px-6 py-3 rounded-lg w-full shadow-lg transition-all uppercase tracking-widest">Entrar na Planilha</button>
         </div>
     </div>
@@ -552,6 +561,9 @@
                         }
                     });
                 }
+                
+                // AMNÉSIA PROPOSITAL: Toda vez que os dados são carregados (ao atualizar a página), nós apagamos o usuário para forçar login
+                window.appState.currentUser = '';
             }
             window.syncUI();
         };
@@ -693,17 +705,36 @@
             window.renderListaCadastro(); 
         };
 
+        window.checkVisitante = function() {
+            const select = document.getElementById('userSelect');
+            const input = document.getElementById('userNameInput');
+            if (select.value === 'VISITANTE') {
+                input.classList.remove('hidden');
+                input.focus();
+            } else {
+                input.classList.add('hidden');
+            }
+        };
+
         window.abrirLogin = function() {
             document.getElementById('modalUser').classList.remove('hidden');
-            if(window.appState.currentUser && window.appState.currentUser !== 'VOCÊ') {
-                document.getElementById('userNameInput').value = window.appState.currentUser;
-            }
-            document.getElementById('userNameInput').focus();
+            document.getElementById('userSelect').value = '';
+            document.getElementById('userNameInput').value = '';
+            document.getElementById('userNameInput').classList.add('hidden');
         };
 
         window.salvarUsuario = async function() {
-            let n = document.getElementById('userNameInput').value.trim();
-            if (!n) return alert("Por favor, identifique-se.");
+            let selectVal = document.getElementById('userSelect').value;
+            let n = selectVal;
+            
+            if (selectVal === 'VISITANTE') {
+                n = document.getElementById('userNameInput').value.trim();
+            }
+            
+            if (!n || selectVal === '') {
+                return alert("Por favor, identifique-se selecionando seu nome ou digitando se for visitante.");
+            }
+            
             window.appState.currentUser = n;
             await window.saveState();
             window.syncUI();
@@ -1222,6 +1253,8 @@
             const janelaImpressao = window.open('', '_blank');
             janelaImpressao.document.write(htmlFinal);
             janelaImpressao.document.close();
+            
+            window.registrarImpressao(titulo, htmlFinal);
         };
 
         // ==========================================
