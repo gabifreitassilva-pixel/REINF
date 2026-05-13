@@ -79,6 +79,7 @@
             font-size: 9px;
         }
         .cell-input:focus { background: white; box-shadow: inset 0 0 0 1px #3b82f6; }
+        .cell-input:disabled, .cell-input[readonly] { cursor: not-allowed; background-color: transparent !important; }
 
         /* DESTAQUE DE LINHA SELECIONADA (Clique) - Tom Laranja Forte e Nítido */
         .linha-selecionada td {
@@ -99,16 +100,18 @@
     <div id="modalUser" class="fixed inset-0 bg-slate-900 bg-opacity-80 flex justify-center items-center z-[100] hidden px-4">
         <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-sm text-center border-t-4 border-blue-600">
             <h2 class="text-xl font-black mb-2 text-slate-800 uppercase tracking-tight">Acesso ao Sistema</h2>
-            <p class="text-xs text-slate-500 mb-4 font-medium">Identifique-se para registrar suas alterações no log de auditoria.</p>
+            <p class="text-xs text-slate-500 mb-4 font-medium">Identifique-se para acessar os dados da planilha.</p>
             
-            <select id="userSelect" onchange="window.checkVisitante()" class="w-full border-2 border-slate-200 p-3 rounded-lg mb-4 text-center font-bold text-lg focus:border-blue-500 outline-none uppercase bg-slate-50">
+            <select id="userSelect" onchange="window.checkUserType()" class="w-full border-2 border-slate-200 p-3 rounded-lg mb-4 text-center font-bold text-lg focus:border-blue-500 outline-none uppercase bg-slate-50 cursor-pointer">
                 <option value="">SELECIONE SEU NOME...</option>
                 <option value="GABRIELA">GABRIELA</option>
                 <option value="AMAURI">AMAURI</option>
-                <option value="VISITANTE">VISITANTE (DIGITAR NOME)</option>
+                <option value="VISITANTE">VISITANTE (APENAS VISUALIZAR)</option>
             </select>
 
             <input type="text" id="userNameInput" class="w-full border-2 border-slate-200 p-3 rounded-lg mb-4 text-center font-bold text-lg focus:border-blue-500 outline-none uppercase hidden" placeholder="DIGITE SEU NOME">
+            
+            <input type="password" id="userPasswordInput" class="w-full border-2 border-slate-200 p-3 rounded-lg mb-4 text-center font-bold text-lg focus:border-blue-500 outline-none hidden" placeholder="DIGITE SUA SENHA">
             
             <button onclick="window.salvarUsuario()" class="bg-blue-600 hover:bg-blue-700 text-white font-black px-6 py-3 rounded-lg w-full shadow-lg transition-all uppercase tracking-widest">Entrar na Planilha</button>
         </div>
@@ -244,7 +247,7 @@
                 </button>
 
                 <div class="text-[10px] bg-white px-3 py-1.5 rounded-full border border-slate-200 shadow-sm font-bold flex items-center gap-2">
-                    <span class="text-slate-400">USUÁRIO:</span> <span id="displayUserName" class="text-blue-600 uppercase"></span>
+                    <span class="text-slate-400">USUÁRIO:</span> <span id="displayUserName" class="text-blue-600 uppercase flex items-center gap-1"></span>
                     <button onclick="window.abrirLogin()" class="text-slate-300 hover:text-red-500 transition-colors" title="Alterar Usuário">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
                     </button>
@@ -270,7 +273,7 @@
         </div>
 
         <!-- Importação (Valores Mensais) -->
-        <div class="p-3 bg-blue-50 border-b border-blue-100 flex-shrink-0 relative z-10">
+        <div class="p-3 bg-blue-50 border-b border-blue-100 flex-shrink-0 relative z-10" id="botoesImportacao">
             <div class="flex gap-4 items-center">
                 <div class="flex items-center gap-3 flex-shrink-0">
                     <label class="text-[10px] font-black text-blue-900 uppercase">Mês Ref:</label>
@@ -308,7 +311,8 @@
                 <h2 class="text-sm font-black text-indigo-900 uppercase tracking-tighter">Cadastro de Clientes</h2>
                 <button onclick="togglePainel('painelCadastro')" class="text-slate-400 hover:text-black text-2xl font-light leading-none">&times;</button>
             </div>
-            <div class="p-4 bg-slate-50 flex-shrink-0 border-b">
+            
+            <div id="blocoImportarCadastro" class="p-4 bg-slate-50 flex-shrink-0 border-b">
                 <p class="text-[9px] font-bold text-slate-500 uppercase mb-2">Cole dados da planilha para importar (Nome, CNPJ, etc.):</p>
                 <textarea id="rawDataCadastro" rows="3" class="w-full border p-2 text-xs font-mono rounded outline-none focus:ring-1 focus:ring-indigo-500 mb-2" placeholder="Ex: NOME [TAB] CNPJ [TAB] CONTATO [TAB] ATIVIDADE [TAB] REGIME [TAB] WHATSAPP"></textarea>
                 <button onclick="window.importarCadastro()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-black py-2 px-4 rounded shadow w-full uppercase tracking-widest">Importar Cadastro Base</button>
@@ -321,7 +325,7 @@
                         <button onclick="window.imprimirCadastroCompleto()" class="bg-white text-indigo-700 border border-indigo-200 hover:bg-indigo-50 px-2 py-1 rounded text-[9px] font-bold shadow-sm flex items-center gap-1 transition-colors" title="Imprimir Cadastro">
                             🖨️ IMPRIMIR
                         </button>
-                        <button onclick="window.adicionarClienteManual()" class="bg-indigo-100 text-indigo-700 hover:bg-indigo-200 px-2 py-1 rounded text-[9px] font-bold shadow-sm flex items-center gap-1 transition-colors">
+                        <button id="btnNovoCadastro" onclick="window.adicionarClienteManual()" class="bg-indigo-100 text-indigo-700 hover:bg-indigo-200 px-2 py-1 rounded text-[9px] font-bold shadow-sm flex items-center gap-1 transition-colors">
                             ➕ NOVO
                         </button>
                     </div>
@@ -331,7 +335,7 @@
                 </div>
             </div>
             <div class="p-3 border-t border-slate-200 text-center bg-white flex-shrink-0">
-                <button onclick="window.limparCadastro()" class="text-[10px] text-red-600 uppercase font-black hover:underline tracking-widest">Apagar Todos os Cadastros</button>
+                <button id="btnApagarTodosCadastro" onclick="window.limparCadastro()" class="text-[10px] text-red-600 uppercase font-black hover:underline tracking-widest">Apagar Todos os Cadastros</button>
             </div>
         </div>
 
@@ -445,10 +449,12 @@
             historicoGeral: [],
             historicoPlanilhas: [], 
             filtros: {},
-            currentUser: '' 
+            currentUser: '',
+            passwords: {} // Guarda senhas do sistema
         };
 
         window.isAdmin = false;
+        window.isVisitante = false;
 
         window.toggleAdmin = function() {
             if(window.isAdmin) {
@@ -532,6 +538,7 @@
             if (data) {
                 window.appState = Object.assign(window.appState, data);
                 if(!window.appState.historicoPlanilhas) window.appState.historicoPlanilhas = [];
+                if(!window.appState.passwords) window.appState.passwords = {};
                 
                 if (window.appState.clientes) {
                     window.appState.clientes = window.appState.clientes.filter(c => {
@@ -619,6 +626,7 @@
         };
 
         window.saveState = async function() {
+            if (window.isVisitante) return; // Visitante nunca salva estado na nuvem/local
             const dadosParaSalvar = window.appState;
             await window.salvarDadosLocais(dadosParaSalvar);
             if (window.gistConfig.token && window.gistConfig.id) {
@@ -627,7 +635,7 @@
         };
 
         // ==========================================
-        // INICIALIZAÇÃO
+        // INICIALIZAÇÃO E AUTENTICAÇÃO
         // ==========================================
         window.onload = async () => {
             if (window.gistConfig.token && window.gistConfig.id) {
@@ -640,6 +648,7 @@
         };
 
         window.abrirModalGist = function() {
+            if (window.isVisitante) return alert("Modo Visitante: Apenas para visualização.");
             document.getElementById('modalGist').classList.remove('hidden');
             document.getElementById('gistTokenInput').value = window.gistConfig.token;
             document.getElementById('gistIdInput').value = window.gistConfig.id;
@@ -650,6 +659,7 @@
         window.fecharModalGist = function() { document.getElementById('modalGist').classList.add('hidden'); };
 
         window.salvarConfigGist = async function() {
+            if (window.isVisitante) return alert("Modo Visitante: Acesso negado.");
             const token = document.getElementById('gistTokenInput').value.trim();
             const id = document.getElementById('gistIdInput').value.trim();
             if (!token || !id) return alert("Preencha ambos os campos.");
@@ -670,6 +680,7 @@
         };
 
         window.desconectarGist = function() {
+            if (window.isVisitante) return alert("Modo Visitante: Acesso negado.");
             if(confirm("Parar de sincronizar com a nuvem neste navegador?")) {
                 localStorage.removeItem('reinfGistToken');
                 localStorage.removeItem('reinfGistId');
@@ -693,26 +704,49 @@
         }
 
         window.syncUI = function() {
-            if (!window.appState.currentUser || window.appState.currentUser === 'VOCÊ') {
+            window.isVisitante = window.appState.currentUser && window.appState.currentUser.startsWith('VISITANTE');
+            
+            if (!window.appState.currentUser) {
                 window.abrirLogin();
             } else {
-                document.getElementById('displayUserName').innerText = window.appState.currentUser;
+                let badgeVisitante = window.isVisitante ? ' <span class="bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded text-[8px] font-black ml-1 tracking-widest">SOMENTE LEITURA</span>' : '';
+                document.getElementById('displayUserName').innerHTML = window.appState.currentUser + badgeVisitante;
                 document.getElementById('modalUser').classList.add('hidden');
             }
+            
+            // Oculta blocos inteiros para visitantes
+            document.getElementById('botoesImportacao').style.display = window.isVisitante ? 'none' : 'block';
+            const blocoImportarCad = document.getElementById('blocoImportarCadastro');
+            if(blocoImportarCad) blocoImportarCad.style.display = window.isVisitante ? 'none' : 'block';
+            
+            const btnApagarTodosCad = document.getElementById('btnApagarTodosCadastro');
+            if(btnApagarTodosCad) btnApagarTodosCad.style.display = window.isVisitante ? 'none' : 'inline-block';
+            
+            const btnNovoCad = document.getElementById('btnNovoCadastro');
+            if(btnNovoCad) btnNovoCad.style.display = window.isVisitante ? 'none' : 'flex';
+
             window.renderTable();
             window.renderHistorico();
             window.renderFiltroReinf(); 
             window.renderListaCadastro(); 
         };
 
-        window.checkVisitante = function() {
+        window.checkUserType = function() {
             const select = document.getElementById('userSelect');
-            const input = document.getElementById('userNameInput');
+            const nameInput = document.getElementById('userNameInput');
+            const passInput = document.getElementById('userPasswordInput');
+            
             if (select.value === 'VISITANTE') {
-                input.classList.remove('hidden');
-                input.focus();
+                nameInput.classList.remove('hidden');
+                passInput.classList.add('hidden');
+                nameInput.focus();
+            } else if (select.value === 'GABRIELA' || select.value === 'AMAURI') {
+                nameInput.classList.add('hidden');
+                passInput.classList.remove('hidden');
+                passInput.focus();
             } else {
-                input.classList.add('hidden');
+                nameInput.classList.add('hidden');
+                passInput.classList.add('hidden');
             }
         };
 
@@ -720,19 +754,49 @@
             document.getElementById('modalUser').classList.remove('hidden');
             document.getElementById('userSelect').value = '';
             document.getElementById('userNameInput').value = '';
+            document.getElementById('userPasswordInput').value = '';
             document.getElementById('userNameInput').classList.add('hidden');
+            document.getElementById('userPasswordInput').classList.add('hidden');
         };
 
         window.salvarUsuario = async function() {
             let selectVal = document.getElementById('userSelect').value;
             let n = selectVal;
             
+            window.isVisitante = false;
+
+            if (selectVal === '') {
+                return alert("Por favor, selecione quem você é na lista.");
+            }
+
             if (selectVal === 'VISITANTE') {
                 n = document.getElementById('userNameInput').value.trim();
-            }
-            
-            if (!n || selectVal === '') {
-                return alert("Por favor, identifique-se selecionando seu nome ou digitando se for visitante.");
+                if (!n) return alert("Visitante, por favor digite seu nome.");
+                n = "VISITANTE (" + n.toUpperCase() + ")";
+                window.isVisitante = true;
+            } else {
+                let pass = document.getElementById('userPasswordInput').value;
+                if (!pass) return alert("Por favor, digite sua senha.");
+
+                if (selectVal === 'GABRIELA') {
+                    if (pass !== '6975') return alert("Senha incorreta para Gabriela.");
+                } else if (selectVal === 'AMAURI') {
+                    if (!window.appState.passwords) window.appState.passwords = {};
+                    
+                    if (!window.appState.passwords['AMAURI']) {
+                        let conf = confirm(`Bem-vindo, Amauri! Você ainda não tem uma senha cadastrada no sistema.\n\nDeseja registrar a senha que você acabou de digitar ("${pass}") como sua senha permanente a partir de hoje?`);
+                        if (conf) {
+                            window.appState.passwords['AMAURI'] = pass;
+                            await window.salvarDadosLocais(window.appState);
+                            if (window.gistConfig.token && window.gistConfig.id) await window.salvarNoGist(window.appState);
+                            alert("Senha cadastrada com sucesso! Bem-vindo.");
+                        } else {
+                            return;
+                        }
+                    } else {
+                        if (pass !== window.appState.passwords['AMAURI']) return alert("Senha incorreta para Amauri.");
+                    }
+                }
             }
             
             window.appState.currentUser = n;
@@ -741,6 +805,9 @@
         };
 
         document.getElementById('userNameInput').addEventListener('keypress', function(e){
+            if(e.key === 'Enter') window.salvarUsuario();
+        });
+        document.getElementById('userPasswordInput').addEventListener('keypress', function(e){
             if(e.key === 'Enter') window.salvarUsuario();
         });
 
@@ -764,6 +831,7 @@
         // SISTEMA DE IMPRESSÃO SALVA NO LOG
         // ==========================================
         window.registrarImpressao = async function(titulo, htmlFull) {
+            if (window.isVisitante) return; // Visitantes não gravam logs
             window.appState.historicoGeral.push({
                 idImpressao: window.generateId(),
                 tipo: 'impressao',
@@ -791,6 +859,7 @@
         // ==========================================
         
         window.toggleLancado = async function(id, mes, isChecked) {
+            if (window.isVisitante) return alert("Modo Visitante: Acesso apenas para visualização.");
             let cli = window.appState.clientes.find(c => c.id === id);
             if(!cli) return;
             if(!cli.mensal[mes]) cli.mensal[mes] = { antec: '-', lancado: '-', reinf: '-', dctfweb: false };
@@ -814,6 +883,7 @@
         };
 
         window.toggleReinf = async function(id, mes, isChecked) {
+            if (window.isVisitante) return alert("Modo Visitante: Acesso apenas para visualização.");
             let cli = window.appState.clientes.find(c => c.id === id);
             if(!cli) return;
             if(!cli.mensal[mes]) cli.mensal[mes] = { antec: '-', lancado: '-', reinf: '-', dctfweb: false };
@@ -867,6 +937,7 @@
         };
 
         window.toggleDctfWeb = async function(id, mes, isChecked) {
+            if (window.isVisitante) return alert("Modo Visitante: Acesso apenas para visualização.");
             let cli = window.appState.clientes.find(c => c.id === id);
             if(!cli) return;
             if(!cli.mensal[mes]) cli.mensal[mes] = { antec: '-', lancado: '-', reinf: '-', dctfweb: false };
@@ -913,10 +984,44 @@
             window.renderHistorico();
         };
 
+        window.atualizarCelulaManual = async function(id, mes, campo, el, old) {
+            if (window.isVisitante) return alert("Modo Visitante: Acesso apenas para visualização.");
+            let cli = window.appState.clientes.find(c => c.id === id);
+            let val = el.value.trim().toUpperCase();
+            
+            if (cli && val !== old) {
+                // Assegura que o objeto do mês exista
+                if (!cli.mensal[mes]) {
+                    cli.mensal[mes] = { antec: '-', lancado: '-', reinf: '-', dctfweb: false };
+                }
+
+                cli.mensal[mes][campo] = val;
+                el.value = val;
+                
+                if (campo === 'lancado') {
+                    el.className = `cell-input ${val === 'OK' ? 'text-blue-600 font-black' : (val === 'NT' ? 'text-emerald-600 font-black' : 'text-slate-400')}`;
+                }
+                
+                el.setAttribute('onchange', `window.atualizarCelulaManual('${id}', '${mes}', '${campo}', this, '${val}')`);
+
+                window.appState.historicoGeral.push({
+                    tipo: 'edicao',
+                    data: new Date().toLocaleString('pt-BR'),
+                    usuario: window.appState.currentUser, mes: mes,
+                    alteracoes: [`<span class="text-blue-600 font-bold">EDIÇÃO MANUAL:</span> <b>${cli.razao} (${cli.contato})</b> - ${campo.toUpperCase()} mudou para '${val || 'Vazio'}'`]
+                });
+                
+                window.saveState(); 
+                window.renderHistorico();
+                window.renderTable(); 
+            }
+        };
+
         // ==========================================
         // COBRANÇA AUTOMATIZADA WHATSAPP E EXTRATOS
         // ==========================================
         window.cobrarManual = async function(id) {
+            if (window.isVisitante) return alert("Modo Visitante: Acesso apenas para visualização.");
             let cli = window.appState.clientes.find(c => c.id === id);
             if(!cli) return;
 
@@ -949,6 +1054,7 @@
         };
 
         window.cobrarWhatsApp = function(id) {
+            if (window.isVisitante) return alert("Modo Visitante: Acesso apenas para visualização.");
             let cli = window.appState.clientes.find(c => c.id === id);
             if(!cli) return;
 
@@ -1077,6 +1183,7 @@
         };
 
         window.marcarExtratoRecebido = async function(id) {
+            if (window.isVisitante) return alert("Modo Visitante: Acesso apenas para visualização.");
             let cli = window.appState.clientes.find(c => c.id === id);
             if(!cli) return;
 
@@ -1392,6 +1499,7 @@
         };
 
         window.togglePresuncao = async function(id, isChecked) {
+            if (window.isVisitante) return alert("Modo Visitante: Acesso apenas para visualização.");
             let cli = window.appState.clientes.find(c => c.id === id);
             if(cli) {
                 cli.presuncao = isChecked;
@@ -1412,6 +1520,7 @@
         // CADASTRO DE CLIENTES (Inteligente e Editável com ID Único)
         // ==========================================
         window.adicionarClienteManual = async function() {
+            if (window.isVisitante) return alert("Modo Visitante: Acesso apenas para visualização.");
             window.appState.clientes.push({
                 id: window.generateId(),
                 razao: 'NOVA EMPRESA', cnpj: 'S/ CNPJ', contato: '', atividade: '', regime: '',
@@ -1431,6 +1540,7 @@
         };
 
         window.adicionarSocio = async function(id) {
+            if (window.isVisitante) return alert("Modo Visitante: Acesso apenas para visualização.");
             let cliBase = window.appState.clientes.find(c => c.id === id);
             if (cliBase) {
                 window.appState.clientes.push({
@@ -1453,6 +1563,7 @@
         };
 
         window.editarClienteCadastro = async function(id, campo, el) {
+            if (window.isVisitante) return alert("Modo Visitante: Acesso apenas para visualização.");
             let cli = window.appState.clientes.find(c => c.id === id);
             if(cli) {
                 let valAntigo = cli[campo] || '';
@@ -1494,6 +1605,7 @@
         };
 
         window.importarCadastro = async function() {
+            if (window.isVisitante) return alert("Modo Visitante: Acesso apenas para visualização.");
             const input = document.getElementById('rawDataCadastro').value;
             if (!input.trim()) return alert("Cole os dados para importar.");
 
@@ -1608,6 +1720,10 @@
                 return;
             }
 
+            const isReadonly = window.isVisitante ? 'readonly' : '';
+            const isDisabled = window.isVisitante ? 'disabled' : '';
+            const isHiddenClass = window.isVisitante ? 'hidden' : '';
+
             container.innerHTML = list.map(cli => {
                 const valRazao = (cli.razao || '').replace(/"/g, '&quot;');
                 const valCnpj = (cli.cnpj || '').replace(/"/g, '&quot;');
@@ -1619,27 +1735,27 @@
                 return `
                 <div class="bg-white p-2.5 rounded border border-slate-200 shadow-sm flex flex-col gap-2 relative group hover:border-indigo-300 transition-colors">
                     <div class="flex justify-between items-start gap-2">
-                        <input type="text" value="${valRazao}" class="text-[10px] font-black text-slate-800 uppercase leading-tight flex-grow bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none w-full" placeholder="RAZÃO SOCIAL" title="Razão Social" onchange="window.editarClienteCadastro('${cli.id}', 'razao', this)">
-                        <div class="flex items-center gap-1 flex-shrink-0">
+                        <input type="text" value="${valRazao}" ${isReadonly} class="text-[10px] font-black text-slate-800 uppercase leading-tight flex-grow bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none w-full" placeholder="RAZÃO SOCIAL" title="Razão Social" onchange="window.editarClienteCadastro('${cli.id}', 'razao', this)">
+                        <div class="flex items-center gap-1 flex-shrink-0 ${isHiddenClass}">
                             <button onclick="window.adicionarSocio('${cli.id}')" class="text-indigo-400 hover:text-indigo-700 text-[9px] font-bold leading-none transition-colors border border-indigo-200 px-1 py-0.5 rounded" title="Adicionar Novo Sócio para esta Empresa">➕ SÓCIO</button>
                             <button onclick="window.excluirCliente('${cli.id}')" class="text-red-400 hover:text-red-700 text-lg leading-none transition-colors" title="Excluir Cliente">&times;</button>
                         </div>
                     </div>
                     <div class="flex gap-2 w-full">
-                        <input type="text" value="${valCnpj}" class="text-[9px] font-mono text-indigo-600 font-bold bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none w-1/3" placeholder="CNPJ" title="CNPJ" onchange="window.editarClienteCadastro('${cli.id}', 'cnpj', this)">
-                        <input type="text" value="${valContato}" class="text-[9px] text-slate-500 bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none w-2/3" placeholder="Sócio / Contato" title="Contato" onchange="window.editarClienteCadastro('${cli.id}', 'contato', this)">
+                        <input type="text" value="${valCnpj}" ${isReadonly} class="text-[9px] font-mono text-indigo-600 font-bold bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none w-1/3" placeholder="CNPJ" title="CNPJ" onchange="window.editarClienteCadastro('${cli.id}', 'cnpj', this)">
+                        <input type="text" value="${valContato}" ${isReadonly} class="text-[9px] text-slate-500 bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none w-2/3" placeholder="Sócio / Contato" title="Contato" onchange="window.editarClienteCadastro('${cli.id}', 'contato', this)">
                     </div>
                     <div class="flex w-full mt-1 border-t border-slate-50 pt-1.5 gap-2 items-center">
-                        <input type="text" value="${valAtividade}" class="text-[8px] text-slate-400 bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none w-1/3 uppercase font-bold" placeholder="ATIVIDADE" title="Atividade" onchange="window.editarClienteCadastro('${cli.id}', 'atividade', this)">
-                        <input type="text" value="${valRegime}" class="text-[8px] text-slate-400 bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none w-1/3 uppercase font-bold" placeholder="REGIME" title="Regime" onchange="window.editarClienteCadastro('${cli.id}', 'regime', this)">
+                        <input type="text" value="${valAtividade}" ${isReadonly} class="text-[8px] text-slate-400 bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none w-1/3 uppercase font-bold" placeholder="ATIVIDADE" title="Atividade" onchange="window.editarClienteCadastro('${cli.id}', 'atividade', this)">
+                        <input type="text" value="${valRegime}" ${isReadonly} class="text-[8px] text-slate-400 bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none w-1/3 uppercase font-bold" placeholder="REGIME" title="Regime" onchange="window.editarClienteCadastro('${cli.id}', 'regime', this)">
                         <label class="flex items-center gap-1 cursor-pointer hover:bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200 ml-auto flex-shrink-0" title="Não sobrescrever valor na importação">
-                            <input type="checkbox" ${cli.presuncao ? 'checked' : ''} onchange="window.togglePresuncao('${cli.id}', this.checked)" class="w-3 h-3 accent-indigo-600">
+                            <input type="checkbox" ${cli.presuncao ? 'checked' : ''} ${isDisabled} onchange="window.togglePresuncao('${cli.id}', this.checked)" class="w-3 h-3 accent-indigo-600">
                             <span class="text-[8px] font-black ${cli.presuncao ? 'text-indigo-700' : 'text-slate-500'} uppercase tracking-tight">PRESUNÇÃO 🔒</span>
                         </label>
                     </div>
                     <div class="flex w-full mt-1 border-t border-slate-50 pt-1.5 gap-2">
-                        <input type="text" value="${valWhatsapp}" class="text-[9px] text-slate-500 bg-transparent border-b border-transparent hover:border-slate-300 focus:border-emerald-500 outline-none w-1/2" placeholder="Link/Telefone WhatsApp" title="WhatsApp" onchange="window.editarClienteCadastro('${cli.id}', 'whatsapp', this)">
-                        <input type="text" value="${(cli.obs || '').replace(/"/g, '&quot;')}" class="text-[9px] text-slate-500 bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none w-1/2 uppercase" placeholder="Observações (ex: Inativa)" title="Observações Gerais" onchange="window.editarClienteCadastro('${cli.id}', 'obs', this)">
+                        <input type="text" value="${valWhatsapp}" ${isReadonly} class="text-[9px] text-slate-500 bg-transparent border-b border-transparent hover:border-slate-300 focus:border-emerald-500 outline-none w-1/2" placeholder="Link/Telefone WhatsApp" title="WhatsApp" onchange="window.editarClienteCadastro('${cli.id}', 'whatsapp', this)">
+                        <input type="text" value="${(cli.obs || '').replace(/"/g, '&quot;')}" ${isReadonly} class="text-[9px] text-slate-500 bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none w-1/2 uppercase" placeholder="Observações (ex: Inativa)" title="Observações Gerais" onchange="window.editarClienteCadastro('${cli.id}', 'obs', this)">
                     </div>
                 </div>
             `}).join('');
@@ -2075,16 +2191,17 @@
                                             let dctfChecked = !!d.dctfweb;
 
                                             let bgClass = (reinfChecked && dctfChecked) ? "bg-emerald-100/50" : (reinfChecked || dctfChecked ? "bg-emerald-50/30" : "bg-white");
+                                            let isDisabled = window.isVisitante ? 'disabled' : '';
 
                                             return `
                                                 <td class="p-2 border-r border-slate-100 text-center align-middle ${bgClass}">
                                                     <div class="flex flex-col gap-1 items-center justify-center">
                                                         <label class="flex items-center gap-1 cursor-pointer hover:bg-black/5 px-1 rounded w-full justify-center" onclick="event.stopPropagation()">
-                                                            <input type="checkbox" ${reinfChecked ? 'checked' : ''} onchange="window.toggleReinf('${emp.id}', '${m}', this.checked)" class="w-2.5 h-2.5 accent-emerald-600">
+                                                            <input type="checkbox" ${reinfChecked ? 'checked' : ''} ${isDisabled} onchange="window.toggleReinf('${emp.id}', '${m}', this.checked)" class="w-2.5 h-2.5 accent-emerald-600">
                                                             <span class="text-[8px] font-black ${reinfChecked ? 'text-emerald-700' : 'text-slate-400'}">REINF</span>
                                                         </label>
                                                         <label class="flex items-center gap-1 cursor-pointer hover:bg-black/5 px-1 rounded w-full justify-center" onclick="event.stopPropagation()">
-                                                            <input type="checkbox" ${dctfChecked ? 'checked' : ''} onchange="window.toggleDctfWeb('${emp.id}', '${m}', this.checked)" class="w-2.5 h-2.5 accent-indigo-600">
+                                                            <input type="checkbox" ${dctfChecked ? 'checked' : ''} ${isDisabled} onchange="window.toggleDctfWeb('${emp.id}', '${m}', this.checked)" class="w-2.5 h-2.5 accent-indigo-600">
                                                             <span class="text-[8px] font-black ${dctfChecked ? 'text-indigo-700' : 'text-slate-400'}">DCTF</span>
                                                         </label>
                                                     </div>
@@ -2484,6 +2601,9 @@
                 }
             });
 
+            const isReadOnlyAttr = window.isVisitante ? 'readonly' : '';
+            const isDisabledAttr = window.isVisitante ? 'disabled' : '';
+
             tbody.innerHTML = list.length === 0 ? `<tr><td colspan="100" class="text-center py-20 text-slate-300 uppercase font-black italic tracking-widest">Nenhum dado</td></tr>` : 
             list.map(cli => {
                 let hasVisibleMonths = false;
@@ -2530,13 +2650,13 @@
                     <td class="col-fixed-regime font-black uppercase">${cli.regime || ''}</td>
                     <td class="col-fixed-extratos align-middle">
                         <div class="flex items-center justify-center h-full gap-1.5">
-                            <button onclick="window.cobrarManual('${cli.id}'); event.stopPropagation();" class="transition-all text-[10px] rounded p-1 flex-shrink-0 border ${classManual}" title="${cli.dataCobranca && isManual ? 'Cobrado Manualmente em ' + cli.dataCobranca + ' (Clique para editar)' : 'Informar data de cobrança manual'}">📅</button>
+                            <button onclick="window.cobrarManual('${cli.id}'); event.stopPropagation();" ${isDisabledAttr} class="transition-all text-[10px] rounded p-1 flex-shrink-0 border ${classManual} disabled:cursor-not-allowed" title="${cli.dataCobranca && isManual ? 'Cobrado Manualmente em ' + cli.dataCobranca + ' (Clique para editar)' : 'Informar data de cobrança manual'}">📅</button>
                             
-                            <button onclick="window.cobrarWhatsApp('${cli.id}'); event.stopPropagation();" class="transition-all text-[10px] rounded p-1 flex-shrink-0 border ${classWhats}" title="${cli.dataCobranca && isWhats ? 'Mensagem Whatsapp gerada em ' + cli.dataCobranca : 'Cobrar Extratos via WhatsApp (Atualiza data para hoje)'}">
+                            <button onclick="window.cobrarWhatsApp('${cli.id}'); event.stopPropagation();" ${isDisabledAttr} class="transition-all text-[10px] rounded p-1 flex-shrink-0 border ${classWhats} disabled:cursor-not-allowed" title="${cli.dataCobranca && isWhats ? 'Mensagem Whatsapp gerada em ' + cli.dataCobranca : 'Cobrar Extratos via WhatsApp (Atualiza data para hoje)'}">
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" class="w-3 h-3 fill-current"><path d="M380.9 97.1C339 55.1 283.2 32 223.9 32c-122.4 0-222 99.6-222 222 0 39.1 10.2 77.3 29.6 111L0 480l117.7-30.9c32.4 17.7 68.9 27 106.1 27h.1c122.3 0 224.1-99.6 224.1-222 0-59.3-23.2-115-65.1-157zM223.9 414.8c-33.2 0-65.8-8.9-94-25.7l-6.7-4-69.8 18.3L72 334.2l-4.4-7c-18.5-29.4-28.2-63.3-28.2-98.2 0-101.7 82.8-184.5 184.6-184.5 49.3 0 95.6 19.2 130.4 54.1 34.8 34.9 56.2 81.2 56.1 130.5 0 101.8-84.9 184.6-186.6 184.6zm101.2-138.2c-5.5-2.8-32.8-16.2-37.9-18-5.1-1.9-8.8-2.8-12.5 2.8-3.7 5.6-14.3 18-17.6 21.8-3.2 3.7-6.5 4.2-12 1.4-32.6-16.3-54-29.1-75.5-66-5.7-9.8 5.7-9.1 16.3-30.3 1.8-3.7 .9-6.9-.5-9.7-1.4-2.8-12.5-30.1-17.1-41.2-4.5-10.8-9.1-9.3-12.5-9.5-3.2-.2-6.9-.2-10.6-.2-3.7 0-9.7 1.4-14.8 6.9-5.1 5.6-19.4 19-19.4 46.3 0 27.3 19.9 53.7 22.6 57.4 2.8 3.7 39.1 59.7 94.8 83.8 35.2 15.2 49 16.5 66.6 13.9 10.7-1.6 32.8-13.4 37.4-26.4 4.6-13 4.6-24.1 3.2-26.4-1.3-2.5-5-3.9-10.5-6.6z"/></svg>
                             </button>
                             
-                            <button onclick="window.marcarExtratoRecebido('${cli.id}'); event.stopPropagation();" class="transition-all text-[10px] rounded p-1 flex-shrink-0 border ${classRec}" title="${cli.dataRecebimento ? 'Recebido em ' + cli.dataRecebimento + ' (Clique para desmarcar)' : 'Marcar como Recebido'}">✅</button>
+                            <button onclick="window.marcarExtratoRecebido('${cli.id}'); event.stopPropagation();" ${isDisabledAttr} class="transition-all text-[10px] rounded p-1 flex-shrink-0 border ${classRec} disabled:cursor-not-allowed" title="${cli.dataRecebimento ? 'Recebido em ' + cli.dataRecebimento + ' (Clique para desmarcar)' : 'Marcar como Recebido'}">✅</button>
                         </div>
                     </td>`;
                 
@@ -2579,11 +2699,11 @@
                         let htmlDeclaracoes = `
                             <div class="flex flex-col gap-1 items-start justify-center text-left mx-auto w-fit py-0.5">
                                 <label class="flex items-center gap-1 cursor-pointer hover:bg-slate-100 px-1 rounded" onclick="event.stopPropagation()">
-                                    <input type="checkbox" ${reinfChecked ? 'checked' : ''} onchange="window.toggleReinf('${cli.id}', '${m}', this.checked)" class="w-3 h-3 accent-emerald-600 cursor-pointer">
+                                    <input type="checkbox" ${reinfChecked ? 'checked' : ''} ${isDisabledAttr} onchange="window.toggleReinf('${cli.id}', '${m}', this.checked)" class="w-3 h-3 accent-emerald-600 cursor-pointer">
                                     <span class="text-[8px] font-black ${reinfChecked ? 'text-emerald-700' : 'text-slate-400'} uppercase tracking-tight">REINF</span>
                                 </label>
                                 <label class="flex items-center gap-1 cursor-pointer hover:bg-slate-100 px-1 rounded" onclick="event.stopPropagation()">
-                                    <input type="checkbox" ${dctfChecked ? 'checked' : ''} onchange="window.toggleDctfWeb('${cli.id}', '${m}', this.checked)" class="w-3 h-3 accent-indigo-600 cursor-pointer">
+                                    <input type="checkbox" ${dctfChecked ? 'checked' : ''} ${isDisabledAttr} onchange="window.toggleDctfWeb('${cli.id}', '${m}', this.checked)" class="w-3 h-3 accent-indigo-600 cursor-pointer">
                                     <span class="text-[8px] font-black ${dctfChecked ? 'text-indigo-700' : 'text-slate-400'} uppercase tracking-tight">DCTF</span>
                                 </label>
                             </div>
@@ -2596,7 +2716,7 @@
                             </td>
                             <td class="bg-transparent align-middle transition-colors cursor-pointer hover:bg-black/5" onclick="window.toggleLancado('${cli.id}', '${m}', ${d.lancado !== 'OK'}); event.stopPropagation();">
                                 <div class="flex items-center justify-center gap-1 w-full h-full p-1 cursor-pointer" onclick="event.stopPropagation()">
-                                    <input type="checkbox" ${d.lancado === 'OK' ? 'checked' : ''} onclick="event.stopPropagation()" onchange="window.toggleLancado('${cli.id}', '${m}', this.checked)" class="w-3.5 h-3.5 accent-blue-600 cursor-pointer">
+                                    <input type="checkbox" ${d.lancado === 'OK' ? 'checked' : ''} ${isDisabledAttr} onclick="event.stopPropagation()" onchange="window.toggleLancado('${cli.id}', '${m}', this.checked)" class="w-3.5 h-3.5 accent-blue-600 cursor-pointer">
                                     <span class="text-[9px] font-black ${d.lancado === 'OK' ? 'text-blue-600' : 'text-slate-300'}">${d.lancado === 'OK' ? 'OK' : '-'}</span>
                                 </div>
                             </td>
@@ -2673,6 +2793,7 @@
         // IMPORTAÇÃO DE DADOS & GERAÇÃO DE POPUP (COM VERIFICAÇÃO DE FALTANTES)
         // ==========================================
         window.adicionarDados = async function() {
+            if (window.isVisitante) return alert("Modo Visitante: Acesso apenas para visualização.");
             const input = document.getElementById('rawData').value;
             let mesRef = document.getElementById('mesRefInput').value.trim();
             
