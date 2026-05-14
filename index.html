@@ -96,6 +96,7 @@
 </head>
 <body class="font-sans overflow-hidden">
 
+    <!-- Modal de Identificação -->
     <div id="modalUser" class="fixed inset-0 bg-slate-900 bg-opacity-80 flex justify-center items-center z-[100] hidden px-4">
         <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-sm text-center border-t-4 border-blue-600">
             <h2 class="text-xl font-black mb-2 text-slate-800 uppercase tracking-tight">Acesso ao Sistema</h2>
@@ -116,6 +117,7 @@
         </div>
     </div>
 
+    <!-- Modal Admin -->
     <div id="modalAdmin" class="fixed inset-0 bg-slate-900 bg-opacity-80 flex justify-center items-center z-[110] hidden px-4">
         <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-sm text-center border-t-4 border-red-600">
             <h2 class="text-xl font-black mb-2 text-slate-800 uppercase tracking-tight">Modo Administrador</h2>
@@ -128,6 +130,7 @@
         </div>
     </div>
 
+    <!-- Modal de Configuração do Gist -->
     <div id="modalGist" class="fixed inset-0 bg-slate-900 bg-opacity-80 flex justify-center items-center z-[100] hidden px-4">
         <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-md text-center border-t-4 border-emerald-600 relative">
             <button onclick="window.fecharModalGist()" class="absolute top-3 right-4 text-slate-400 hover:text-slate-700 text-xl font-bold">&times;</button>
@@ -151,6 +154,7 @@
         </div>
     </div>
 
+    <!-- POPUP DE RESUMO DA IMPORTAÇÃO -->
     <div id="modalResumoImportacao" class="fixed inset-0 bg-slate-900 bg-opacity-80 flex justify-center items-center z-[110] hidden px-4">
         <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-3xl max-h-[85vh] flex flex-col border-t-4 border-amber-500 relative">
             <button onclick="document.getElementById('modalResumoImportacao').classList.add('hidden')" class="absolute top-3 right-4 text-slate-400 hover:text-slate-700 text-2xl font-bold leading-none">&times;</button>
@@ -158,6 +162,7 @@
             <p id="subtituloModalImportacao" class="text-xs text-slate-500 mb-4 font-medium">Verifique abaixo as divergências e alertas de valores detetados na última leitura de dados:</p>
             
             <div class="overflow-y-auto flex-grow space-y-5 pr-2">
+                <!-- Bloco de Alterações de Valores -->
                 <div id="blocoAlteracoesModal" class="hidden">
                     <h3 class="text-[11px] font-black text-amber-600 uppercase border-b border-amber-200 pb-1 mb-2 tracking-widest flex justify-between items-center">
                         <span>⚠️ Alterações de Valores</span>
@@ -165,6 +170,7 @@
                     </h3>
                     <ul id="listaAlteracoesModal" class="text-[11px] font-mono text-slate-700 space-y-1.5 list-disc pl-4"></ul>
                 </div>
+                <!-- Bloco de Alertas 50k -->
                 <div id="blocoAlertas50kModal" class="hidden">
                     <h3 class="text-[11px] font-black text-red-600 uppercase border-b border-red-200 pb-1 mb-2 tracking-widest flex justify-between items-center">
                         <span>🚨 Distribuição > 50 Mil (Atenção IR)</span>
@@ -172,6 +178,7 @@
                     </h3>
                     <ul id="listaAlertas50kModal" class="text-[11px] font-mono text-slate-700 space-y-1.5 list-disc pl-4"></ul>
                 </div>
+                <!-- Bloco de Faltantes na Planilha -->
                 <div id="blocoFaltantesModal" class="hidden">
                     <h3 class="text-[11px] font-black text-orange-600 uppercase border-b border-orange-200 pb-1 mb-2 tracking-widest flex items-center justify-between">
                         <span>⚠️ Ausentes na Importação <span id="badgeCountFaltantes" class="bg-orange-200 text-orange-800 px-2 py-0.5 rounded-full text-[9px] ml-1">0</span></span>
@@ -180,6 +187,7 @@
                     <p class="text-[9px] text-slate-400 mb-2 italic">As empresas abaixo constam no seu Cadastro, mas não foram encontradas na planilha importada agora.</p>
                     <ul id="listaFaltantesModal" class="text-[10px] font-mono text-slate-600 space-y-1 list-disc pl-4 max-h-40 overflow-y-auto"></ul>
                 </div>
+                <!-- Bloco de Clientes Novos/Não Cadastrados (Cadastros Faltantes) -->
                 <div id="blocoNovosModal" class="hidden">
                     <h3 class="text-[11px] font-black text-blue-600 uppercase border-b border-blue-200 pb-1 mb-2 tracking-widest mt-2 flex justify-between items-center">
                         <span>✨ Cadastros Novos na Planilha (Faltam Cad.)</span>
@@ -194,6 +202,7 @@
         </div>
     </div>
 
+    <!-- MODAL DE VISUALIZAÇÃO DE PLANILHA SALVA -->
     <div id="modalVisualizarPlanilha" class="fixed inset-0 bg-slate-900 bg-opacity-95 flex justify-center items-center z-[120] hidden p-4">
         <div class="bg-white rounded-xl shadow-2xl w-full h-full max-w-[95vw] max-h-full flex flex-col border-t-4 border-blue-600 relative overflow-hidden">
             <div class="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50 flex-shrink-0">
@@ -209,13 +218,15 @@
         </div>
     </div>
 
+    <!-- Modal Escolher Sócio para WhatsApp -->
     <div id="modalSocioWhatsapp" class="fixed inset-0 bg-slate-900 bg-opacity-80 flex justify-center items-center z-[110] hidden px-4">
         <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-sm text-center border-t-4 border-emerald-600">
             <h2 class="text-xl font-black mb-2 text-slate-800 uppercase tracking-tight">Múltiplos Sócios</h2>
             <p class="text-xs text-slate-500 mb-4 font-medium" id="textoModalSocio"></p>
             
             <div id="listaBotoesSocio" class="flex flex-col gap-2 mb-4">
-                </div>
+                <!-- Botões serão gerados aqui -->
+            </div>
             
             <button onclick="document.getElementById('modalSocioWhatsapp').classList.add('hidden')" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-black px-4 py-2 rounded-lg w-full transition-all uppercase text-xs">Cancelar Operação</button>
         </div>
@@ -223,6 +234,7 @@
 
     <div class="h-screen flex flex-col relative bg-white">
         
+        <!-- Cabeçalho -->
         <div class="p-3 border-b border-slate-200 flex justify-between items-center bg-slate-50 flex-shrink-0 shadow-sm z-30">
             <h1 class="text-sm font-black text-slate-700 uppercase tracking-tighter flex items-center gap-2 leading-none">
                 <span class="bg-blue-600 text-white p-1 rounded shadow-sm">PI</span>
@@ -239,6 +251,7 @@
                     <button onclick="window.abrirLogin()" class="text-slate-300 hover:text-red-500 transition-colors" title="Alterar Usuário">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
                     </button>
+                    <!-- BOTAO ADMIN -->
                     <button onclick="window.toggleAdmin()" id="btnAdmin" class="bg-slate-100 hover:bg-red-100 text-slate-500 hover:text-red-700 transition-colors px-2 py-0.5 rounded font-black text-[8px] uppercase flex items-center gap-1" title="Ativar Modo Admin">
                         🔐 Admin
                     </button>
@@ -259,6 +272,7 @@
             </div>
         </div>
 
+        <!-- Importação (Valores Mensais) -->
         <div class="p-3 bg-blue-50 border-b border-blue-100 flex-shrink-0 relative z-10" id="botoesImportacao">
             <div class="flex gap-4 items-center">
                 <div class="flex items-center gap-3 flex-shrink-0">
@@ -275,11 +289,13 @@
             </div>
         </div>
         
+        <!-- Meses Ocultos -->
         <div id="barraMesesOcultos" class="bg-slate-100 border-b border-slate-200 p-2 px-4 flex-shrink-0 hidden items-center gap-3 shadow-inner">
             <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Períodos Ocultos:</span>
             <div id="listaMesesOcultos" class="flex gap-2 flex-wrap"></div>
         </div>
 
+        <!-- Tabela Principal -->
         <div class="overflow-auto flex-grow relative bg-white">
             <table id="mainTable">
                 <thead id="tabelaHead" class="text-slate-700 uppercase bg-slate-100 border-b-2 border-slate-300 shadow-sm">
@@ -289,6 +305,7 @@
             </table>
         </div>
 
+        <!-- Painel de Cadastro de Clientes -->
         <div id="painelCadastro" class="painel-lateral painel-oculto absolute top-0 right-0 h-full w-96 bg-white shadow-2xl border-l border-slate-200 z-50 flex flex-col">
             <div class="p-4 bg-indigo-50 border-b border-indigo-200 flex justify-between items-center">
                 <h2 class="text-sm font-black text-indigo-900 uppercase tracking-tighter">Cadastro de Clientes</h2>
@@ -314,13 +331,15 @@
                     </div>
                 </div>
                 <div id="listaCadastro" class="space-y-2 pb-6">
-                    </div>
+                    <!-- Lista de clientes (Gerado via JS) -->
+                </div>
             </div>
             <div class="p-3 border-t border-slate-200 text-center bg-white flex-shrink-0">
                 <button id="btnApagarTodosCadastro" onclick="window.limparCadastro()" class="text-[10px] text-red-600 uppercase font-black hover:underline tracking-widest">Apagar Todos os Cadastros</button>
             </div>
         </div>
 
+        <!-- Painel Historico -->
         <div id="painelHistorico" class="painel-lateral painel-oculto absolute top-0 right-0 h-full w-[400px] bg-white shadow-2xl border-l border-slate-200 z-50 flex flex-col">
             <div class="p-4 bg-amber-50 border-b border-amber-200 flex justify-between items-center flex-shrink-0">
                 <h2 class="text-sm font-black text-amber-900 uppercase tracking-tighter">Registo (Log)</h2>
@@ -341,12 +360,14 @@
             </div>
         </div>
 
+        <!-- Painel Classificacao Reinf -->
         <div id="painelClassificacao" class="painel-lateral painel-oculto absolute top-0 right-0 h-full w-[800px] max-w-full bg-white shadow-2xl border-l border-slate-200 z-50 flex flex-col">
             <div class="p-4 bg-blue-50 border-b border-blue-200 flex justify-between items-center flex-shrink-0">
                 <h2 class="text-sm font-black text-blue-900 uppercase tracking-tighter">Classificação e Entregas</h2>
                 <button onclick="togglePainel('painelClassificacao')" class="text-slate-400 hover:text-black text-2xl font-light leading-none">&times;</button>
             </div>
             
+            <!-- ABAS DO PAINEL REINF -->
             <div class="flex flex-wrap border-b border-slate-200 text-[8px] font-black uppercase text-center bg-white cursor-pointer flex-shrink-0">
                 <div id="tabReinfPrevisao" onclick="window.setReinfTab('previsao')" class="w-1/2 py-2.5 text-blue-600 border-b-2 border-blue-600 bg-blue-50 transition-colors">Previsão e Valores</div>
                 <div id="tabReinfEntregas" onclick="window.setReinfTab('entregas')" class="w-1/2 py-2.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 border-b-2 border-transparent transition-colors">Status de Entregas</div>
@@ -421,8 +442,6 @@
         };
 
         // Variáveis de Estado da Aplicação
-        window.originalState = {}; // Rastreia o estado original para calcular a mesclagem baseada em diferenças
-
         window.appState = {
             meses: [], 
             mesesConfig: {},
@@ -431,7 +450,7 @@
             historicoPlanilhas: [], 
             filtros: {},
             currentUser: '',
-            passwords: {} 
+            passwords: {} // Guarda senhas do sistema
         };
 
         window.isAdmin = false;
@@ -453,6 +472,7 @@
 
         window.validarAdmin = function() {
             let pass = document.getElementById('adminPasswordInput').value;
+            // SENHA PADRÃO DO ADMIN AQUI:
             if(pass === '05583070' || pass === 'admin') {
                 window.isAdmin = true;
                 document.getElementById('modalAdmin').classList.add('hidden');
@@ -471,7 +491,7 @@
         });
 
         // ==========================================
-        // GITHUB GIST E PERSISTÊNCIA LOCAL (COM DEEP MERGE)
+        // GITHUB GIST E PERSISTÊNCIA LOCAL
         // ==========================================
         window.gistConfig = {
             token: localStorage.getItem('reinfGistToken') || '',
@@ -503,7 +523,7 @@
                 const req = tx.objectStore("store").get("estado_geral");
                 req.onsuccess = () => {
                     if(req.result) {
-                        window.aplicarDados(req.result, true);
+                        window.aplicarDados(req.result);
                     } else {
                         window.syncUI();
                     }
@@ -514,7 +534,7 @@
             }
         };
 
-        window.aplicarDados = function(data, isInit = true) {
+        window.aplicarDados = function(data) {
             if (data) {
                 window.appState = Object.assign(window.appState, data);
                 if(!window.appState.historicoPlanilhas) window.appState.historicoPlanilhas = [];
@@ -527,6 +547,7 @@
                         return !['RAZÃO SOCIAL', 'RAZAO SOCIAL', 'NOME', 'CLIENTE', 'EMPRESA', 'NOME DA EMPRESA', 'TITULO', 'CNPJ'].includes(r);
                     });
 
+                    // MIGRAÇÃO SEGURA PARA ID ÚNICO, OBSERVAÇÕES, WHATSAPP, E DECLARAÇÕES
                     window.appState.clientes.forEach(c => {
                         if (c.atividade === undefined) c.atividade = '';
                         if (c.obs === undefined) c.obs = '';
@@ -548,11 +569,8 @@
                     });
                 }
                 
-                if (isInit) {
-                    window.appState.currentUser = ''; // Força login ao carregar a página
-                    // Registra a foto original para calcular o que mudou
-                    window.originalState = JSON.parse(JSON.stringify(window.appState));
-                }
+                // AMNÉSIA PROPOSITAL: Toda vez que os dados são carregados (ao atualizar a página), nós apagamos o usuário para forçar login
+                window.appState.currentUser = '';
             }
             window.syncUI();
         };
@@ -561,18 +579,15 @@
             if (!window.gistConfig.token || !window.gistConfig.id) return false;
             try {
                 const response = await fetch(`https://api.github.com/gists/${window.gistConfig.id}`, {
-                    headers: { 'Authorization': `Bearer ${window.gistConfig.token}` },
-                    cache: 'no-store'
+                    headers: { 'Authorization': `Bearer ${window.gistConfig.token}` }
                 });
                 if (!response.ok) throw new Error("Erro de autorização ou ID não encontrado.");
-                
                 const data = await response.json();
                 const files = data.files;
                 const firstFileName = Object.keys(files)[0];
-                
                 if (firstFileName && files[firstFileName].content && files[firstFileName].content !== "{}") {
                     const nuvemState = JSON.parse(files[firstFileName].content);
-                    window.aplicarDados(nuvemState, true);
+                    window.aplicarDados(nuvemState);
                     await window.salvarDadosLocais(nuvemState); 
                 }
                 window.atualizarBotaoNuvem(true);
@@ -584,113 +599,17 @@
             }
         };
 
-        // --- MOTOR DE MESCLAGEM INTELIGENTE ---
-        window.mergeWithRemote = function(localOriginal, localCurrent, remote) {
-            let merged = JSON.parse(JSON.stringify(remote));
-
-            // Mesclar Arrays de Meses
-            localCurrent.meses.forEach(m => {
-                if (!merged.meses.includes(m)) merged.meses.push(m);
-            });
-
-            // Mapas de Clientes para busca rápida
-            let remoteClientsMap = {}; merged.clientes.forEach(c => remoteClientsMap[c.id] = c);
-            let originalClientsMap = {}; (localOriginal.clientes || []).forEach(c => originalClientsMap[c.id] = c);
-            let currClientsMap = {}; localCurrent.clientes.forEach(c => currClientsMap[c.id] = c);
-
-            localCurrent.clientes.forEach(currCli => {
-                let origCli = originalClientsMap[currCli.id];
-                let remCli = remoteClientsMap[currCli.id];
-
-                if (!remCli) {
-                    // Se não existe na nuvem, mas você acabou de criar localmente, adiciona no merged
-                    if (!origCli) {
-                        merged.clientes.push(currCli);
-                    }
-                } else {
-                    // Existe na nuvem. Vamos aplicar AS SUAS alterações em cima do que veio da nuvem
-                    if (!origCli) origCli = {}; 
-
-                    // Verifica mudanças em campos básicos do cadastro
-                    const fields = ['razao', 'cnpj', 'contato', 'atividade', 'regime', 'obs', 'whatsapp', 'dataCobranca', 'dataRecebimento', 'tipoCobranca', 'presuncao'];
-                    fields.forEach(f => {
-                        if (currCli[f] !== origCli[f]) remCli[f] = currCli[f]; // Você alterou! Aplica na nuvem.
-                    });
-
-                    // Verifica mudanças nos meses (Antecipação, Folha, Reinf, Dctf)
-                    currCli.mensal = currCli.mensal || {};
-                    origCli.mensal = origCli.mensal || {};
-                    remCli.mensal = remCli.mensal || {};
-
-                    Object.keys(currCli.mensal).forEach(mes => {
-                        let currMes = currCli.mensal[mes];
-                        let origMes = origCli.mensal[mes] || { antec: '-', lancado: '-', reinf: '-', dctfweb: false };
-                        let remMes = remCli.mensal[mes] || { antec: '-', lancado: '-', reinf: '-', dctfweb: false };
-
-                        const mFields = ['antec', 'lancado', 'reinf', 'dctfweb'];
-                        let changed = false;
-                        mFields.forEach(mf => {
-                            if (currMes[mf] !== origMes[mf]) {
-                                remMes[mf] = currMes[mf]; // Você alterou este valor! Aplica na nuvem.
-                                changed = true;
-                            }
-                        });
-                        if (changed || !remCli.mensal[mes]) remCli.mensal[mes] = remMes;
-                    });
-                }
-            });
-
-            // Tratamento de Exclusões Locais
-            merged.clientes = merged.clientes.filter(remCli => {
-                let origCli = originalClientsMap[remCli.id];
-                let currCli = currClientsMap[remCli.id];
-                if (origCli && !currCli) return false; // Você apagou localmente, então remove do merged final
-                return true; 
-            });
-
-            // Mesclar Logs (Garante que os logs dos dois usuários fiquem salvos)
-            let remoteLogsKeys = new Set(merged.historicoGeral.map(l => l.data + l.tipo + l.usuario));
-            localCurrent.historicoGeral.forEach(localLog => {
-                if (!remoteLogsKeys.has(localLog.data + localLog.tipo + localLog.usuario)) {
-                    merged.historicoGeral.push(localLog);
-                }
-            });
-
-            let remotePlanilhasStrings = new Set(merged.historicoPlanilhas.map(p => p.data + p.mes + p.usuario));
-            localCurrent.historicoPlanilhas.forEach(p => {
-                if (!remotePlanilhasStrings.has(p.data + p.mes + p.usuario)) {
-                    merged.historicoPlanilhas.push(p);
-                }
-            });
-
-            // Manter senhas novas cadastradas
-            merged.passwords = { ...merged.passwords, ...localCurrent.passwords };
-
-            return merged;
-        };
-
-        window.salvarNoGist = async function(dadosLocais) {
+        window.salvarNoGist = async function(dados) {
             if (!window.gistConfig.token || !window.gistConfig.id) return;
             try {
-                // Efeito Visual de Sincronização
-                document.getElementById('iconeNuvem').innerText = "⏳";
-                document.getElementById('textoNuvem').innerText = "MESCLANDO...";
-
-                // 1. Puxa os dados fresquinhos do Gist silenciosamente
-                const checkResponse = await fetch(`https://api.github.com/gists/${window.gistConfig.id}`, {
-                    headers: { 'Authorization': `Bearer ${window.gistConfig.token}` },
-                    cache: 'no-store'
+                const response = await fetch(`https://api.github.com/gists/${window.gistConfig.id}`, {
+                    headers: { 'Authorization': `Bearer ${window.gistConfig.token}` }
                 });
-                const checkData = await checkResponse.json();
-                const fileName = Object.keys(checkData.files)[0] || "planilha_reinf.json";
-                
-                let nuvemState = JSON.parse(checkData.files[fileName].content);
+                if (!response.ok) return;
+                const data = await response.json();
+                const fileName = Object.keys(data.files)[0] || "planilha_reinf.json";
+                const payload = { files: { [fileName]: { content: JSON.stringify(dados) } } };
 
-                // 2. Faz a Mágica: Junta as alterações do seu colega com as suas
-                let dadosMesclados = window.mergeWithRemote(window.originalState, dadosLocais, nuvemState);
-
-                // 3. Monta e envia o pacote com as informações unidas
-                const payload = { files: { [fileName]: { content: JSON.stringify(dadosMesclados) } } };
                 await fetch(`https://api.github.com/gists/${window.gistConfig.id}`, {
                     method: 'PATCH',
                     headers: { 
@@ -699,27 +618,19 @@
                     },
                     body: JSON.stringify(payload)
                 });
-                
-                // 4. Atualiza seu aplicativo localmente para exibir o que o colega fez
-                window.aplicarDados(dadosMesclados, false); // false = Não pede login de novo
-                window.originalState = JSON.parse(JSON.stringify(dadosMesclados)); // Tira uma foto nova
-                await window.salvarDadosLocais(window.appState); // Salva fisicamente a nova foto unida no navegador
-
                 window.atualizarBotaoNuvem(true);
             } catch(e) {
-                console.error("Erro ao salvar no Gist com Mesclagem:", e);
+                console.error("Erro ao salvar no Gist:", e);
                 window.atualizarBotaoNuvem(false);
             }
         };
 
         window.saveState = async function() {
-            if (window.isVisitante) return; 
-            // Salva backup local hiper-rápido do estado atual primeiro
-            await window.salvarDadosLocais(window.appState);
-            
-            // Depois aciona a nuvem que fará a mesclagem inteligente e reatualizará a tela
+            if (window.isVisitante) return; // Visitante nunca salva estado na nuvem/local
+            const dadosParaSalvar = window.appState;
+            await window.salvarDadosLocais(dadosParaSalvar);
             if (window.gistConfig.token && window.gistConfig.id) {
-                await window.salvarNoGist(window.appState);
+                window.salvarNoGist(dadosParaSalvar);
             }
         };
 
