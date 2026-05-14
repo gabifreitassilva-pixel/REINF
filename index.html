@@ -107,7 +107,7 @@
     <div id="modalAdmin" class="fixed inset-0 bg-slate-900 bg-opacity-80 flex justify-center items-center z-[110] hidden px-4">
         <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-sm text-center border-t-4 border-red-600">
             <h2 class="text-xl font-black mb-2 text-slate-800 uppercase tracking-tight">Modo Administrador</h2>
-            <p class="text-xs text-slate-500 mb-4 font-medium">Digite a senha para habilitar a exclusão e edição avançada de registros.</p>
+            <p class="text-xs text-slate-500 mb-4 font-medium">Digite a senha para habilitar a exclusão de registros.</p>
             <input type="password" id="adminPasswordInput" class="w-full border-2 border-slate-200 p-3 rounded-lg mb-4 text-center font-bold text-lg focus:border-red-500 outline-none" placeholder="****">
             <div class="flex gap-2">
                 <button onclick="document.getElementById('modalAdmin').classList.add('hidden')" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-black px-4 py-2 rounded-lg w-1/3 transition-all uppercase">Cancelar</button>
@@ -142,8 +142,8 @@
     <div id="modalResumoImportacao" class="fixed inset-0 bg-slate-900 bg-opacity-80 flex justify-center items-center z-[110] hidden px-4">
         <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-3xl max-h-[85vh] flex flex-col border-t-4 border-amber-500 relative">
             <button onclick="document.getElementById('modalResumoImportacao').classList.add('hidden')" class="absolute top-3 right-4 text-slate-400 hover:text-slate-700 text-2xl font-bold leading-none">&times;</button>
-            <h2 id="tituloModalImportacao" class="text-xl font-black mb-2 text-slate-800 uppercase tracking-tight">Relatório da Importação</h2>
-            <p id="subtituloModalImportacao" class="text-xs text-slate-500 mb-4 font-medium">Verifique abaixo as divergências e alertas de valores detetados na última leitura de dados:</p>
+            <h2 class="text-xl font-black mb-2 text-slate-800 uppercase tracking-tight">Relatório da Importação</h2>
+            <p class="text-xs text-slate-500 mb-4 font-medium">Verifique abaixo as divergências e alertas de valores detetados na última leitura de dados:</p>
             
             <div class="overflow-y-auto flex-grow space-y-5 pr-2">
                 <div id="blocoAlteracoesModal" class="hidden">
@@ -237,7 +237,7 @@
                 </button>
 
                 <button onclick="togglePainel('painelClassificacao')" class="bg-blue-100 hover:bg-blue-200 text-blue-900 px-4 py-1.5 rounded-full text-[10px] font-black border border-blue-300 transition-all leading-none flex items-center gap-2 shadow-sm">
-                    📊 REINF & DCTF
+                    📊 REINF
                 </button>
 
                 <button onclick="togglePainel('painelHistorico')" class="bg-amber-100 hover:bg-amber-200 text-amber-900 px-4 py-1.5 rounded-full text-[10px] font-black border border-amber-300 transition-all leading-none flex items-center gap-2 shadow-sm">
@@ -327,9 +327,9 @@
             </div>
         </div>
 
-        <div id="painelClassificacao" class="painel-lateral painel-oculto absolute top-0 right-0 h-full w-[800px] max-w-full bg-white shadow-2xl border-l border-slate-200 z-50 flex flex-col">
+        <div id="painelClassificacao" class="painel-lateral painel-oculto absolute top-0 right-0 h-full w-[600px] max-w-full bg-white shadow-2xl border-l border-slate-200 z-50 flex flex-col">
             <div class="p-4 bg-blue-50 border-b border-blue-200 flex justify-between items-center flex-shrink-0">
-                <h2 class="text-sm font-black text-blue-900 uppercase tracking-tighter">Classificação e Entregas</h2>
+                <h2 class="text-sm font-black text-blue-900 uppercase tracking-tighter">Classificação Reinf e Previsão</h2>
                 <button onclick="togglePainel('painelClassificacao')" class="text-slate-400 hover:text-black text-2xl font-light leading-none">&times;</button>
             </div>
             
@@ -441,7 +441,7 @@
                 document.getElementById('btnAdmin').classList.replace('bg-slate-100', 'bg-red-100');
                 document.getElementById('btnAdmin').classList.replace('text-slate-500', 'text-red-700');
                 document.getElementById('btnAdmin').innerHTML = '🔓 ADMIN ATIVO';
-                alert("Modo Administrador ativado! Você pode editar a coluna ANT e excluir linhas na Tabela Principal.");
+                alert("Modo Administrador ativado! Agora você pode excluir linhas diretamente na Tabela Principal.");
                 window.renderTable();
             } else {
                 alert("Senha incorreta!");
@@ -508,7 +508,7 @@
                         return !['RAZÃO SOCIAL', 'RAZAO SOCIAL', 'NOME', 'CLIENTE', 'EMPRESA', 'NOME DA EMPRESA', 'TITULO', 'CNPJ'].includes(r);
                     });
 
-                    // MIGRAÇÃO SEGURA PARA ID ÚNICO, OBSERVAÇÕES, WHATSAPP, E DECLARAÇÕES
+                    // MIGRAÇÃO SEGURA PARA ID ÚNICO, OBSERVAÇÕES E WHATSAPP
                     window.appState.clientes.forEach(c => {
                         if (c.atividade === undefined) c.atividade = '';
                         if (c.obs === undefined) c.obs = '';
@@ -516,17 +516,7 @@
                         if (c.dataCobranca === undefined) c.dataCobranca = '';
                         if (c.dataRecebimento === undefined) c.dataRecebimento = '';
                         if (c.tipoCobranca === undefined) c.tipoCobranca = '';
-                        if (c.presuncao === undefined) c.presuncao = false;
                         if (!c.id) c.id = window.generateId();
-                        
-                        if (c.mensal) {
-                            Object.keys(c.mensal).forEach(m => {
-                                delete c.mensal[m].dataEntregaReinf;
-                                if (c.mensal[m] && c.mensal[m].dctfweb === undefined) {
-                                    c.mensal[m].dctfweb = false;
-                                }
-                            });
-                        }
                     });
                 }
             }
@@ -707,109 +697,6 @@
         };
 
         // ==========================================
-        // DECLARAÇÕES: REINF E DCTF-WEB
-        // ==========================================
-        window.toggleReinf = async function(id, mes, isChecked) {
-            let cli = window.appState.clientes.find(c => c.id === id);
-            if(!cli) return;
-            if(!cli.mensal[mes]) cli.mensal[mes] = { antec: '-', lancado: '-', reinf: '-', dctfweb: false };
-            
-            cli.mensal[mes].reinf = isChecked ? 'OK' : '-';
-            let alteradosTrim = false;
-            let targets = [];
-
-            if (isChecked) {
-                let [mStr, yStr] = mes.split('/');
-                let mNum = parseInt(mStr, 10);
-                let yNum = parseInt(yStr, 10);
-                let isTriggerMonth = [1, 4, 7, 10].includes(mNum);
-                
-                if (isTriggerMonth) {
-                    if (mNum === 4) { targets = [`01/${yStr}`, `02/${yStr}`, `03/${yStr}`]; }
-                    else if (mNum === 7) { targets = [`04/${yStr}`, `05/${yStr}`, `06/${yStr}`]; }
-                    else if (mNum === 10) { targets = [`07/${yStr}`, `08/${yStr}`, `09/${yStr}`]; }
-                    else if (mNum === 1) { targets = [`10/${yNum-1}`, `11/${yNum-1}`, `12/${yNum-1}`]; }
-
-                    targets.forEach(t => {
-                        if (!cli.mensal[t]) cli.mensal[t] = { antec: '-', lancado: '-', reinf: '-', dctfweb: false };
-                        let tVlr = window.parseCurrency(cli.mensal[t].antec);
-                        
-                        if (tVlr > 50000) {
-                            cli.mensal[t].reinf = 'MENSAL OK';
-                        } else {
-                            cli.mensal[t].reinf = 'TRIM OK'; // Cobre valor 0, sem lucro, ausentes e <=50k.
-                        }
-                        alteradosTrim = true;
-                    });
-                }
-            }
-
-            window.appState.historicoGeral.push({
-                tipo: 'edicao',
-                data: new Date().toLocaleString('pt-BR'),
-                usuario: window.appState.currentUser,
-                mes: mes,
-                alteracoes: [`<span class="text-blue-600 font-bold">REINF:</span> <b>${cli.razao}</b> - ${isChecked ? 'Marcada como Entregue' : 'Desmarcada'}.`]
-            });
-
-            if(alteradosTrim) {
-                alert(`Regra do Trimestre (REINF) aplicada: Os meses ${targets.join(', ')} foram finalizados com sucesso!`);
-            }
-
-            await window.saveState();
-            window.renderTable();
-            window.renderClassificacao();
-            window.renderHistorico();
-        };
-
-        window.toggleDctfWeb = async function(id, mes, isChecked) {
-            let cli = window.appState.clientes.find(c => c.id === id);
-            if(!cli) return;
-            if(!cli.mensal[mes]) cli.mensal[mes] = { antec: '-', lancado: '-', reinf: '-', dctfweb: false };
-            
-            cli.mensal[mes].dctfweb = isChecked;
-            let alteradosTrim = false;
-            let targets = [];
-
-            if (isChecked) {
-                let [mStr, yStr] = mes.split('/');
-                let mNum = parseInt(mStr, 10);
-                let yNum = parseInt(yStr, 10);
-                let isTriggerMonth = [1, 4, 7, 10].includes(mNum);
-                
-                if (isTriggerMonth) {
-                    if (mNum === 4) { targets = [`01/${yStr}`, `02/${yStr}`, `03/${yStr}`]; }
-                    else if (mNum === 7) { targets = [`04/${yStr}`, `05/${yStr}`, `06/${yStr}`]; }
-                    else if (mNum === 10) { targets = [`07/${yStr}`, `08/${yStr}`, `09/${yStr}`]; }
-                    else if (mNum === 1) { targets = [`10/${yNum-1}`, `11/${yNum-1}`, `12/${yNum-1}`]; }
-
-                    targets.forEach(t => {
-                        if (!cli.mensal[t]) cli.mensal[t] = { antec: '-', lancado: '-', reinf: '-', dctfweb: false };
-                        cli.mensal[t].dctfweb = true;
-                        alteradosTrim = true;
-                    });
-                }
-            }
-
-            window.appState.historicoGeral.push({
-                tipo: 'edicao',
-                data: new Date().toLocaleString('pt-BR'),
-                usuario: window.appState.currentUser,
-                mes: mes,
-                alteracoes: [`<span class="text-indigo-600 font-bold">DCTF-WEB:</span> <b>${cli.razao}</b> - ${isChecked ? 'Marcada como Entregue' : 'Desmarcada'}.`]
-            });
-
-            if(alteradosTrim) {
-                alert(`Regra do Trimestre (DCTF-Web) aplicada: Os meses ${targets.join(', ')} também foram marcados como entregues!`);
-            }
-
-            await window.saveState();
-            window.renderTable();
-            window.renderClassificacao();
-            window.renderHistorico();
-        };
-
-        // ==========================================
         // COBRANÇA AUTOMATIZADA WHATSAPP E EXTRATOS
         // ==========================================
         window.cobrarManual = async function(id) {
@@ -872,7 +759,9 @@
             window.executarCobrancaWhatsapp(cli.id);
         };
 
+        // Função que realmente copia a mensagem e abre o WhatsApp (ativada pelo clique de forma 100% síncrona para não ser bloqueada pelo browser)
         window.executarCobrancaWhatsapp = function(targetId) {
+            // Fecha o modal caso ele esteja aberto
             document.getElementById('modalSocioWhatsapp').classList.add('hidden');
 
             let targetCli = window.appState.clientes.find(c => c.id === targetId);
@@ -912,6 +801,7 @@
 
             let msg = `Olá ${firstName}, tudo bem?\nEstamos organizando os arquivos para a contabilidade da empresa *${targetCli.razao}* e sentimos falta dos extratos bancários de *${mesesStr}*.\n\nSe puder disponibilizar por aqui, já consigo deixar tudo engatilhado para que o pessoal do contábil dê continuidade na contabilização.`;
 
+            // Tentativa de cópia síncrona garantida para iFrames (Como o Canvas)
             let copiado = false;
             try {
                 const el = document.createElement('textarea');
@@ -928,6 +818,7 @@
                 console.warn("Erro ao tentar copiar via execCommand: ", e);
             }
 
+            // Fallback para API moderna caso execCommand falhe, mas é assíncrono
             if (!copiado && navigator.clipboard && window.isSecureContext) {
                 navigator.clipboard.writeText(msg).catch(e => console.warn("Erro no clipboard API: ", e));
             }
@@ -986,14 +877,17 @@
             let novaData = '';
             if (!desmarcar) {
                 if (cli.tipoCobranca === 'whatsapp') {
+                    // Preenchimento automático pelo sistema quando foi cobrado via WhatsApp
                     novaData = dataAtual;
                 } else {
+                    // Cobrança manual ou sem cobrança: Pede a data do recebimento
                     novaData = prompt(`Informe a data em que o extrato de ${cli.razao} foi recebido:\n(Deixe a data de hoje ou altere se necessário)`, dataAtual);
-                    if (novaData === null) return;
+                    if (novaData === null) return; // Cancelou a operação
                     novaData = novaData.trim();
                 }
             }
 
+            // Atualiza a dataRecebimento de TODOS os sócios dessa empresa
             window.appState.clientes.forEach(c => {
                 if ((window.getNumbers(c.cnpj) === cnpjNum && cnpjNum.length === 14) || c.id === id) {
                     c.dataRecebimento = desmarcar ? '' : novaData;
@@ -1001,7 +895,7 @@
             });
 
             window.appState.historicoGeral.push({
-                tipo: 'extrato_log',
+                tipo: 'extrato_log', // Log não vai para 'Modificações'
                 data: new Date().toLocaleString('pt-BR'),
                 usuario: window.appState.currentUser,
                 mes: 'GERAL',
@@ -1019,6 +913,7 @@
                 return;
             }
 
+            // Agrupa por CNPJ ou nome para não imprimir a mesma empresa múltiplas vezes (devido a múltiplos sócios)
             let vistos = new Set();
             let listaUnica = window.appState.clientes.filter(cli => {
                 let num = window.getNumbers(cli.cnpj);
@@ -1027,9 +922,18 @@
                 vistos.add(key);
                 return true;
             }).sort((a, b) => {
-                const groupA = (a.dataCobranca && !a.dataRecebimento) ? 1 : (a.dataRecebimento ? 2 : 3);
-                const groupB = (b.dataCobranca && !b.dataRecebimento) ? 1 : (b.dataRecebimento ? 2 : 3);
-                if (groupA !== groupB) return groupA - groupB;
+                // Nova Ordenação: 1. Cobrado e ñ recebido | 2. Recebido | 3. Nenhum
+                let getGroup = (cli) => {
+                    let cobrado = !!(cli.dataCobranca && cli.dataCobranca.trim() !== '');
+                    let recebido = !!(cli.dataRecebimento && cli.dataRecebimento.trim() !== '');
+                    if (cobrado && !recebido) return 1;
+                    if (recebido) return 2;
+                    if (!cobrado && !recebido) return 3;
+                    return 4;
+                };
+                let gA = getGroup(a);
+                let gB = getGroup(b);
+                if (gA !== gB) return gA - gB;
                 return a.razao.localeCompare(b.razao);
             });
 
@@ -1092,84 +996,23 @@
         };
 
         // ==========================================
-        // IMPRESSÃO DE LOGS INDIVIDUAIS
-        // ==========================================
-        window.imprimirLogHistorico = function(idx) {
-            const reg = window.currentDisplayedLogs[idx];
-            if (!reg) return;
-
-            let titulo = 'Relatório de Log';
-            if (reg.tipo === 'modificacao' || reg.tipo === 'edicao') titulo = 'Relatório de Modificações / Alterações';
-            if (reg.tipo === 'faltante') titulo = 'Relatório de Clientes Faltantes (Ausentes na Importação)';
-            if (reg.tipo === 'novo_cliente') titulo = 'Relatório de Novos Clientes (Cadastros Novos)';
-            if (reg.tipo === 'importacao_resumo') titulo = 'Resumo da Importação';
-
-            let listaHTML = reg.alteracoes.map(a => `<li>${a}</li>`).join('');
-
-            const janelaImpressao = window.open('', '_blank');
-            janelaImpressao.document.write(`
-                <html>
-                <head>
-                    <title>${titulo}</title>
-                    <style>
-                        body { font-family: Arial, sans-serif; padding: 20px; }
-                        h1 { font-size: 18px; color: #333; text-transform: uppercase; margin-bottom: 5px; }
-                        .header { border-bottom: 2px solid #ccc; padding-bottom: 10px; margin-bottom: 20px; }
-                        ul { list-style-type: none; padding-left: 0; }
-                        li { padding: 8px; border-bottom: 1px solid #eee; font-size: 13px; color: #444; }
-                        b { color: #111; font-size: 14px; }
-                        i { color: #666; font-size: 11px; }
-                        .text-slate-400 { color: #888; }
-                        .text-amber-500 { color: #f59e0b; }
-                        .text-red-500 { color: #ef4444; }
-                        .text-red-600 { color: #dc2626; }
-                        .text-indigo-600 { color: #4f46e5; }
-                        .text-blue-600 { color: #2563eb; }
-                        .text-emerald-600 { color: #059669; }
-                        .font-bold { font-weight: bold; }
-                    </style>
-                </head>
-                <body>
-                    <div class="header">
-                        <h1>${titulo} - Mês: ${reg.mes}</h1>
-                        <p style="font-size: 11px; color: #666; margin: 0;">Usuário: ${reg.usuario} | Data do Registo: ${reg.data} | <strong>Planilha de Integrações</strong></p>
-                    </div>
-                    <ul>
-                        ${listaHTML}
-                    </ul>
-                    <script>
-                        window.onload = function() { 
-                            setTimeout(function() {
-                                window.print(); 
-                                window.close();
-                            }, 500);
-                        };
-                    <\/script>
-                </body>
-                </html>
-            `);
-            janelaImpressao.document.close();
-        };
-
-        // ==========================================
         // IMPRESSÃO DOS RELATÓRIOS DO POPUP DE IMPORTAÇÃO
         // ==========================================
         window.imprimirRelatorioImportacao = function(tipo) {
-            let mes = window.currentImportMonth || '';
             let titulo = '';
             let listaId = '';
             
             if (tipo === 'alteracoes') {
-                titulo = 'Relatório de Valores Alterados - Mês: ' + mes;
+                titulo = 'Relatório de Valores Alterados';
                 listaId = 'listaAlteracoesModal';
             } else if (tipo === '50k') {
-                titulo = 'Relatório de Distribuição > 50 Mil - Mês: ' + mes;
+                titulo = 'Relatório de Distribuição > 50 Mil (Atenção IR)';
                 listaId = 'listaAlertas50kModal';
             } else if (tipo === 'faltantes') {
-                titulo = 'Relatório de Clientes Faltantes - Mês: ' + mes;
+                titulo = 'Relatório de Clientes Faltantes (Sem Movimento)';
                 listaId = 'listaFaltantesModal';
             } else if (tipo === 'novos') {
-                titulo = 'Relatório de Novos Clientes na Planilha - Mês: ' + mes;
+                titulo = 'Relatório de Novos Clientes na Planilha (Sem Cadastro Prévio)';
                 listaId = 'listaNovosModal';
             }
 
@@ -1281,48 +1124,6 @@
             janelaImpressao.document.close();
         };
 
-        window.togglePresuncao = async function(id, isChecked) {
-            let cli = window.appState.clientes.find(c => c.id === id);
-            if(cli) {
-                cli.presuncao = isChecked;
-                window.appState.historicoGeral.push({
-                    tipo: 'edicao',
-                    data: new Date().toLocaleString('pt-BR'),
-                    usuario: window.appState.currentUser,
-                    mes: 'CADASTRO',
-                    alteracoes: [`<span class="text-indigo-600 font-bold">PRESUNÇÃO:</span> <b>${cli.razao}</b> - ${isChecked ? 'Ativada (Valor de faturamento travado)' : 'Desativada'}.`]
-                });
-                await window.saveState();
-                window.renderListaCadastro();
-                window.renderTable();
-            }
-        };
-
-        window.atualizarAntecManual = async function(id, mes, el, old) {
-            let cli = window.appState.clientes.find(c => c.id === id);
-            let val = el.value.trim().toUpperCase();
-            
-            if (cli && val !== old) {
-                if (!cli.mensal[mes]) {
-                    cli.mensal[mes] = { antec: '-', lancado: '-', reinf: '-', dctfweb: false };
-                }
-
-                cli.mensal[mes].antec = val;
-                
-                window.appState.historicoGeral.push({
-                    tipo: 'edicao',
-                    data: new Date().toLocaleString('pt-BR'),
-                    usuario: window.appState.currentUser, mes: mes,
-                    alteracoes: [`<span class="text-blue-600 font-bold">EDIÇÃO ADMIN (ANT):</span> <b>${cli.razao}</b> - Valor alterado de '${old}' para '${val}'.`]
-                });
-                
-                await window.saveState(); 
-                window.renderHistorico();
-                window.renderClassificacao();
-                window.renderTable(); 
-            }
-        };
-
         // ==========================================
         // CADASTRO DE CLIENTES (Inteligente e Editável com ID Único)
         // ==========================================
@@ -1330,7 +1131,7 @@
             window.appState.clientes.push({
                 id: window.generateId(),
                 razao: 'NOVA EMPRESA', cnpj: 'S/ CNPJ', contato: '', atividade: '', regime: '',
-                obs: '', whatsapp: '', dataCobranca: '', dataRecebimento: '', tipoCobranca: '', mensal: {}, presuncao: false
+                obs: '', whatsapp: '', dataCobranca: '', dataRecebimento: '', tipoCobranca: '', mensal: {}
             });
             window.appState.historicoGeral.push({
                 tipo: 'edicao',
@@ -1352,7 +1153,7 @@
                     id: window.generateId(),
                     razao: cliBase.razao, cnpj: cliBase.cnpj,
                     contato: 'NOVO SÓCIO', regime: cliBase.regime, atividade: cliBase.atividade,
-                    obs: cliBase.obs, whatsapp: cliBase.whatsapp, dataCobranca: cliBase.dataCobranca, dataRecebimento: cliBase.dataRecebimento, tipoCobranca: cliBase.tipoCobranca, mensal: {}, presuncao: cliBase.presuncao || false
+                    obs: cliBase.obs, whatsapp: cliBase.whatsapp, dataCobranca: cliBase.dataCobranca, dataRecebimento: cliBase.dataRecebimento, tipoCobranca: cliBase.tipoCobranca, mensal: {}
                 });
                 window.appState.historicoGeral.push({
                     tipo: 'edicao',
@@ -1438,10 +1239,12 @@
                 let atividade = colunas.length > 3 ? colunas[3].toUpperCase() : '';
                 let regime = colunas.length > 4 ? colunas[4].toUpperCase() : '';
                 
+                // O índice 5 antigamente era conta. Para manter a mesma leitura caso vc ainda cole planilhas com 7 colunas, pulamos a 5.
                 let whatsapp = colunas.length > 6 ? colunas[6] : (colunas.length === 6 && !colunas[5].toUpperCase().includes('CONTA') ? colunas[5] : '');
 
                 let cliExistente = null;
 
+                // 1. Busca por CNPJ exato
                 if (cnpjNum.length === 14) {
                     let candidates = window.appState.clientes.filter(c => window.getNumbers(c.cnpj) === cnpjNum);
                     if (candidates.length === 1) {
@@ -1454,10 +1257,11 @@
                         if (!cliExistente && contato === '') {
                             cliExistente = candidates.find(c => !c.contato || c.contato.trim() === '') || candidates[0];
                         }
-                        if (!cliExistente) cliExistente = candidates[0]; 
+                        if (!cliExistente) cliExistente = candidates[0]; // fallback
                     }
                 }
 
+                // 2. Busca Inteligente por Nome caso CNPJ falhe
                 if (!cliExistente && nome) {
                     let candidates = window.appState.clientes.filter(c => window.isSameCompanyByName(c.razao, nome));
                     if (candidates.length === 1) {
@@ -1489,7 +1293,7 @@
                     window.appState.clientes.push({
                         id: window.generateId(),
                         razao: nome, cnpj: cnpj, contato: contato, atividade: atividade, regime: regime,
-                        obs: '', whatsapp: whatsapp, dataCobranca: '', dataRecebimento: '', tipoCobranca: '', mensal: {}, presuncao: false 
+                        obs: '', whatsapp: whatsapp, dataCobranca: '', dataRecebimento: '', tipoCobranca: '', mensal: {} 
                     });
                     novos++;
                 }
@@ -1544,13 +1348,9 @@
                         <input type="text" value="${valCnpj}" class="text-[9px] font-mono text-indigo-600 font-bold bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none w-1/3" placeholder="CNPJ" title="CNPJ" onchange="window.editarClienteCadastro('${cli.id}', 'cnpj', this)">
                         <input type="text" value="${valContato}" class="text-[9px] text-slate-500 bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none w-2/3" placeholder="Sócio / Contato" title="Contato" onchange="window.editarClienteCadastro('${cli.id}', 'contato', this)">
                     </div>
-                    <div class="flex w-full mt-1 border-t border-slate-50 pt-1.5 gap-2 items-center">
+                    <div class="flex w-full mt-1 border-t border-slate-50 pt-1.5 gap-2">
                         <input type="text" value="${valAtividade}" class="text-[8px] text-slate-400 bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none w-1/3 uppercase font-bold" placeholder="ATIVIDADE" title="Atividade" onchange="window.editarClienteCadastro('${cli.id}', 'atividade', this)">
                         <input type="text" value="${valRegime}" class="text-[8px] text-slate-400 bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none w-1/3 uppercase font-bold" placeholder="REGIME" title="Regime" onchange="window.editarClienteCadastro('${cli.id}', 'regime', this)">
-                        <label class="flex items-center gap-1 cursor-pointer hover:bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200 ml-auto flex-shrink-0" title="Não sobrescrever valor na importação">
-                            <input type="checkbox" ${cli.presuncao ? 'checked' : ''} onchange="window.togglePresuncao('${cli.id}', this.checked)" class="w-3 h-3 accent-indigo-600">
-                            <span class="text-[8px] font-black ${cli.presuncao ? 'text-indigo-700' : 'text-slate-500'} uppercase tracking-tight">PRESUNÇÃO 🔒</span>
-                        </label>
                     </div>
                     <div class="flex w-full mt-1 border-t border-slate-50 pt-1.5 gap-2">
                         <input type="text" value="${valWhatsapp}" class="text-[9px] text-slate-500 bg-transparent border-b border-transparent hover:border-slate-300 focus:border-emerald-500 outline-none w-1/2" placeholder="Link/Telefone WhatsApp" title="WhatsApp" onchange="window.editarClienteCadastro('${cli.id}', 'whatsapp', this)">
@@ -1651,7 +1451,7 @@
 
             if(window.currentLogTab === 'extratos') {
                 let cnpjsVistos = new Set();
-                let listaExtratos = [...window.appState.clientes].filter(cli => {
+                let listaExtratos = [...window.appState.clientes].sort((a, b) => a.razao.localeCompare(b.razao)).filter(cli => {
                     let num = window.getNumbers(cli.cnpj);
                     if(num.length === 14) {
                         if(cnpjsVistos.has(num)) return false;
@@ -1659,9 +1459,18 @@
                     }
                     return true;
                 }).sort((a, b) => {
-                    const groupA = (a.dataCobranca && !a.dataRecebimento) ? 1 : (a.dataRecebimento ? 2 : 3);
-                    const groupB = (b.dataCobranca && !b.dataRecebimento) ? 1 : (b.dataRecebimento ? 2 : 3);
-                    if (groupA !== groupB) return groupA - groupB;
+                    // Nova Ordenação: 1. Cobrado e ñ recebido | 2. Recebido | 3. Nenhum
+                    let getGroup = (cli) => {
+                        let cobrado = !!(cli.dataCobranca && cli.dataCobranca.trim() !== '');
+                        let recebido = !!(cli.dataRecebimento && cli.dataRecebimento.trim() !== '');
+                        if (cobrado && !recebido) return 1;
+                        if (recebido) return 2;
+                        if (!cobrado && !recebido) return 3;
+                        return 4;
+                    };
+                    let gA = getGroup(a);
+                    let gB = getGroup(b);
+                    if (gA !== gB) return gA - gB;
                     return a.razao.localeCompare(b.razao);
                 });
 
@@ -1698,24 +1507,16 @@
                 container.innerHTML = `<p class="text-[9px] text-slate-400 text-center mt-10 uppercase font-bold tracking-widest">Nenhum registo nesta categoria</p>`;
                 return;
             }
-            
-            window.currentDisplayedLogs = [...logsFiltrados].reverse();
-
-            container.innerHTML = window.currentDisplayedLogs.map((reg, idx) => `
-                <div class="mb-3 bg-white p-2.5 rounded-lg border border-slate-200 text-[10px] shadow-sm flex flex-col">
-                    <div class="flex justify-between items-start border-b border-slate-100 mb-2 pb-1.5 gap-2">
-                        <div class="flex flex-col gap-0.5">
-                            <span class="text-blue-600 font-black uppercase tracking-tight">${reg.usuario}</span>
-                            <span class="text-slate-400 font-bold leading-none block">${reg.mes}</span>
-                            <span class="text-slate-300 text-[8px] leading-none block">${reg.data}</span>
+            container.innerHTML = [...logsFiltrados].reverse().map(reg => `
+                <div class="mb-3 bg-white p-2.5 rounded-lg border border-slate-200 text-[10px] shadow-sm">
+                    <div class="flex justify-between items-center border-b border-slate-100 mb-2 pb-1.5">
+                        <span class="text-blue-600 font-black uppercase tracking-tight">${reg.usuario}</span>
+                        <div class="text-right leading-none">
+                            <span class="text-slate-400 font-bold block">${reg.mes}</span>
+                            <span class="text-slate-300 text-[8px]">${reg.data}</span>
                         </div>
-                        <button onclick="window.imprimirLogHistorico(${idx})" class="bg-white text-slate-500 hover:text-blue-600 border border-slate-200 hover:bg-blue-50 px-1.5 py-1 rounded shadow-sm flex items-center gap-1 font-bold tracking-widest text-[8px] transition-colors flex-shrink-0 h-fit" title="Imprimir este Log">
-                            🖨️ IMPRIMIR
-                        </button>
                     </div>
-                    <div class="max-h-60 overflow-y-auto pr-1">
-                        ${reg.alteracoes.map(a => `<div class="text-slate-700 py-0.5 leading-tight">• ${a}</div>`).join('')}
-                    </div>
+                    ${reg.alteracoes.map(a => `<div class="text-slate-700 py-0.5 leading-tight">• ${a}</div>`).join('')}
                 </div>
             `).join('');
         };
@@ -1954,7 +1755,7 @@
                 let htmlEntregas = `
                     <div class="mb-6">
                         <div class="bg-indigo-600 text-white text-[10px] font-black p-2 rounded shadow-md uppercase mb-2 flex justify-between items-center">
-                            <span>Status Geral de Entregas (REINF e DCTF-Web)</span>
+                            <span>Status Geral de Entregas REINF</span>
                             <button onclick="window.imprimirRelatorioEntregas()" class="bg-white text-indigo-600 px-2 py-0.5 rounded hover:bg-indigo-50 flex items-center gap-1 shadow-sm font-bold tracking-widest text-[9px] transition-colors" title="Imprimir Relatório de Entregas">
                                 🖨️ IMPRIMIR
                             </button>
@@ -1963,42 +1764,34 @@
                             <table class="w-full text-left border-collapse">
                                 <thead>
                                     <tr class="bg-indigo-50 text-indigo-900 text-[9px] uppercase border-b border-indigo-200">
-                                        <th class="p-2 border-r border-indigo-100 min-w-[150px]">Razão Social</th>
-                                        ${sortedMeses.map(m => `<th class="p-2 border-r border-indigo-100 text-center min-w-[80px]">${m}</th>`).join('')}
+                                        <th class="p-2 border-r border-indigo-100">Razão Social</th>
+                                        ${sortedMeses.map(m => `<th class="p-2 border-r border-indigo-100 text-center">${m}</th>`).join('')}
                                     </tr>
                                 </thead>
                                 <tbody>
                                     ${listaTodos.map(emp => {
                                         let tdMeses = sortedMeses.map(m => {
                                             let d = emp.mensal[m];
-                                            if (!d) {
-                                                return `<td class="p-2 border-r border-slate-100 text-center align-middle text-slate-300">-</td>`;
+                                            if (!d) return `<td class="p-2 border-r border-slate-100 text-center align-middle"></td>`;
+                                            
+                                            let reinfVal = (d.reinf || '').toUpperCase();
+                                            let isEntregue = reinfVal.includes('OK');
+
+                                            if (!isEntregue) {
+                                                return `<td class="p-2 border-r border-slate-100 text-center align-middle"></td>`;
                                             }
+                                            
+                                            let displayVal = d.antec !== '-' && d.antec !== '' ? d.antec : 'S/M';
 
-                                            let reinfChecked = d.reinf.toUpperCase().includes('OK');
-                                            let dctfChecked = !!d.dctfweb;
-
-                                            let bgClass = (reinfChecked && dctfChecked) ? "bg-emerald-100/50" : (reinfChecked || dctfChecked ? "bg-emerald-50/30" : "bg-white");
-
-                                            return `
-                                                <td class="p-2 border-r border-slate-100 text-center align-middle ${bgClass}">
-                                                    <div class="flex flex-col gap-1 items-center justify-center">
-                                                        <label class="flex items-center gap-1 cursor-pointer hover:bg-black/5 px-1 rounded w-full justify-center" onclick="event.stopPropagation()">
-                                                            <input type="checkbox" ${reinfChecked ? 'checked' : ''} onchange="window.toggleReinf('${emp.id}', '${m}', this.checked)" class="w-2.5 h-2.5 accent-emerald-600">
-                                                            <span class="text-[8px] font-black ${reinfChecked ? 'text-emerald-700' : 'text-slate-400'}">REINF</span>
-                                                        </label>
-                                                        <label class="flex items-center gap-1 cursor-pointer hover:bg-black/5 px-1 rounded w-full justify-center" onclick="event.stopPropagation()">
-                                                            <input type="checkbox" ${dctfChecked ? 'checked' : ''} onchange="window.toggleDctfWeb('${emp.id}', '${m}', this.checked)" class="w-2.5 h-2.5 accent-indigo-600">
-                                                            <span class="text-[8px] font-black ${dctfChecked ? 'text-indigo-700' : 'text-slate-400'}">DCTF</span>
-                                                        </label>
-                                                    </div>
-                                                </td>
-                                            `;
+                                            return `<td class="p-2 border-r border-slate-100 text-center align-middle bg-emerald-50/30">
+                                                <div class="text-[10px] font-black text-emerald-700">${displayVal}</div>
+                                                <div class="text-[7px] text-emerald-500 font-bold uppercase">✅ Entregue</div>
+                                            </td>`;
                                         }).join('');
 
                                         return `
                                             <tr class="border-b border-slate-100 hover:bg-slate-50">
-                                                <td class="p-2 border-r border-slate-100 text-[9px] font-black text-slate-800 uppercase" title="${emp.razao}">${emp.razao}</td>
+                                                <td class="p-2 border-r border-slate-100 text-[9px] font-bold text-slate-800" title="${emp.contato || ''}">${emp.razao}</td>
                                                 ${tdMeses}
                                             </tr>
                                         `;
@@ -2028,34 +1821,30 @@
                 return new Date(ya, ma-1) - new Date(yb, mb-1);
             });
 
-            let thMeses = sortedMeses.map(m => `<th style="padding: 6px; border: 1px solid #c7d2fe; text-align: center; width: 100px;">${m}</th>`).join('');
+            let thMeses = sortedMeses.map(m => `<th style="padding: 8px; border: 1px solid #c7d2fe; text-align: center; width: 100px;">${m}</th>`).join('');
             
             let trEmpresas = listaTodos.map(emp => {
                 let tdMeses = sortedMeses.map(m => {
                     let d = emp.mensal[m];
-                    if (!d) return `<td style="padding: 6px; border: 1px solid #c7d2fe; text-align: center; color: #ccc;">-</td>`;
+                    if (!d) return `<td style="padding: 8px; border: 1px solid #c7d2fe; text-align: center;"></td>`;
                     
-                    let reinfChecked = d.reinf.toUpperCase().includes('OK');
-                    let dctfChecked = !!d.dctfweb;
+                    let reinfVal = (d.reinf || '').toUpperCase();
+                    let isEntregue = reinfVal.includes('OK');
 
-                    let dctfHtml = `<div style="font-size: 9px; font-weight: bold; color: ${dctfChecked ? '#4f46e5' : '#888'};">
-                        ${dctfChecked ? '☑ DCTF-Web' : '☐ DCTF-Web'}
-                    </div>`;
+                    if (!isEntregue) {
+                        return `<td style="padding: 8px; border: 1px solid #c7d2fe; text-align: center;"></td>`;
+                    }
                     
-                    let reinfHtml = `<div style="font-size: 9px; font-weight: bold; color: ${reinfChecked ? '#059669' : '#888'}; margin-bottom: 2px;">
-                        ${reinfChecked ? '☑ REINF' : '☐ REINF'}
-                    </div>`;
+                    let displayVal = d.antec !== '-' && d.antec !== '' ? d.antec : 'S/M';
 
-                    let bgTd = (reinfChecked && dctfChecked) ? '#ecfdf5' : (reinfChecked || dctfChecked ? '#f0fdf4' : '#fff');
-
-                    return `<td style="padding: 6px; border: 1px solid #c7d2fe; text-align: left; padding-left: 10px; background-color: ${bgTd};">
-                        ${reinfHtml}
-                        ${dctfHtml}
+                    return `<td style="padding: 8px; border: 1px solid #c7d2fe; text-align: center; background-color: #ecfdf5;">
+                        <span style="font-size: 11px; font-weight: bold; color: #065f46;">${displayVal}</span><br>
+                        <span style="font-size: 8px; color: #10b981;">✅ ENTREGUE</span>
                     </td>`;
                 }).join('');
 
                 return `<tr>
-                    <td style="padding: 6px; border: 1px solid #c7d2fe; font-weight: bold; font-size: 11px; color: #333;">${emp.razao}</td>
+                    <td style="padding: 8px; border: 1px solid #c7d2fe; font-weight: bold; font-size: 12px; color: #333;">${emp.razao}</td>
                     ${tdMeses}
                 </tr>`;
             }).join('');
@@ -2064,7 +1853,7 @@
                 <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
                     <thead>
                         <tr style="background-color: #e0e7ff; color: #3730a3; text-align: left;">
-                            <th style="padding: 6px; border: 1px solid #c7d2fe;">Razão Social</th>
+                            <th style="padding: 8px; border: 1px solid #c7d2fe;">Razão Social</th>
                             ${thMeses}
                         </tr>
                     </thead>
@@ -2074,24 +1863,22 @@
                 </table>
             `;
 
-            let mesesStr = sortedMeses.join(', ');
-
             const janelaImpressao = window.open('', '_blank');
             janelaImpressao.document.write(`
                 <html>
                 <head>
-                    <title>Relatório de Entregas REINF e DCTF</title>
+                    <title>Relatório de Entregas REINF</title>
                     <style>
                         body { font-family: Arial, sans-serif; padding: 20px; }
                         h1 { font-size: 18px; color: #333; text-transform: uppercase; margin-bottom: 5px; }
                         .header { border-bottom: 2px solid #ccc; padding-bottom: 10px; margin-bottom: 20px; }
-                        td, th { font-size: 11px; }
+                        td, th { font-size: 12px; }
                     </style>
                 </head>
                 <body>
                     <div class="header">
-                        <h1>Status Geral de Entregas (REINF e DCTF-Web)</h1>
-                        <p style="font-size: 11px; color: #666; margin: 0;">Meses Analisados: <b>${mesesStr}</b> | Gerado em: ${new Date().toLocaleString('pt-BR')} | <strong>Planilha de Integrações</strong></p>
+                        <h1>Status Geral de Entregas REINF</h1>
+                        <p style="font-size: 11px; color: #666; margin: 0;">Gerado em: ${new Date().toLocaleString('pt-BR')} | <strong>Planilha de Integrações</strong></p>
                     </div>
                     ${htmlConteudo}
                     <script>
@@ -2235,8 +2022,6 @@
                 `;
             }
 
-            let mesesStr = sortedMeses.join(', ');
-
             const janelaImpressao = window.open('', '_blank');
             janelaImpressao.document.write(`
                 <html>
@@ -2252,7 +2037,7 @@
                 <body>
                     <div class="header">
                         <h1>${titulo}</h1>
-                        <p style="font-size: 11px; color: #666; margin: 0;">Meses Analisados: <b>${mesesStr}</b> | Gerado em: ${new Date().toLocaleString('pt-BR')} | <strong>Planilha de Integrações REINF</strong></p>
+                        <p style="font-size: 11px; color: #666; margin: 0;">Gerado em: ${new Date().toLocaleString('pt-BR')} | <strong>Planilha de Integrações REINF</strong></p>
                     </div>
                     ${htmlConteudo}
                     <script>
@@ -2334,7 +2119,7 @@
                     const configCols = [
                         { campo: 'antec', nome: 'ANT', cor: 'bg-blue-50' },
                         { campo: 'lancado', nome: 'FOLHA', cor: 'bg-slate-50' },
-                        { campo: 'reinf', nome: 'DECL.', cor: 'bg-white' }
+                        { campo: 'reinf', nome: 'REINF', cor: 'bg-white' }
                     ];
 
                     configCols.forEach(cfg => {
@@ -2361,7 +2146,7 @@
             }
             thead.innerHTML = tr1 + tr2;
 
-            // MOSTRA TODOS OS CLIENTES DO CADASTRO
+            // MOSTRA TODOS OS CLIENTES DO CADASTRO (Os sem dados nas planilhas importadas ficarão em amarelo)
             let list = [...window.appState.clientes].sort((a, b) => {
                 let cmp = a.razao.localeCompare(b.razao);
                 if (cmp === 0) return (a.contato || '').localeCompare(b.contato || '');
@@ -2383,6 +2168,9 @@
 
             tbody.innerHTML = list.length === 0 ? `<tr><td colspan="100" class="text-center py-20 text-slate-300 uppercase font-black italic tracking-widest">Nenhum dado</td></tr>` : 
             list.map(cli => {
+                // NOVIDADE: Linha verde se TODOS os REINFs devidos estiverem OK. Linha clareada se for faltante.
+                let allReinfOk = true;
+                let hasAnyValue = false;
                 let hasVisibleMonths = false;
                 let isImported = false;
                 
@@ -2392,20 +2180,38 @@
                         let d = cli.mensal[m];
                         if (d) {
                             isImported = true;
+                            let vlr = window.parseCurrency(d.antec);
+                            let antecText = (d.antec || '').trim().toUpperCase();
+                            let r = d.reinf ? d.reinf.toUpperCase() : '';
+                            
+                            // Para considerar que a linha tem valor, ou ela tem dinheiro (>0), ou tem texto na antecipação que não seja traço/vazio, ou o próprio REINF já tem "OK" (indicando que foi resolvido).
+                            if (vlr > 0 || antecText === 'S/M' || (antecText !== '-' && antecText !== '') || r.includes('OK')) {
+                                hasAnyValue = true;
+                                if (!r.includes('OK')) {
+                                    allReinfOk = false;
+                                }
+                            }
                         }
                     }
                 });
 
+                // Fundo da linha base
                 let trBgClass = 'bg-white hover:bg-slate-50';
                 
                 if (hasVisibleMonths && !isImported) {
+                    // Cliente está no cadastro mas não tem absolutamente NENHUM dado nos meses visíveis (FALTANTE na Importação)
                     trBgClass = 'bg-gray-50 text-gray-400 opacity-60 hover:opacity-100 hover:bg-gray-100'; 
+                } else if (hasAnyValue && allReinfOk) {
+                    // Cliente com todas as entregas OK
+                    trBgClass = 'bg-emerald-100 hover:bg-emerald-200 border-emerald-200';
                 }
 
+                // Linha selecionada visualmente
                 if (cli.id === window.selectedRowId) {
                     trBgClass += ' linha-selecionada';
                 }
 
+                // Lógica de Cores dos Botões (Cinza quando inativo, Colorido quando usado)
                 let isManual = cli.tipoCobranca === 'manual';
                 let isWhats = cli.tipoCobranca === 'whatsapp';
                 let isRec = !!cli.dataRecebimento;
@@ -2416,11 +2222,9 @@
                 
                 let classRec = isRec ? 'bg-emerald-100 text-emerald-600 shadow-sm border-emerald-300' : 'bg-slate-100 text-slate-400 grayscale opacity-50 hover:grayscale-0 hover:opacity-100 hover:text-emerald-500 hover:border-emerald-300 border-slate-200';
 
-                let iconePresuncao = cli.presuncao ? ' <span class="text-[9px] text-amber-500" title="Cálculo por Presunção (Valor Travado)">🔒</span>' : '';
-
                 let row = `<tr id="row-${cli.id}" onclick="window.selectRow('${cli.id}')" class="${trBgClass} border-b border-slate-100 transition-colors cursor-pointer">
                     ${window.isAdmin ? `<td class="col-fixed-del align-middle"><button onclick="window.excluirLinhaMainTable('${cli.id}'); event.stopPropagation();" class="text-red-500 hover:text-red-700 font-black text-xs">&times;</button></td>` : ''}
-                    <td class="col-fixed-razao font-black uppercase tracking-tighter" title="${cli.razao}">${cli.razao}${iconePresuncao}</td>
+                    <td class="col-fixed-razao font-black uppercase tracking-tighter" title="${cli.razao}">${cli.razao}</td>
                     <td class="col-fixed-cnpj font-mono text-blue-700 tracking-tighter">${cli.cnpj}</td>
                     <td class="col-fixed-contato uppercase" title="${cli.contato}">${cli.contato}</td>
                     <td class="col-fixed-atividade uppercase" title="${cli.atividade || ''}">${cli.atividade || ''}</td>
@@ -2439,75 +2243,40 @@
                 
                 window.appState.meses.forEach(m => {
                     if (window.appState.mesesConfig[m]?.visible) {
-                        let d = cli.mensal[m] || { antec: '-', lancado: '-', reinf: '-', dctfweb: false };
+                        let d = cli.mensal[m] || { antec: '-', lancado: '-', reinf: '-' };
                         let cLancado = d.lancado.toUpperCase() === 'OK' ? 'text-blue-600 font-black' : (d.lancado.toUpperCase() === 'NT' ? 'text-emerald-600 font-black' : 'text-slate-400');
                         
-                        // --- DECLARAÇÕES (REINF e DCTF) NA TELA PRINCIPAL ---
-                        let reinfVal = (d.reinf || '-').toUpperCase();
-                        let reinfChecked = reinfVal.includes('OK');
-                        let dctfChecked = !!d.dctfweb;
-
                         let vlr = window.parseCurrency(d.antec);
-                        let bgAntec = "bg-transparent";
-                        let bgFolha = "bg-transparent";
-                        let bgDeclTd = "bg-transparent";
+                        let bgAntec = "bg-blue-50/20";
                         let fontAntec = "text-slate-900";
                         let badgeHtml = "";
                         
                         let antecText = (d.antec || '').trim().toUpperCase();
-
-                        if (reinfChecked) {
-                            bgAntec = "bg-emerald-100";
-                            bgFolha = "bg-emerald-100";
-                            bgDeclTd = dctfChecked ? "bg-emerald-200" : "bg-emerald-100";
-                            fontAntec = "text-emerald-800";
-                            if (vlr > 50000) {
-                                badgeHtml = `<div class="text-[8px] bg-emerald-600 text-white rounded px-1.5 mt-0.5 inline-block font-black tracking-widest leading-tight shadow-sm">MENSAL >50k</div>`;
-                            } else if (vlr > 0 || antecText === 'S/M' || (antecText !== '-' && antecText !== '')) {
-                                badgeHtml = `<div class="text-[8px] bg-emerald-500 text-white rounded px-1.5 mt-0.5 inline-block font-black tracking-widest leading-tight shadow-sm">TRIMESTRAL</div>`;
-                            }
-                        } else {
-                            if (dctfChecked) bgDeclTd = "bg-indigo-50";
-
-                            if (vlr > 50000) {
-                                bgAntec = "bg-red-50"; fontAntec = "text-red-700";
-                                badgeHtml = `<div class="text-[8px] bg-red-600 text-white rounded px-1.5 mt-0.5 inline-block font-black tracking-widest leading-tight shadow-sm">MENSAL >50k</div>`;
-                            } else if (vlr > 0 || antecText === 'S/M' || (antecText !== '-' && antecText !== '')) {
-                                bgAntec = "bg-transparent"; fontAntec = "text-slate-700";
-                                badgeHtml = `<div class="text-[8px] bg-slate-400 text-white rounded px-1.5 mt-0.5 inline-block font-black tracking-widest leading-tight shadow-sm">TRIMESTRAL</div>`;
-                            }
+                        if (vlr > 50000) {
+                            bgAntec = "bg-red-50"; fontAntec = "text-red-700";
+                            badgeHtml = `<div class="text-[8px] bg-red-600 text-white rounded px-1.5 mt-0.5 inline-block font-black tracking-widest leading-tight shadow-sm">MENSAL >50k</div>`;
+                        } else if (vlr > 0 || antecText === 'S/M' || (antecText !== '-' && antecText !== '')) {
+                            bgAntec = "bg-emerald-50"; fontAntec = "text-emerald-800";
+                            badgeHtml = `<div class="text-[8px] bg-emerald-500 text-white rounded px-1.5 mt-0.5 inline-block font-black tracking-widest leading-tight shadow-sm">TRIMESTRAL</div>`;
                         }
 
-                        let htmlDeclaracoes = `
-                            <div class="flex flex-col gap-1 items-start justify-center text-left mx-auto w-fit py-0.5">
-                                <label class="flex items-center gap-1 cursor-pointer hover:bg-slate-100 px-1 rounded" onclick="event.stopPropagation()">
-                                    <input type="checkbox" ${reinfChecked ? 'checked' : ''} onchange="window.toggleReinf('${cli.id}', '${m}', this.checked)" class="w-3 h-3 accent-emerald-600 cursor-pointer">
-                                    <span class="text-[8px] font-black ${reinfChecked ? 'text-emerald-700' : 'text-slate-400'} uppercase tracking-tight">REINF</span>
-                                </label>
-                                <label class="flex items-center gap-1 cursor-pointer hover:bg-slate-100 px-1 rounded" onclick="event.stopPropagation()">
-                                    <input type="checkbox" ${dctfChecked ? 'checked' : ''} onchange="window.toggleDctfWeb('${cli.id}', '${m}', this.checked)" class="w-3 h-3 accent-indigo-600 cursor-pointer">
-                                    <span class="text-[8px] font-black ${dctfChecked ? 'text-indigo-700' : 'text-slate-400'} uppercase tracking-tight">DCTF</span>
-                                </label>
-                            </div>
-                        `;
-
-                        let antecValDisplay = '';
-                        if (window.isAdmin) {
-                            antecValDisplay = `<input type="text" class="cell-input ${fontAntec} bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500" value="${d.antec}" onchange="window.atualizarAntecManual('${cli.id}', '${m}', this, '${d.antec}')" onclick="event.stopPropagation()">`;
-                        } else {
-                            antecValDisplay = `<div>${d.antec}</div>`;
-                        }
+                        // --- NOVA LÓGICA REINF (Cores Neutras e OK em Verde) ---
+                        let reinfVal = (d.reinf || '-').toUpperCase();
+                        let isReinfOk = reinfVal.includes('OK');
+                        let bgReinfTd = isReinfOk ? "bg-emerald-100" : "bg-transparent";
+                        let cReinfText = isReinfOk ? 'text-emerald-800 font-black' : 'text-slate-400 font-bold';
+                        // ------------------------------------------------
 
                         row += `
-                            <td class="${bgAntec} font-black ${fontAntec} align-middle transition-colors">
-                                ${antecValDisplay}
+                            <td class="${bgAntec} font-black ${fontAntec} align-middle">
+                                <div>${d.antec}</div>
                                 ${badgeHtml}
                             </td>
-                            <td class="${bgFolha} align-middle transition-colors">
+                            <td class="align-middle">
                                 <input type="text" class="cell-input ${cLancado}" value="${d.lancado}" onchange="window.atualizarCelulaManual('${cli.id}', '${m}', 'lancado', this, '${d.lancado}')" onclick="event.stopPropagation()">
                             </td>
-                            <td class="${bgDeclTd} align-middle transition-colors relative" style="min-width: 80px;">
-                                ${htmlDeclaracoes}
+                            <td class="${bgReinfTd} align-middle transition-colors">
+                                <input type="text" class="cell-input ${cReinfText} uppercase" value="${d.reinf}" onchange="window.atualizarCelulaManual('${cli.id}', '${m}', 'reinf', this, '${d.reinf}')" onclick="event.stopPropagation()">
                             </td>`;
                     }
                 });
@@ -2556,12 +2325,74 @@
             let val = el.value.trim().toUpperCase();
             
             if (cli && val !== old) {
-                // Assegura que o objeto do mês exista
+                // Assegura que o objeto do mês exista se a empresa for "faltante" na importação
                 if (!cli.mensal[mes]) {
-                    cli.mensal[mes] = { antec: '-', lancado: '-', reinf: '-', dctfweb: false };
+                    cli.mensal[mes] = { antec: '-', lancado: '-', reinf: '-' };
                 }
 
-                cli.mensal[mes][campo] = val;
+                // === LÓGICA INTELIGENTE AUTO-PREENCHIMENTO REINF ===
+                if (campo === 'reinf' && val.includes('OK')) {
+                    let [mStr, yStr] = mes.split('/');
+                    let mNum = parseInt(mStr, 10);
+                    let yNum = parseInt(yStr, 10);
+                    let targets = [];
+                    let isTriggerMonth = false;
+
+                    // Mapeia os 3 meses anteriores ao mês de entrega do trimestre
+                    if (mNum === 4) { targets = [`01/${yStr}`, `02/${yStr}`, `03/${yStr}`]; isTriggerMonth = true; }
+                    else if (mNum === 7) { targets = [`04/${yStr}`, `05/${yStr}`, `06/${yStr}`]; isTriggerMonth = true; }
+                    else if (mNum === 10) { targets = [`07/${yStr}`, `08/${yStr}`, `09/${yStr}`]; isTriggerMonth = true; }
+                    else if (mNum === 1) { targets = [`10/${yNum-1}`, `11/${yNum-1}`, `12/${yNum-1}`]; isTriggerMonth = true; }
+
+                    let vlrCurrent = window.parseCurrency(cli.mensal[mes].antec);
+                    let isCurrentMensal = vlrCurrent > 50000;
+
+                    if (isCurrentMensal) {
+                        val = 'MENSAL OK';
+                    } else {
+                        if (isTriggerMonth) {
+                            val = ''; // O mês trigger (ex: Abril) que não passou de 50k NÃO é baixado. Volta pra vazio.
+                        } else {
+                            val = 'TRIM OK'; // Default para mês solto que for <= 50k e você der OK manual
+                        }
+                    }
+                    cli.mensal[mes].reinf = val;
+
+                    let alteradosTrim = false;
+                    
+                    // Vai dar a baixa de trimestre SEMPRE se a pessoa clicou num mês trigger (ex: abril)
+                    if (isTriggerMonth) {
+                        targets.forEach(t => {
+                            if (!cli.mensal[t]) {
+                                cli.mensal[t] = { antec: '-', lancado: '-', reinf: '-' };
+                            }
+                            
+                            let tVlr = window.parseCurrency(cli.mensal[t].antec);
+                            
+                            // A IN da Receita manda baixar como TRIM OK tudo que for <=50k no trimestre anterior
+                            if (tVlr > 50000) {
+                                cli.mensal[t].reinf = 'MENSAL OK';
+                            } else {
+                                cli.mensal[t].reinf = 'TRIM OK'; // Cobre valor 0, sem lucro, ausentes e <=50k.
+                            }
+                            alteradosTrim = true;
+                        });
+                    }
+                    
+                    if(alteradosTrim) {
+                         alert(`Trimestre anterior (${targets.join(', ')}) finalizado com sucesso!`);
+                         window.appState.historicoGeral.push({
+                            tipo: 'edicao',
+                            data: new Date().toLocaleString('pt-BR'),
+                            usuario: window.appState.currentUser, mes: mes,
+                            alteracoes: [`<span class="text-emerald-600 font-bold">AUTO-PREENCHIMENTO REINF:</span> <b>${cli.razao}</b> - Trimestre anterior preenchido automaticamente.`]
+                        });
+                    }
+                } else {
+                    // Atualização padrão para quem não digitou "OK" ou apagou a célula
+                    cli.mensal[mes][campo] = val;
+                }
+
                 el.value = val;
                 
                 if (campo === 'lancado') {
@@ -2579,7 +2410,8 @@
                 
                 window.saveState(); 
                 window.renderHistorico();
-                window.renderTable(); 
+                window.renderClassificacao();
+                window.renderTable(); // Re-renderiza para processar as cores atualizadas
             }
         };
 
@@ -2701,7 +2533,7 @@
                 if (!cli) {
                     cli = { 
                         id: window.generateId(), razao: razao, cnpj: cnpj || "S/ CNPJ", contato: contato, 
-                        regime: '', atividade: '', obs: '', whatsapp: '', dataCobranca: '', dataRecebimento: '', tipoCobranca: '', mensal: {}, presuncao: false 
+                        regime: '', atividade: '', obs: '', whatsapp: '', dataCobranca: '', dataRecebimento: '', tipoCobranca: '', mensal: {} 
                     };
                     window.appState.clientes.push(cli);
                     htmlNovosPopup += `<li><b>${razao}</b> - <i class="text-slate-400">CNPJ: ${cnpj}</i></li>`;
@@ -2724,18 +2556,13 @@
                 let oldAntec = old?.antec || '-';
                 let oldLancado = old?.lancado || '-'; // Mantém o que já está preenchido no sistema
 
-                // TRAVAR VALOR SE FOR PRESUNÇÃO
-                if (cli.presuncao) {
-                    ant = oldAntec; // Sempre ignora Excel e mantém o que tá na memória (seja manual ou vazio)
-                }
-
                 // Alertas de 50k
-                if (window.parseCurrency(ant) > 50000 && !cli.presuncao) {
+                if (window.parseCurrency(ant) > 50000) {
                     htmlAlertas50kPopup += `<li><b>${cli.razao}</b> - R$ ${ant}</li>`;
                 }
 
                 // Logs de alteração de valor de antecipação
-                if (old && oldAntec !== '-' && oldAntec !== ant && ant !== '-' && !cli.presuncao) {
+                if (old && oldAntec !== '-' && oldAntec !== ant && ant !== '-') {
                     htmlAlteracoesPopup += `<li><b>${cli.razao}</b>: R$ ${oldAntec} ➔ R$ ${ant}</li>`;
                     logAlteracoesValores.push(`<span class="text-amber-500 font-bold">VALOR:</span> <b>${cli.razao}</b> | R$ ${oldAntec} ➔ R$ ${ant}`);
                 }
@@ -2745,8 +2572,7 @@
                 cli.mensal[mesRef] = { 
                     antec: ant, 
                     lancado: oldLancado, 
-                    reinf: old?.reinf || '-',
-                    dctfweb: old?.dctfweb || false
+                    reinf: old?.reinf || '-' 
                 };
             });
             
@@ -2782,19 +2608,13 @@
             const blocoNovos = document.getElementById('blocoNovosModal');
             const blocoFalt = document.getElementById('blocoFaltantesModal');
             
-            window.currentImportMonth = mesRef;
-
             let abrirModal = false;
             if (htmlAlteracoesPopup) { document.getElementById('listaAlteracoesModal').innerHTML = htmlAlteracoesPopup; blocoAlt.classList.remove('hidden'); abrirModal = true; } else blocoAlt.classList.add('hidden');
             if (htmlAlertas50kPopup) { document.getElementById('listaAlertas50kModal').innerHTML = htmlAlertas50kPopup; bloco50k.classList.remove('hidden'); abrirModal = true; } else bloco50k.classList.add('hidden');
             if (htmlFaltantesPopup) { document.getElementById('listaFaltantesModal').innerHTML = htmlFaltantesPopup; document.getElementById('badgeCountFaltantes').innerText = countFaltantes; blocoFalt.classList.remove('hidden'); abrirModal = true; } else blocoFalt.classList.add('hidden');
             if (htmlNovosPopup) { document.getElementById('listaNovosModal').innerHTML = htmlNovosPopup; blocoNovos.classList.remove('hidden'); abrirModal = true; } else blocoNovos.classList.add('hidden');
 
-            if (abrirModal) {
-                document.getElementById('tituloModalImportacao').innerText = 'RELATÓRIO DA IMPORTAÇÃO - ' + mesRef;
-                document.getElementById('subtituloModalImportacao').innerHTML = `Verifique abaixo as divergências e alertas de valores detectados na competência <b>${mesRef}</b>:`;
-                document.getElementById('modalResumoImportacao').classList.remove('hidden');
-            }
+            if (abrirModal) document.getElementById('modalResumoImportacao').classList.remove('hidden');
         };
 
         window.limparTabela = async function() { 
