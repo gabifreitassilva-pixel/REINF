@@ -79,7 +79,6 @@
             font-size: 9px;
         }
         .cell-input:focus { background: white; box-shadow: inset 0 0 0 1px #3b82f6; }
-        .cell-input:disabled, .cell-input[readonly] { cursor: not-allowed; background-color: transparent !important; }
 
         /* DESTAQUE DE LINHA SELECIONADA (Clique) - Tom Laranja Forte e Nítido */
         .linha-selecionada td {
@@ -96,32 +95,19 @@
 </head>
 <body class="font-sans overflow-hidden">
 
-    <!-- Modal de Identificação -->
     <div id="modalUser" class="fixed inset-0 bg-slate-900 bg-opacity-80 flex justify-center items-center z-[100] hidden px-4">
         <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-sm text-center border-t-4 border-blue-600">
             <h2 class="text-xl font-black mb-2 text-slate-800 uppercase tracking-tight">Acesso ao Sistema</h2>
-            <p class="text-xs text-slate-500 mb-4 font-medium">Identifique-se para acessar os dados da planilha.</p>
-            
-            <select id="userSelect" onchange="window.checkUserType()" class="w-full border-2 border-slate-200 p-3 rounded-lg mb-4 text-center font-bold text-lg focus:border-blue-500 outline-none uppercase bg-slate-50 cursor-pointer">
-                <option value="">SELECIONE SEU NOME...</option>
-                <option value="GABRIELA">GABRIELA</option>
-                <option value="AMAURI">AMAURI</option>
-                <option value="VISITANTE">VISITANTE (APENAS VISUALIZAR)</option>
-            </select>
-
-            <input type="text" id="userNameInput" class="w-full border-2 border-slate-200 p-3 rounded-lg mb-4 text-center font-bold text-lg focus:border-blue-500 outline-none uppercase hidden" placeholder="DIGITE SEU NOME">
-            
-            <input type="password" id="userPasswordInput" class="w-full border-2 border-slate-200 p-3 rounded-lg mb-4 text-center font-bold text-lg focus:border-blue-500 outline-none hidden" placeholder="DIGITE SUA SENHA">
-            
+            <p class="text-xs text-slate-500 mb-4 font-medium">Identifique-se para registrar suas alterações no log de auditoria.</p>
+            <input type="text" id="userNameInput" class="w-full border-2 border-slate-200 p-3 rounded-lg mb-4 text-center font-bold text-lg focus:border-blue-500 outline-none uppercase" placeholder="SEU NOME">
             <button onclick="window.salvarUsuario()" class="bg-blue-600 hover:bg-blue-700 text-white font-black px-6 py-3 rounded-lg w-full shadow-lg transition-all uppercase tracking-widest">Entrar na Planilha</button>
         </div>
     </div>
 
-    <!-- Modal Admin -->
     <div id="modalAdmin" class="fixed inset-0 bg-slate-900 bg-opacity-80 flex justify-center items-center z-[110] hidden px-4">
         <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-sm text-center border-t-4 border-red-600">
             <h2 class="text-xl font-black mb-2 text-slate-800 uppercase tracking-tight">Modo Administrador</h2>
-            <p class="text-xs text-slate-500 mb-4 font-medium">Digite a senha para habilitar a edição manual e exclusão de registros.</p>
+            <p class="text-xs text-slate-500 mb-4 font-medium">Digite a senha para habilitar a exclusão e edição avançada de registros.</p>
             <input type="password" id="adminPasswordInput" class="w-full border-2 border-slate-200 p-3 rounded-lg mb-4 text-center font-bold text-lg focus:border-red-500 outline-none" placeholder="****">
             <div class="flex gap-2">
                 <button onclick="document.getElementById('modalAdmin').classList.add('hidden')" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-black px-4 py-2 rounded-lg w-1/3 transition-all uppercase">Cancelar</button>
@@ -130,7 +116,6 @@
         </div>
     </div>
 
-    <!-- Modal de Configuração do Gist -->
     <div id="modalGist" class="fixed inset-0 bg-slate-900 bg-opacity-80 flex justify-center items-center z-[100] hidden px-4">
         <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-md text-center border-t-4 border-emerald-600 relative">
             <button onclick="window.fecharModalGist()" class="absolute top-3 right-4 text-slate-400 hover:text-slate-700 text-xl font-bold">&times;</button>
@@ -154,7 +139,6 @@
         </div>
     </div>
 
-    <!-- POPUP DE RESUMO DA IMPORTAÇÃO -->
     <div id="modalResumoImportacao" class="fixed inset-0 bg-slate-900 bg-opacity-80 flex justify-center items-center z-[110] hidden px-4">
         <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-3xl max-h-[85vh] flex flex-col border-t-4 border-amber-500 relative">
             <button onclick="document.getElementById('modalResumoImportacao').classList.add('hidden')" class="absolute top-3 right-4 text-slate-400 hover:text-slate-700 text-2xl font-bold leading-none">&times;</button>
@@ -162,7 +146,6 @@
             <p id="subtituloModalImportacao" class="text-xs text-slate-500 mb-4 font-medium">Verifique abaixo as divergências e alertas de valores detetados na última leitura de dados:</p>
             
             <div class="overflow-y-auto flex-grow space-y-5 pr-2">
-                <!-- Bloco de Alterações de Valores -->
                 <div id="blocoAlteracoesModal" class="hidden">
                     <h3 class="text-[11px] font-black text-amber-600 uppercase border-b border-amber-200 pb-1 mb-2 tracking-widest flex justify-between items-center">
                         <span>⚠️ Alterações de Valores</span>
@@ -170,7 +153,6 @@
                     </h3>
                     <ul id="listaAlteracoesModal" class="text-[11px] font-mono text-slate-700 space-y-1.5 list-disc pl-4"></ul>
                 </div>
-                <!-- Bloco de Alertas 50k -->
                 <div id="blocoAlertas50kModal" class="hidden">
                     <h3 class="text-[11px] font-black text-red-600 uppercase border-b border-red-200 pb-1 mb-2 tracking-widest flex justify-between items-center">
                         <span>🚨 Distribuição > 50 Mil (Atenção IR)</span>
@@ -178,7 +160,6 @@
                     </h3>
                     <ul id="listaAlertas50kModal" class="text-[11px] font-mono text-slate-700 space-y-1.5 list-disc pl-4"></ul>
                 </div>
-                <!-- Bloco de Faltantes na Planilha -->
                 <div id="blocoFaltantesModal" class="hidden">
                     <h3 class="text-[11px] font-black text-orange-600 uppercase border-b border-orange-200 pb-1 mb-2 tracking-widest flex items-center justify-between">
                         <span>⚠️ Ausentes na Importação <span id="badgeCountFaltantes" class="bg-orange-200 text-orange-800 px-2 py-0.5 rounded-full text-[9px] ml-1">0</span></span>
@@ -187,7 +168,6 @@
                     <p class="text-[9px] text-slate-400 mb-2 italic">As empresas abaixo constam no seu Cadastro, mas não foram encontradas na planilha importada agora.</p>
                     <ul id="listaFaltantesModal" class="text-[10px] font-mono text-slate-600 space-y-1 list-disc pl-4 max-h-40 overflow-y-auto"></ul>
                 </div>
-                <!-- Bloco de Clientes Novos/Não Cadastrados (Cadastros Faltantes) -->
                 <div id="blocoNovosModal" class="hidden">
                     <h3 class="text-[11px] font-black text-blue-600 uppercase border-b border-blue-200 pb-1 mb-2 tracking-widest mt-2 flex justify-between items-center">
                         <span>✨ Cadastros Novos na Planilha (Faltam Cad.)</span>
@@ -202,7 +182,6 @@
         </div>
     </div>
 
-    <!-- MODAL DE VISUALIZAÇÃO DE PLANILHA SALVA -->
     <div id="modalVisualizarPlanilha" class="fixed inset-0 bg-slate-900 bg-opacity-95 flex justify-center items-center z-[120] hidden p-4">
         <div class="bg-white rounded-xl shadow-2xl w-full h-full max-w-[95vw] max-h-full flex flex-col border-t-4 border-blue-600 relative overflow-hidden">
             <div class="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50 flex-shrink-0">
@@ -218,15 +197,13 @@
         </div>
     </div>
 
-    <!-- Modal Escolher Sócio para WhatsApp -->
     <div id="modalSocioWhatsapp" class="fixed inset-0 bg-slate-900 bg-opacity-80 flex justify-center items-center z-[110] hidden px-4">
         <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-sm text-center border-t-4 border-emerald-600">
             <h2 class="text-xl font-black mb-2 text-slate-800 uppercase tracking-tight">Múltiplos Sócios</h2>
             <p class="text-xs text-slate-500 mb-4 font-medium" id="textoModalSocio"></p>
             
             <div id="listaBotoesSocio" class="flex flex-col gap-2 mb-4">
-                <!-- Botões serão gerados aqui -->
-            </div>
+                </div>
             
             <button onclick="document.getElementById('modalSocioWhatsapp').classList.add('hidden')" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-black px-4 py-2 rounded-lg w-full transition-all uppercase text-xs">Cancelar Operação</button>
         </div>
@@ -234,7 +211,6 @@
 
     <div class="h-screen flex flex-col relative bg-white">
         
-        <!-- Cabeçalho -->
         <div class="p-3 border-b border-slate-200 flex justify-between items-center bg-slate-50 flex-shrink-0 shadow-sm z-30">
             <h1 class="text-sm font-black text-slate-700 uppercase tracking-tighter flex items-center gap-2 leading-none">
                 <span class="bg-blue-600 text-white p-1 rounded shadow-sm">PI</span>
@@ -247,11 +223,10 @@
                 </button>
 
                 <div class="text-[10px] bg-white px-3 py-1.5 rounded-full border border-slate-200 shadow-sm font-bold flex items-center gap-2">
-                    <span class="text-slate-400">USUÁRIO:</span> <span id="displayUserName" class="text-blue-600 uppercase flex items-center gap-1"></span>
+                    <span class="text-slate-400">USUÁRIO:</span> <span id="displayUserName" class="text-blue-600 uppercase"></span>
                     <button onclick="window.abrirLogin()" class="text-slate-300 hover:text-red-500 transition-colors" title="Alterar Usuário">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
                     </button>
-                    <!-- BOTAO ADMIN -->
                     <button onclick="window.toggleAdmin()" id="btnAdmin" class="bg-slate-100 hover:bg-red-100 text-slate-500 hover:text-red-700 transition-colors px-2 py-0.5 rounded font-black text-[8px] uppercase flex items-center gap-1" title="Ativar Modo Admin">
                         🔐 Admin
                     </button>
@@ -272,8 +247,7 @@
             </div>
         </div>
 
-        <!-- Importação (Valores Mensais) -->
-        <div class="p-3 bg-blue-50 border-b border-blue-100 flex-shrink-0 relative z-10" id="botoesImportacao">
+        <div class="p-3 bg-blue-50 border-b border-blue-100 flex-shrink-0 relative z-10">
             <div class="flex gap-4 items-center">
                 <div class="flex items-center gap-3 flex-shrink-0">
                     <label class="text-[10px] font-black text-blue-900 uppercase">Mês Ref:</label>
@@ -289,13 +263,11 @@
             </div>
         </div>
         
-        <!-- Meses Ocultos -->
         <div id="barraMesesOcultos" class="bg-slate-100 border-b border-slate-200 p-2 px-4 flex-shrink-0 hidden items-center gap-3 shadow-inner">
             <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Períodos Ocultos:</span>
             <div id="listaMesesOcultos" class="flex gap-2 flex-wrap"></div>
         </div>
 
-        <!-- Tabela Principal -->
         <div class="overflow-auto flex-grow relative bg-white">
             <table id="mainTable">
                 <thead id="tabelaHead" class="text-slate-700 uppercase bg-slate-100 border-b-2 border-slate-300 shadow-sm">
@@ -305,14 +277,12 @@
             </table>
         </div>
 
-        <!-- Painel de Cadastro de Clientes -->
         <div id="painelCadastro" class="painel-lateral painel-oculto absolute top-0 right-0 h-full w-96 bg-white shadow-2xl border-l border-slate-200 z-50 flex flex-col">
             <div class="p-4 bg-indigo-50 border-b border-indigo-200 flex justify-between items-center">
                 <h2 class="text-sm font-black text-indigo-900 uppercase tracking-tighter">Cadastro de Clientes</h2>
                 <button onclick="togglePainel('painelCadastro')" class="text-slate-400 hover:text-black text-2xl font-light leading-none">&times;</button>
             </div>
-            
-            <div id="blocoImportarCadastro" class="p-4 bg-slate-50 flex-shrink-0 border-b">
+            <div class="p-4 bg-slate-50 flex-shrink-0 border-b">
                 <p class="text-[9px] font-bold text-slate-500 uppercase mb-2">Cole dados da planilha para importar (Nome, CNPJ, etc.):</p>
                 <textarea id="rawDataCadastro" rows="3" class="w-full border p-2 text-xs font-mono rounded outline-none focus:ring-1 focus:ring-indigo-500 mb-2" placeholder="Ex: NOME [TAB] CNPJ [TAB] CONTATO [TAB] ATIVIDADE [TAB] REGIME [TAB] WHATSAPP"></textarea>
                 <button onclick="window.importarCadastro()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-black py-2 px-4 rounded shadow w-full uppercase tracking-widest">Importar Cadastro Base</button>
@@ -325,22 +295,20 @@
                         <button onclick="window.imprimirCadastroCompleto()" class="bg-white text-indigo-700 border border-indigo-200 hover:bg-indigo-50 px-2 py-1 rounded text-[9px] font-bold shadow-sm flex items-center gap-1 transition-colors" title="Imprimir Cadastro">
                             🖨️ IMPRIMIR
                         </button>
-                        <button id="btnNovoCadastro" onclick="window.adicionarClienteManual()" class="bg-indigo-100 text-indigo-700 hover:bg-indigo-200 px-2 py-1 rounded text-[9px] font-bold shadow-sm flex items-center gap-1 transition-colors">
+                        <button onclick="window.adicionarClienteManual()" class="bg-indigo-100 text-indigo-700 hover:bg-indigo-200 px-2 py-1 rounded text-[9px] font-bold shadow-sm flex items-center gap-1 transition-colors">
                             ➕ NOVO
                         </button>
                     </div>
                 </div>
                 <div id="listaCadastro" class="space-y-2 pb-6">
-                    <!-- Lista de clientes (Gerado via JS) -->
-                </div>
+                    </div>
             </div>
             <div class="p-3 border-t border-slate-200 text-center bg-white flex-shrink-0">
-                <button id="btnApagarTodosCadastro" onclick="window.limparCadastro()" class="text-[10px] text-red-600 uppercase font-black hover:underline tracking-widest">Apagar Todos os Cadastros</button>
+                <button onclick="window.limparCadastro()" class="text-[10px] text-red-600 uppercase font-black hover:underline tracking-widest">Apagar Todos os Cadastros</button>
             </div>
         </div>
 
-        <!-- Painel Historico -->
-        <div id="painelHistorico" class="painel-lateral painel-oculto absolute top-0 right-0 h-full w-[400px] bg-white shadow-2xl border-l border-slate-200 z-50 flex flex-col">
+        <div id="painelHistorico" class="painel-lateral painel-oculto absolute top-0 right-0 h-full w-[380px] bg-white shadow-2xl border-l border-slate-200 z-50 flex flex-col">
             <div class="p-4 bg-amber-50 border-b border-amber-200 flex justify-between items-center flex-shrink-0">
                 <h2 class="text-sm font-black text-amber-900 uppercase tracking-tighter">Registo (Log)</h2>
                 <button onclick="togglePainel('painelHistorico')" class="text-slate-400 hover:text-black text-2xl font-light leading-none">&times;</button>
@@ -352,7 +320,6 @@
                 <div id="tabLogNovos" onclick="window.setLogTab('novos')" class="w-1/3 py-2.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 border-b-2 border-transparent transition-colors">Novos</div>
                 <div id="tabLogPlanilhas" onclick="window.setLogTab('planilhas')" class="w-1/3 py-2.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 border-b-2 border-transparent transition-colors">Salvos</div>
                 <div id="tabLogExtratos" onclick="window.setLogTab('extratos')" class="w-1/3 py-2.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 border-b-2 border-transparent transition-colors">Extratos</div>
-                <div id="tabLogImpressoes" onclick="window.setLogTab('impressoes')" class="w-full py-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 border-b-2 border-transparent transition-colors bg-slate-50 tracking-widest">🖨️ Impressões e Relatórios</div>
             </div>
             <div class="p-3 overflow-y-auto flex-grow bg-slate-50 font-mono" id="conteudoHistorico"></div>
             <div class="p-3 border-t border-slate-200 text-center bg-white flex-shrink-0">
@@ -360,14 +327,12 @@
             </div>
         </div>
 
-        <!-- Painel Classificacao Reinf -->
         <div id="painelClassificacao" class="painel-lateral painel-oculto absolute top-0 right-0 h-full w-[800px] max-w-full bg-white shadow-2xl border-l border-slate-200 z-50 flex flex-col">
             <div class="p-4 bg-blue-50 border-b border-blue-200 flex justify-between items-center flex-shrink-0">
                 <h2 class="text-sm font-black text-blue-900 uppercase tracking-tighter">Classificação e Entregas</h2>
                 <button onclick="togglePainel('painelClassificacao')" class="text-slate-400 hover:text-black text-2xl font-light leading-none">&times;</button>
             </div>
             
-            <!-- ABAS DO PAINEL REINF -->
             <div class="flex flex-wrap border-b border-slate-200 text-[8px] font-black uppercase text-center bg-white cursor-pointer flex-shrink-0">
                 <div id="tabReinfPrevisao" onclick="window.setReinfTab('previsao')" class="w-1/2 py-2.5 text-blue-600 border-b-2 border-blue-600 bg-blue-50 transition-colors">Previsão e Valores</div>
                 <div id="tabReinfEntregas" onclick="window.setReinfTab('entregas')" class="w-1/2 py-2.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 border-b-2 border-transparent transition-colors">Status de Entregas</div>
@@ -386,22 +351,11 @@
 
     <script>
         // ==========================================
-        // ESTADO GLOBAL E FUNÇÕES DE IDENTIFICAÇÃO ÚNICA
+        // FUNÇÕES GLOBAIS DE LIMPEZA E IDENTIFICAÇÃO ÚNICA
         // ==========================================
-        window.baseState = null; // CRÍTICO: Guarda o estado base para o Merge Inteligente
-
-        window.appState = {
-            meses: [], 
-            mesesConfig: {},
-            clientes: [], 
-            historicoGeral: [],
-            historicoPlanilhas: [], 
-            filtros: {},
-            currentUser: '',
-            passwords: {}
+        window.getNumbers = function(str) {
+            return (str || '').replace(/\D/g, '');
         };
-
-        window.getNumbers = function(str) { return (str || '').replace(/\D/g, ''); };
 
         window.formatCNPJ = function(str) {
             let num = window.getNumbers(str);
@@ -427,6 +381,7 @@
             
             if (n1.length > 8 && n2.length > 8) {
                 if (n1.includes(n2) || n2.includes(n1)) return true;
+                
                 let w1 = n1.split(' ').slice(0, 3).join(' ');
                 let w2 = n2.split(' ').slice(0, 3).join(' ');
                 if (w1 === w2 && w1.length > 5) return true;
@@ -441,14 +396,28 @@
         // Seleção de Linhas (Visual)
         window.selectedRowId = null;
         window.selectRow = function(id) {
-            document.querySelectorAll('#tabelaCorpo tr').forEach(tr => { tr.classList.remove('linha-selecionada'); });
+            document.querySelectorAll('#tabelaCorpo tr').forEach(tr => {
+                tr.classList.remove('linha-selecionada');
+            });
             window.selectedRowId = id;
             let newRow = document.getElementById('row-' + id);
-            if (newRow) newRow.classList.add('linha-selecionada');
+            if (newRow) {
+                newRow.classList.add('linha-selecionada');
+            }
+        };
+
+        // Variáveis de Estado da Aplicação
+        window.appState = {
+            meses: [], 
+            mesesConfig: {},
+            clientes: [], 
+            historicoGeral: [],
+            historicoPlanilhas: [], 
+            filtros: {},
+            currentUser: '' 
         };
 
         window.isAdmin = false;
-        window.isVisitante = false;
 
         window.toggleAdmin = function() {
             if(window.isAdmin) {
@@ -466,13 +435,13 @@
 
         window.validarAdmin = function() {
             let pass = document.getElementById('adminPasswordInput').value;
-            if(pass === '05583070' || pass === 'admin') {
+            if(pass === '05583070') {
                 window.isAdmin = true;
                 document.getElementById('modalAdmin').classList.add('hidden');
                 document.getElementById('btnAdmin').classList.replace('bg-slate-100', 'bg-red-100');
                 document.getElementById('btnAdmin').classList.replace('text-slate-500', 'text-red-700');
                 document.getElementById('btnAdmin').innerHTML = '🔓 ADMIN ATIVO';
-                alert("Modo Administrador ativado! Você pode excluir registros ou editar campos bloqueados.");
+                alert("Modo Administrador ativado! Você pode editar a coluna ANT e excluir linhas na Tabela Principal.");
                 window.renderTable();
             } else {
                 alert("Senha incorreta!");
@@ -484,7 +453,7 @@
         });
 
         // ==========================================
-        // GITHUB GIST, INDEXED DB E MERGE INTELIGENTE (3-WAY MERGE) - COM FILA E OTIMIZAÇÃO DE BACKGROUND
+        // GITHUB GIST E PERSISTÊNCIA LOCAL
         // ==========================================
         window.gistConfig = {
             token: localStorage.getItem('reinfGistToken') || '',
@@ -515,8 +484,11 @@
                 const tx = dbLocal.transaction("store", "readonly");
                 const req = tx.objectStore("store").get("estado_geral");
                 req.onsuccess = () => {
-                    if(req.result) window.aplicarDados(req.result);
-                    else window.syncUI();
+                    if(req.result) {
+                        window.aplicarDados(req.result);
+                    } else {
+                        window.syncUI();
+                    }
                 };
             } catch(e) { 
                 console.warn("Nenhum dado local encontrado", e); 
@@ -528,7 +500,6 @@
             if (data) {
                 window.appState = Object.assign(window.appState, data);
                 if(!window.appState.historicoPlanilhas) window.appState.historicoPlanilhas = [];
-                if(!window.appState.passwords) window.appState.passwords = {};
                 
                 if (window.appState.clientes) {
                     window.appState.clientes = window.appState.clientes.filter(c => {
@@ -537,7 +508,7 @@
                         return !['RAZÃO SOCIAL', 'RAZAO SOCIAL', 'NOME', 'CLIENTE', 'EMPRESA', 'NOME DA EMPRESA', 'TITULO', 'CNPJ'].includes(r);
                     });
 
-                    // Migração de Segurança para Propriedades Novas
+                    // MIGRAÇÃO SEGURA PARA ID ÚNICO, OBSERVAÇÕES, WHATSAPP, E DECLARAÇÕES
                     window.appState.clientes.forEach(c => {
                         if (c.atividade === undefined) c.atividade = '';
                         if (c.obs === undefined) c.obs = '';
@@ -558,11 +529,6 @@
                         }
                     });
                 }
-                
-                // CRÍTICO: Guarda o estado base ao carregar, para o sistema de merge comparar as mudanças depois!
-                window.baseState = JSON.parse(JSON.stringify(window.appState));
-                
-                window.appState.currentUser = ''; // Forçar Login no reload
             }
             window.syncUI();
         };
@@ -570,12 +536,8 @@
         window.sincronizarDoGist = async function() {
             if (!window.gistConfig.token || !window.gistConfig.id) return false;
             try {
-                // Impede o cache do navegador para trazer a versão REALMENTE mais nova
-                const response = await fetch(`https://api.github.com/gists/${window.gistConfig.id}?_ts=${new Date().getTime()}`, {
-                    headers: { 
-                        'Authorization': `Bearer ${window.gistConfig.token}`,
-                        'Cache-Control': 'no-cache'
-                    }
+                const response = await fetch(`https://api.github.com/gists/${window.gistConfig.id}`, {
+                    headers: { 'Authorization': `Bearer ${window.gistConfig.token}` }
                 });
                 if (!response.ok) throw new Error("Erro de autorização ou ID não encontrado.");
                 const data = await response.json();
@@ -595,184 +557,54 @@
             }
         };
 
-        // --- NOVO MOTOR DE MERGE INTELIGENTE (3-WAY MERGE) ---
-        // Ele descobre o que você mexeu analisando o Base e o Local, e costura essas mudanças no Remoto (que é o que está no Github)
-        window.realizarMerge = function(base, local, remote) {
-            if (!base) return local;
+        window.salvarNoGist = async function(dados) {
+            if (!window.gistConfig.token || !window.gistConfig.id) return;
+            try {
+                const response = await fetch(`https://api.github.com/gists/${window.gistConfig.id}`, {
+                    headers: { 'Authorization': `Bearer ${window.gistConfig.token}` }
+                });
+                if (!response.ok) return;
+                const data = await response.json();
+                const fileName = Object.keys(data.files)[0] || "planilha_reinf.json";
+                const payload = { files: { [fileName]: { content: JSON.stringify(dados) } } };
 
-            let merged = JSON.parse(JSON.stringify(remote)); // Trabalha em cima da versão mais atualizada dos colegas
-
-            let baseClientsMap = new Map((base.clientes || []).map(c => [c.id, c]));
-            let localClientsMap = new Map((local.clientes || []).map(c => [c.id, c]));
-            let remoteClientsMap = new Map((remote.clientes || []).map(c => [c.id, c]));
-
-            // 1. Aplica mudanças feitas por VOCÊ no estado Remoto
-            local.clientes.forEach(localCli => {
-                let baseCli = baseClientsMap.get(localCli.id);
-                let remoteCli = remoteClientsMap.get(localCli.id);
-
-                if (!remoteCli) {
-                    if (!baseCli) {
-                        // Você adicionou este cliente (Novo). Adiciona no consolidado.
-                        merged.clientes.push(localCli);
-                    }
-                } else {
-                    if (baseCli) {
-                        // Campos Básicos do Cadastro
-                        const camposRaiz = ['razao', 'cnpj', 'contato', 'atividade', 'regime', 'obs', 'whatsapp', 'dataCobranca', 'dataRecebimento', 'tipoCobranca', 'presuncao'];
-                        camposRaiz.forEach(campo => {
-                            if (localCli[campo] !== baseCli[campo]) {
-                                // Você alterou! Sobrescreve o que estava na nuvem.
-                                remoteCli[campo] = localCli[campo];
-                            }
-                        });
-
-                        // Campos dos Meses (Antecipação, Checkboxes de Reinf e DCTF)
-                        Object.keys(localCli.mensal || {}).forEach(mes => {
-                            if (!baseCli.mensal) baseCli.mensal = {};
-                            if (!remoteCli.mensal) remoteCli.mensal = {};
-                            if (!baseCli.mensal[mes]) baseCli.mensal[mes] = { antec: '-', lancado: '-', reinf: '-', dctfweb: false };
-                            if (!remoteCli.mensal[mes]) remoteCli.mensal[mes] = { antec: '-', lancado: '-', reinf: '-', dctfweb: false };
-
-                            ['antec', 'lancado', 'reinf', 'dctfweb'].forEach(campoMes => {
-                                if (localCli.mensal[mes][campoMes] !== baseCli.mensal[mes][campoMes]) {
-                                    // Você checou/deschecou ou mudou valor. Sobrescreve o que estava na nuvem.
-                                    remoteCli.mensal[mes][campoMes] = localCli.mensal[mes][campoMes];
-                                }
-                            });
-                        });
-                    }
-                }
-            });
-
-            // 2. Tratar Exclusões de Clientes (Modo Admin)
-            base.clientes.forEach(baseCli => {
-                if (!localClientsMap.has(baseCli.id)) {
-                    // Você apagou este cliente! Tira do consolidado.
-                    merged.clientes = merged.clientes.filter(c => c.id !== baseCli.id);
-                }
-            });
-
-            // 3. Mesclar Histórico de Log (Garante que nenhum sumirá)
-            let novosLogsLocal = (local.historicoGeral || []).slice((base.historicoGeral || []).length);
-            merged.historicoGeral = [...(remote.historicoGeral || []), ...novosLogsLocal];
-
-            let novasPlanilhasLocal = (local.historicoPlanilhas || []).slice((base.historicoPlanilhas || []).length);
-            merged.historicoPlanilhas = [...(remote.historicoPlanilhas || []), ...novasPlanilhasLocal];
-
-            // 4. Mesclar lista de Meses
-            merged.meses = [...new Set([...(remote.meses || []), ...(local.meses || [])])];
-            merged.meses.sort((a, b) => {
-                let [ma, ya] = a.split('/'); let [mb, yb] = b.split('/');
-                return new Date(ya, ma-1) - new Date(yb, mb-1);
-            });
-
-            // 5. Demais dados
-            merged.mesesConfig = { ...(remote.mesesConfig || {}), ...(local.mesesConfig || {}) };
-            merged.passwords = { ...(remote.passwords || {}), ...(local.passwords || {}) };
-
-            return merged;
-        };
-
-        window.isSavingToCloud = false;
-        window.needsAnotherSave = false;
-
-        // O saveState AGORA É TOTALMENTE ASSÍNCRONO e executa sem travar o PC
-        window.saveState = async function() {
-            if (window.isVisitante) return; 
-
-            // Passo 1: Salva instantaneamente na memória local para garantir que nada se perca na sua tela
-            await window.salvarDadosLocais(window.appState);
-
-            if (window.gistConfig.token && window.gistConfig.id) {
-                // Fila inteligente: se ele já estiver enviando algo pro GitHub, deixa agendado pra tentar denovo loguinho
-                if (window.isSavingToCloud) {
-                    window.needsAnotherSave = true; 
-                    return;
-                }
-                
-                window.isSavingToCloud = true;
-                document.getElementById('btnStatusNuvem').classList.add('animate-pulse'); 
-                
-                try {
-                    // Busca a verdade suprema do Github sem cache, para mesclar
-                    const response = await fetch(`https://api.github.com/gists/${window.gistConfig.id}?_ts=${new Date().getTime()}`, {
-                        headers: { 
-                            'Authorization': `Bearer ${window.gistConfig.token}`,
-                            'Cache-Control': 'no-cache, no-store, must-revalidate'
-                        }
-                    });
-
-                    if (response.ok) {
-                        const data = await response.json();
-                        const fileName = Object.keys(data.files)[0] || "planilha_reinf.json";
-                        const fileContent = data.files[fileName].content;
-                        
-                        if (fileContent && fileContent !== "{}") {
-                            let remoteState = JSON.parse(fileContent);
-                            // Roda o Merge para juntar o que você fez com o que os outros fizeram
-                            window.appState = window.realizarMerge(window.baseState, window.appState, remoteState);
-                        }
-
-                        // Salva a versão definitiva mesclada no Github
-                        const payload = { files: { [fileName]: { content: JSON.stringify(window.appState) } } };
-                        await fetch(`https://api.github.com/gists/${window.gistConfig.id}`, {
-                            method: 'PATCH',
-                            headers: { 
-                                'Authorization': `Bearer ${window.gistConfig.token}`,
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify(payload)
-                        });
-
-                        // Atualiza a sua "Base" interna
-                        window.baseState = JSON.parse(JSON.stringify(window.appState));
-                        
-                        // Renderiza a tela sutilmente apenas com as alterações dos colegas que o merge puxou
-                        window.renderTable();
-                        window.renderHistorico();
-                        if(!document.getElementById('painelClassificacao').classList.contains('painel-oculto')) {
-                            window.renderClassificacao();
-                        }
-                        if(!document.getElementById('painelCadastro').classList.contains('painel-oculto')) {
-                            window.renderListaCadastro();
-                        }
-                    }
-                } catch(e) {
-                    console.error("Erro na sincronização simultânea com a Nuvem:", e);
-                } finally {
-                    window.isSavingToCloud = false;
-                    document.getElementById('btnStatusNuvem').classList.remove('animate-pulse');
-                    
-                    // Se você clicou em várias caixas rapidamente enquanto ele salvava a primeira, ele aciona a fila
-                    if (window.needsAnotherSave) {
-                        window.needsAnotherSave = false;
-                        window.saveState(); 
-                    }
-                }
-            } else {
-                // Se não estiver conectado no Gist, a base avança igual
-                window.baseState = JSON.parse(JSON.stringify(window.appState));
-            }
-        };
-
-        // ==========================================
-        // INICIALIZAÇÃO OTIMIZADA E AUTENTICAÇÃO
-        // ==========================================
-        window.onload = async () => {
-            // CARREGA A TELA INSTANTANEAMENTE COM A MEMÓRIA DO COMPUTADOR!
-            await window.carregarDadosLocais();
-
-            // SÓ DEPOIS E EM SEGUNDO PLANO ELE BUSCA NO GITHUB SE ALGO MUDOU
-            if (window.gistConfig.token && window.gistConfig.id) {
-                window.sincronizarDoGist();
-            } else {
+                await fetch(`https://api.github.com/gists/${window.gistConfig.id}`, {
+                    method: 'PATCH',
+                    headers: { 
+                        'Authorization': `Bearer ${window.gistConfig.token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+                window.atualizarBotaoNuvem(true);
+            } catch(e) {
+                console.error("Erro ao salvar no Gist:", e);
                 window.atualizarBotaoNuvem(false);
             }
         };
 
+        window.saveState = async function() {
+            const dadosParaSalvar = window.appState;
+            await window.salvarDadosLocais(dadosParaSalvar);
+            if (window.gistConfig.token && window.gistConfig.id) {
+                window.salvarNoGist(dadosParaSalvar);
+            }
+        };
+
+        // ==========================================
+        // INICIALIZAÇÃO
+        // ==========================================
+        window.onload = async () => {
+            if (window.gistConfig.token && window.gistConfig.id) {
+                const sucessoNuvem = await window.sincronizarDoGist();
+                if (!sucessoNuvem) await window.carregarDadosLocais();
+            } else {
+                window.atualizarBotaoNuvem(false);
+                await window.carregarDadosLocais();
+            }
+        };
+
         window.abrirModalGist = function() {
-            if (window.isVisitante) return alert("Modo Visitante: Apenas para visualização.");
             document.getElementById('modalGist').classList.remove('hidden');
             document.getElementById('gistTokenInput').value = window.gistConfig.token;
             document.getElementById('gistIdInput').value = window.gistConfig.id;
@@ -783,7 +615,6 @@
         window.fecharModalGist = function() { document.getElementById('modalGist').classList.add('hidden'); };
 
         window.salvarConfigGist = async function() {
-            if (window.isVisitante) return alert("Modo Visitante: Acesso negado.");
             const token = document.getElementById('gistTokenInput').value.trim();
             const id = document.getElementById('gistIdInput').value.trim();
             if (!token || !id) return alert("Preencha ambos os campos.");
@@ -804,7 +635,6 @@
         };
 
         window.desconectarGist = function() {
-            if (window.isVisitante) return alert("Modo Visitante: Acesso negado.");
             if(confirm("Parar de sincronizar com a nuvem neste navegador?")) {
                 localStorage.removeItem('reinfGistToken');
                 localStorage.removeItem('reinfGistId');
@@ -828,111 +658,35 @@
         }
 
         window.syncUI = function() {
-            window.isVisitante = window.appState.currentUser && window.appState.currentUser.startsWith('VISITANTE');
-            
-            if (!window.appState.currentUser) {
+            if (!window.appState.currentUser || window.appState.currentUser === 'VOCÊ') {
                 window.abrirLogin();
             } else {
-                let badgeVisitante = window.isVisitante ? ' <span class="bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded text-[8px] font-black ml-1 tracking-widest">SOMENTE LEITURA</span>' : '';
-                document.getElementById('displayUserName').innerHTML = window.appState.currentUser + badgeVisitante;
+                document.getElementById('displayUserName').innerText = window.appState.currentUser;
                 document.getElementById('modalUser').classList.add('hidden');
             }
-            
-            // Oculta blocos inteiros para visitantes
-            document.getElementById('botoesImportacao').style.display = window.isVisitante ? 'none' : 'block';
-            const blocoImportarCad = document.getElementById('blocoImportarCadastro');
-            if(blocoImportarCad) blocoImportarCad.style.display = window.isVisitante ? 'none' : 'block';
-            
-            const btnApagarTodosCad = document.getElementById('btnApagarTodosCadastro');
-            if(btnApagarTodosCad) btnApagarTodosCad.style.display = window.isVisitante ? 'none' : 'inline-block';
-            
-            const btnNovoCad = document.getElementById('btnNovoCadastro');
-            if(btnNovoCad) btnNovoCad.style.display = window.isVisitante ? 'none' : 'flex';
-
             window.renderTable();
             window.renderHistorico();
             window.renderFiltroReinf(); 
             window.renderListaCadastro(); 
         };
 
-        window.checkUserType = function() {
-            const select = document.getElementById('userSelect');
-            const nameInput = document.getElementById('userNameInput');
-            const passInput = document.getElementById('userPasswordInput');
-            
-            if (select.value === 'VISITANTE') {
-                nameInput.classList.remove('hidden');
-                passInput.classList.add('hidden');
-                nameInput.focus();
-            } else if (select.value === 'GABRIELA' || select.value === 'AMAURI') {
-                nameInput.classList.add('hidden');
-                passInput.classList.remove('hidden');
-                passInput.focus();
-            } else {
-                nameInput.classList.add('hidden');
-                passInput.classList.add('hidden');
-            }
-        };
-
         window.abrirLogin = function() {
             document.getElementById('modalUser').classList.remove('hidden');
-            document.getElementById('userSelect').value = '';
-            document.getElementById('userNameInput').value = '';
-            document.getElementById('userPasswordInput').value = '';
-            document.getElementById('userNameInput').classList.add('hidden');
-            document.getElementById('userPasswordInput').classList.add('hidden');
+            if(window.appState.currentUser && window.appState.currentUser !== 'VOCÊ') {
+                document.getElementById('userNameInput').value = window.appState.currentUser;
+            }
+            document.getElementById('userNameInput').focus();
         };
 
-        // SALVA USUÁRIO E FECHA MODAL INSTANTANEAMENTE
         window.salvarUsuario = async function() {
-            let selectVal = document.getElementById('userSelect').value;
-            let n = selectVal;
-            
-            window.isVisitante = false;
-
-            if (selectVal === '') {
-                return alert("Por favor, selecione quem você é na lista.");
-            }
-
-            if (selectVal === 'VISITANTE') {
-                n = document.getElementById('userNameInput').value.trim();
-                if (!n) return alert("Visitante, por favor digite seu nome.");
-                n = "VISITANTE (" + n.toUpperCase() + ")";
-                window.isVisitante = true;
-            } else {
-                let pass = document.getElementById('userPasswordInput').value;
-                if (!pass) return alert("Por favor, digite sua senha.");
-
-                if (selectVal === 'GABRIELA') {
-                    if (pass !== '6975') return alert("Senha incorreta para Gabriela.");
-                } else if (selectVal === 'AMAURI') {
-                    if (!window.appState.passwords) window.appState.passwords = {};
-                    
-                    if (!window.appState.passwords['AMAURI']) {
-                        let conf = confirm(`Bem-vindo, Amauri! Você ainda não tem uma senha cadastrada no sistema.\n\nDeseja registrar a senha que você acabou de digitar ("${pass}") como sua senha permanente a partir de hoje?`);
-                        if (conf) {
-                            window.appState.passwords['AMAURI'] = pass;
-                            alert("Senha cadastrada com sucesso! Bem-vindo.");
-                        } else {
-                            return;
-                        }
-                    } else {
-                        if (pass !== window.appState.passwords['AMAURI']) return alert("Senha incorreta para Amauri.");
-                    }
-                }
-            }
-            
+            let n = document.getElementById('userNameInput').value.trim();
+            if (!n) return alert("Por favor, identifique-se.");
             window.appState.currentUser = n;
-            
-            // LIBERA O USUÁRIO NA HORA! NÃO ESPERA A INTERNET
-            window.syncUI(); 
-            window.saveState(); // Salva por trás dos panos
+            await window.saveState();
+            window.syncUI();
         };
 
         document.getElementById('userNameInput').addEventListener('keypress', function(e){
-            if(e.key === 'Enter') window.salvarUsuario();
-        });
-        document.getElementById('userPasswordInput').addEventListener('keypress', function(e){
             if(e.key === 'Enter') window.salvarUsuario();
         });
 
@@ -953,84 +707,9 @@
         };
 
         // ==========================================
-        // SISTEMA DE IMPRESSÃO SALVA NO LOG (TUDO INSTANTÂNEO A PARTIR DAQUI)
+        // DECLARAÇÕES: REINF E DCTF-WEB
         // ==========================================
-        window.registrarImpressao = async function(titulo, htmlFull) {
-            if (window.isVisitante) return;
-            window.appState.historicoGeral.push({
-                idImpressao: window.generateId(),
-                tipo: 'impressao',
-                data: new Date().toLocaleString('pt-BR'),
-                usuario: window.appState.currentUser,
-                mes: 'GERAL',
-                alteracoes: [`<span class="text-purple-600 font-bold">IMPRESSÃO:</span> Relatório gerado: <b>${titulo}</b>`],
-                conteudoHtml: htmlFull
-            });
-            window.renderHistorico();
-            window.saveState(); // SEM AWAIT
-        };
-
-        window.reabrirImpressao = function(id) {
-            let reg = window.appState.historicoGeral.find(r => r.idImpressao === id);
-            if(reg && reg.conteudoHtml) {
-                const janelaImpressao = window.open('', '_blank');
-                janelaImpressao.document.write(reg.conteudoHtml);
-                janelaImpressao.document.close();
-            }
-        };
-
-        // ==========================================
-        // DECLARAÇÕES E EDIÇÕES
-        // ==========================================
-
-        window.atualizarAntecManual = async function(id, mes, el, old) {
-            if (!window.isAdmin) return alert("Ação restrita! Ative o Modo Admin no topo da tela para alterar valores manualmente.");
-            let cli = window.appState.clientes.find(c => c.id === id);
-            let val = el.value.trim();
-            if(!val) val = '-';
-            
-            if (cli && val !== old) {
-                if (!cli.mensal[mes]) cli.mensal[mes] = { antec: '-', lancado: '-', reinf: '-', dctfweb: false };
-                cli.mensal[mes].antec = val;
-                el.value = val;
-                el.setAttribute('onchange', `window.atualizarAntecManual('${id}', '${mes}', this, '${val}')`);
-
-                window.appState.historicoGeral.push({
-                    tipo: 'edicao', data: new Date().toLocaleString('pt-BR'),
-                    usuario: window.appState.currentUser, mes: mes,
-                    alteracoes: [`<span class="text-amber-600 font-bold">EDIÇÃO DE VALOR (ADMIN):</span> <b>${cli.razao} (${cli.contato})</b> - Antecipação alterada de '${old}' para '${val}'`]
-                });
-                
-                window.renderTable();
-                window.renderHistorico();
-                window.saveState(); 
-            }
-        };
-        
-        window.toggleLancado = async function(id, mes, isChecked) {
-            if (window.isVisitante) return alert("Modo Visitante: Acesso apenas para visualização.");
-            let cli = window.appState.clientes.find(c => c.id === id);
-            if(!cli) return;
-            if(!cli.mensal[mes]) cli.mensal[mes] = { antec: '-', lancado: '-', reinf: '-', dctfweb: false };
-
-            let val = isChecked ? 'OK' : '-';
-            if (cli.mensal[mes].lancado !== val) {
-                cli.mensal[mes].lancado = val;
-
-                window.appState.historicoGeral.push({
-                    tipo: 'edicao', data: new Date().toLocaleString('pt-BR'),
-                    usuario: window.appState.currentUser, mes: mes,
-                    alteracoes: [`<span class="text-blue-600 font-bold">FOLHA (LANÇADO):</span> <b>${cli.razao}</b> - ${isChecked ? 'Marcado como OK' : 'Desmarcado'}.`]
-                });
-
-                window.renderTable();
-                window.renderHistorico();
-                window.saveState(); 
-            }
-        };
-
         window.toggleReinf = async function(id, mes, isChecked) {
-            if (window.isVisitante) return alert("Modo Visitante: Acesso apenas para visualização.");
             let cli = window.appState.clientes.find(c => c.id === id);
             if(!cli) return;
             if(!cli.mensal[mes]) cli.mensal[mes] = { antec: '-', lancado: '-', reinf: '-', dctfweb: false };
@@ -1058,7 +737,7 @@
                         if (tVlr > 50000) {
                             cli.mensal[t].reinf = 'MENSAL OK';
                         } else {
-                            cli.mensal[t].reinf = 'TRIM OK'; 
+                            cli.mensal[t].reinf = 'TRIM OK'; // Cobre valor 0, sem lucro, ausentes e <=50k.
                         }
                         alteradosTrim = true;
                     });
@@ -1066,21 +745,24 @@
             }
 
             window.appState.historicoGeral.push({
-                tipo: 'edicao', data: new Date().toLocaleString('pt-BR'),
-                usuario: window.appState.currentUser, mes: mes,
+                tipo: 'edicao',
+                data: new Date().toLocaleString('pt-BR'),
+                usuario: window.appState.currentUser,
+                mes: mes,
                 alteracoes: [`<span class="text-blue-600 font-bold">REINF:</span> <b>${cli.razao}</b> - ${isChecked ? 'Marcada como Entregue' : 'Desmarcada'}.`]
             });
 
-            if(alteradosTrim) alert(`Regra do Trimestre (REINF) aplicada: Os meses ${targets.join(', ')} foram finalizados com sucesso!`);
-            
+            if(alteradosTrim) {
+                alert(`Regra do Trimestre (REINF) aplicada: Os meses ${targets.join(', ')} foram finalizados com sucesso!`);
+            }
+
+            await window.saveState();
             window.renderTable();
             window.renderClassificacao();
             window.renderHistorico();
-            window.saveState(); 
         };
 
         window.toggleDctfWeb = async function(id, mes, isChecked) {
-            if (window.isVisitante) return alert("Modo Visitante: Acesso apenas para visualização.");
             let cli = window.appState.clientes.find(c => c.id === id);
             if(!cli) return;
             if(!cli.mensal[mes]) cli.mensal[mes] = { antec: '-', lancado: '-', reinf: '-', dctfweb: false };
@@ -1110,24 +792,27 @@
             }
 
             window.appState.historicoGeral.push({
-                tipo: 'edicao', data: new Date().toLocaleString('pt-BR'),
-                usuario: window.appState.currentUser, mes: mes,
+                tipo: 'edicao',
+                data: new Date().toLocaleString('pt-BR'),
+                usuario: window.appState.currentUser,
+                mes: mes,
                 alteracoes: [`<span class="text-indigo-600 font-bold">DCTF-WEB:</span> <b>${cli.razao}</b> - ${isChecked ? 'Marcada como Entregue' : 'Desmarcada'}.`]
             });
 
-            if(alteradosTrim) alert(`Regra do Trimestre (DCTF-Web) aplicada: Os meses ${targets.join(', ')} também foram marcados como entregues!`);
-            
+            if(alteradosTrim) {
+                alert(`Regra do Trimestre (DCTF-Web) aplicada: Os meses ${targets.join(', ')} também foram marcados como entregues!`);
+            }
+
+            await window.saveState();
             window.renderTable();
             window.renderClassificacao();
             window.renderHistorico();
-            window.saveState(); 
         };
 
         // ==========================================
         // COBRANÇA AUTOMATIZADA WHATSAPP E EXTRATOS
         // ==========================================
         window.cobrarManual = async function(id) {
-            if (window.isVisitante) return alert("Modo Visitante: Acesso apenas para visualização.");
             let cli = window.appState.clientes.find(c => c.id === id);
             if(!cli) return;
 
@@ -1137,6 +822,7 @@
 
             if (novaData !== null) { 
                 novaData = novaData.trim();
+                
                 window.appState.clientes.forEach(c => {
                     if ((window.getNumbers(c.cnpj) === cnpjNum && cnpjNum.length === 14) || c.id === id) {
                         c.dataCobranca = novaData;
@@ -1145,28 +831,32 @@
                 });
 
                 window.appState.historicoGeral.push({
-                    tipo: 'extrato_log', data: new Date().toLocaleString('pt-BR'),
-                    usuario: window.appState.currentUser, mes: 'GERAL',
+                    tipo: 'extrato_log',
+                    data: new Date().toLocaleString('pt-BR'),
+                    usuario: window.appState.currentUser,
+                    mes: 'GERAL',
                     alteracoes: [`<span class="${novaData ? 'text-amber-600' : 'text-slate-500'} font-bold">COBRANÇA MANUAL:</span> <b>${cli.razao}</b> - Data definida para '${novaData || 'Vazio'}'.`]
                 });
-                
+
+                await window.saveState();
                 window.renderTable();
                 window.renderHistorico();
-                window.saveState(); 
             }
         };
 
         window.cobrarWhatsApp = function(id) {
-            if (window.isVisitante) return alert("Modo Visitante: Acesso apenas para visualização.");
             let cli = window.appState.clientes.find(c => c.id === id);
             if(!cli) return;
 
             let cnpjNum = window.getNumbers(cli.cnpj);
 
+            // Verificação de Múltiplos Sócios
             if (cnpjNum.length === 14) {
                 let sameCnpjClients = window.appState.clientes.filter(c => window.getNumbers(c.cnpj) === cnpjNum);
                 if (sameCnpjClients.length > 1) {
+                    // Monta os botões no nosso novo Modal em vez de usar o prompt()
                     document.getElementById('textoModalSocio').innerText = `Identificamos que a empresa ${cli.razao} possui múltiplos sócios. Para qual deseja direcionar a mensagem?`;
+                    
                     let botoesHtml = sameCnpjClients.map((c) => {
                         let nome = c.contato || 'Sócio Sem Nome';
                         return `<button onclick="window.executarCobrancaWhatsapp('${c.id}')" class="bg-emerald-100 hover:bg-emerald-200 text-emerald-800 border border-emerald-300 font-bold px-4 py-3 rounded-lg w-full transition-all uppercase text-xs shadow-sm">${nome}</button>`;
@@ -1174,9 +864,11 @@
                     
                     document.getElementById('listaBotoesSocio').innerHTML = botoesHtml;
                     document.getElementById('modalSocioWhatsapp').classList.remove('hidden');
-                    return; 
+                    return; // Para a execução aqui e espera o clique no modal!
                 }
             }
+
+            // Se for um sócio só, vai direto
             window.executarCobrancaWhatsapp(cli.id);
         };
 
@@ -1232,21 +924,28 @@
                 el.setSelectionRange(0, 99999);
                 copiado = document.execCommand('copy');
                 document.body.removeChild(el);
-            } catch(e) { console.warn("Erro copy: ", e); }
+            } catch(e) {
+                console.warn("Erro ao tentar copiar via execCommand: ", e);
+            }
 
             if (!copiado && navigator.clipboard && window.isSecureContext) {
-                navigator.clipboard.writeText(msg).catch(e => console.warn("Erro clipboard: ", e));
+                navigator.clipboard.writeText(msg).catch(e => console.warn("Erro no clipboard API: ", e));
             }
 
             let link = targetCli.whatsapp.trim();
             let finalUrl = link;
             let numOnly = window.getNumbers(link);
-            if (numOnly.length >= 10 && numOnly.length <= 13) finalUrl = `https://wa.me/55${numOnly}`;
-            else if (!link.startsWith('http')) finalUrl = `https://${link}`;
+            
+            if (numOnly.length >= 10 && numOnly.length <= 13) {
+                finalUrl = `https://wa.me/55${numOnly}`;
+            } else if (!link.startsWith('http')) {
+                finalUrl = `https://${link}`;
+            }
 
             window.open(finalUrl, '_blank');
 
             let dataAtual = new Date().toLocaleDateString('pt-BR');
+            
             if (cnpjNum.length === 14) {
                 window.appState.clientes.forEach(c => {
                     if (window.getNumbers(c.cnpj) === cnpjNum) {
@@ -1260,31 +959,35 @@
             }
             
             window.appState.historicoGeral.push({
-                tipo: 'extrato_log', data: new Date().toLocaleString('pt-BR'),
-                usuario: window.appState.currentUser, mes: 'GERAL',
+                tipo: 'extrato_log',
+                data: new Date().toLocaleString('pt-BR'),
+                usuario: window.appState.currentUser,
+                mes: 'GERAL',
                 alteracoes: [`<span class="text-emerald-600 font-bold">COBRANÇA WHATSAPP:</span> <b>${targetCli.razao}</b> - Mensagem de cobrança enviada.`]
             });
 
-            window.renderTable();
-            window.renderHistorico();
-            window.saveState();
+            window.saveState().then(() => {
+                window.renderTable();
+                window.renderHistorico();
+            });
             
             alert(`A mensagem de cobrança para ${firstName} foi copiada!\n(Pressione Ctrl+V no WhatsApp para colar e enviar)`);
         };
 
         window.marcarExtratoRecebido = async function(id) {
-            if (window.isVisitante) return alert("Modo Visitante: Acesso apenas para visualização.");
             let cli = window.appState.clientes.find(c => c.id === id);
             if(!cli) return;
 
             let dataAtual = new Date().toLocaleDateString('pt-BR');
             let cnpjNum = window.getNumbers(cli.cnpj);
+            
             let desmarcar = !!cli.dataRecebimento;
 
             let novaData = '';
             if (!desmarcar) {
-                if (cli.tipoCobranca === 'whatsapp') novaData = dataAtual;
-                else {
+                if (cli.tipoCobranca === 'whatsapp') {
+                    novaData = dataAtual;
+                } else {
                     novaData = prompt(`Informe a data em que o extrato de ${cli.razao} foi recebido:\n(Deixe a data de hoje ou altere se necessário)`, dataAtual);
                     if (novaData === null) return;
                     novaData = novaData.trim();
@@ -1298,119 +1001,420 @@
             });
 
             window.appState.historicoGeral.push({
-                tipo: 'extrato_log', data: new Date().toLocaleString('pt-BR'),
-                usuario: window.appState.currentUser, mes: 'GERAL',
+                tipo: 'extrato_log',
+                data: new Date().toLocaleString('pt-BR'),
+                usuario: window.appState.currentUser,
+                mes: 'GERAL',
                 alteracoes: [`<span class="${desmarcar ? 'text-slate-500' : 'text-blue-600'} font-bold">EXTRATO ${desmarcar ? 'DESMARCADO' : 'RECEBIDO'}:</span> <b>${cli.razao}</b>${desmarcar ? '' : ' (Data: ' + novaData + ')'}.`]
             });
 
+            await window.saveState();
             window.renderTable();
             window.renderHistorico();
-            window.saveState();
+        };
+
+        window.imprimirControleExtratos = function() {
+            if (window.appState.clientes.length === 0) {
+                alert('Nenhum cliente cadastrado.');
+                return;
+            }
+
+            let vistos = new Set();
+            let listaUnica = window.appState.clientes.filter(cli => {
+                let num = window.getNumbers(cli.cnpj);
+                let key = num.length === 14 ? num : window.normalizeStr(cli.razao);
+                if (vistos.has(key)) return false;
+                vistos.add(key);
+                return true;
+            }).sort((a, b) => {
+                const groupA = (a.dataCobranca && !a.dataRecebimento) ? 1 : (a.dataRecebimento ? 2 : 3);
+                const groupB = (b.dataCobranca && !b.dataRecebimento) ? 1 : (b.dataRecebimento ? 2 : 3);
+                if (groupA !== groupB) return groupA - groupB;
+                return a.razao.localeCompare(b.razao);
+            });
+
+            let trClientes = listaUnica.map((cli, index) => {
+                return `<tr>
+                    <td style="padding: 6px; border: 1px solid #ccc; text-align: center;">${index + 1}</td>
+                    <td style="padding: 6px; border: 1px solid #ccc; font-weight: bold;">${cli.razao}</td>
+                    <td style="padding: 6px; border: 1px solid #ccc; text-align: center; font-family: monospace;">${cli.cnpj}</td>
+                    <td style="padding: 6px; border: 1px solid #ccc; text-align: center; color: ${cli.dataCobranca ? '#d97706' : '#94a3b8'}; font-weight: bold;">${cli.dataCobranca || '-'}</td>
+                    <td style="padding: 6px; border: 1px solid #ccc; text-align: center; color: ${cli.dataRecebimento ? '#059669' : '#94a3b8'}; font-weight: bold;">${cli.dataRecebimento ? '✅ ' + cli.dataRecebimento : '-'}</td>
+                </tr>`;
+            }).join('');
+
+            let htmlConteudo = `
+                <table style="width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px;">
+                    <thead>
+                        <tr style="background-color: #f1f5f9; text-align: left;">
+                            <th style="padding: 6px; border: 1px solid #ccc; text-align: center;">Nº</th>
+                            <th style="padding: 6px; border: 1px solid #ccc;">Razão Social</th>
+                            <th style="padding: 6px; border: 1px solid #ccc; text-align: center;">CNPJ</th>
+                            <th style="padding: 6px; border: 1px solid #ccc; text-align: center;">Data Cobrança</th>
+                            <th style="padding: 6px; border: 1px solid #ccc; text-align: center;">Data Recebimento</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${trClientes}
+                    </tbody>
+                </table>
+            `;
+
+            const janelaImpressao = window.open('', '_blank');
+            janelaImpressao.document.write(`
+                <html>
+                <head>
+                    <title>Controle de Extratos</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; padding: 20px; }
+                        h1 { font-size: 18px; color: #333; text-transform: uppercase; margin-bottom: 5px; }
+                        .header { border-bottom: 2px solid #ccc; padding-bottom: 10px; margin-bottom: 20px; }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <h1>Controle de Extratos Bancários</h1>
+                        <p style="font-size: 11px; color: #666; margin: 0;">Total de Empresas: ${listaUnica.length} | Gerado em: ${new Date().toLocaleString('pt-BR')} | <strong>Planilha de Integrações</strong></p>
+                    </div>
+                    ${htmlConteudo}
+                    <script>
+                        window.onload = function() { 
+                            setTimeout(function() {
+                                window.print(); 
+                                window.close();
+                            }, 500);
+                        };
+                    <\/script>
+                </body>
+                </html>
+            `);
+            janelaImpressao.document.close();
         };
 
         // ==========================================
-        // IMPRESSÕES E PRESUNÇÃO
+        // IMPRESSÃO DE LOGS INDIVIDUAIS
         // ==========================================
-        window.imprimirControleExtratos = function() { /* Mantido similar, veja cód original se necessário */ };
-        window.imprimirLogHistorico = function(idx) { /* Mantido */ };
-        window.imprimirRelatorioImportacao = function(tipo) { /* Mantido */ };
-        window.imprimirCadastroCompleto = function() { /* Mantido */ };
+        window.imprimirLogHistorico = function(idx) {
+            const reg = window.currentDisplayedLogs[idx];
+            if (!reg) return;
+
+            let titulo = 'Relatório de Log';
+            if (reg.tipo === 'modificacao' || reg.tipo === 'edicao') titulo = 'Relatório de Modificações / Alterações';
+            if (reg.tipo === 'faltante') titulo = 'Relatório de Clientes Faltantes (Ausentes na Importação)';
+            if (reg.tipo === 'novo_cliente') titulo = 'Relatório de Novos Clientes (Cadastros Novos)';
+            if (reg.tipo === 'importacao_resumo') titulo = 'Resumo da Importação';
+
+            let listaHTML = reg.alteracoes.map(a => `<li>${a}</li>`).join('');
+
+            const janelaImpressao = window.open('', '_blank');
+            janelaImpressao.document.write(`
+                <html>
+                <head>
+                    <title>${titulo}</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; padding: 20px; }
+                        h1 { font-size: 18px; color: #333; text-transform: uppercase; margin-bottom: 5px; }
+                        .header { border-bottom: 2px solid #ccc; padding-bottom: 10px; margin-bottom: 20px; }
+                        ul { list-style-type: none; padding-left: 0; }
+                        li { padding: 8px; border-bottom: 1px solid #eee; font-size: 13px; color: #444; }
+                        b { color: #111; font-size: 14px; }
+                        i { color: #666; font-size: 11px; }
+                        .text-slate-400 { color: #888; }
+                        .text-amber-500 { color: #f59e0b; }
+                        .text-red-500 { color: #ef4444; }
+                        .text-red-600 { color: #dc2626; }
+                        .text-indigo-600 { color: #4f46e5; }
+                        .text-blue-600 { color: #2563eb; }
+                        .text-emerald-600 { color: #059669; }
+                        .font-bold { font-weight: bold; }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <h1>${titulo} - Mês: ${reg.mes}</h1>
+                        <p style="font-size: 11px; color: #666; margin: 0;">Usuário: ${reg.usuario} | Data do Registo: ${reg.data} | <strong>Planilha de Integrações</strong></p>
+                    </div>
+                    <ul>
+                        ${listaHTML}
+                    </ul>
+                    <script>
+                        window.onload = function() { 
+                            setTimeout(function() {
+                                window.print(); 
+                                window.close();
+                            }, 500);
+                        };
+                    <\/script>
+                </body>
+                </html>
+            `);
+            janelaImpressao.document.close();
+        };
+
+        // ==========================================
+        // IMPRESSÃO DOS RELATÓRIOS DO POPUP DE IMPORTAÇÃO
+        // ==========================================
+        window.imprimirRelatorioImportacao = function(tipo) {
+            let mes = window.currentImportMonth || '';
+            let titulo = '';
+            let listaId = '';
+            
+            if (tipo === 'alteracoes') {
+                titulo = 'Relatório de Valores Alterados - Mês: ' + mes;
+                listaId = 'listaAlteracoesModal';
+            } else if (tipo === '50k') {
+                titulo = 'Relatório de Distribuição > 50 Mil - Mês: ' + mes;
+                listaId = 'listaAlertas50kModal';
+            } else if (tipo === 'faltantes') {
+                titulo = 'Relatório de Clientes Faltantes - Mês: ' + mes;
+                listaId = 'listaFaltantesModal';
+            } else if (tipo === 'novos') {
+                titulo = 'Relatório de Novos Clientes na Planilha - Mês: ' + mes;
+                listaId = 'listaNovosModal';
+            }
+
+            const listaHTML = document.getElementById(listaId).innerHTML;
+
+            const janelaImpressao = window.open('', '_blank');
+            janelaImpressao.document.write(`
+                <html>
+                <head>
+                    <title>${titulo}</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; padding: 20px; }
+                        h1 { font-size: 18px; color: #333; text-transform: uppercase; margin-bottom: 5px; }
+                        .header { border-bottom: 2px solid #ccc; padding-bottom: 10px; margin-bottom: 20px; }
+                        ul { list-style-type: none; padding-left: 0; }
+                        li { padding: 8px; border-bottom: 1px solid #eee; font-size: 13px; color: #444; }
+                        b { color: #111; font-size: 14px; }
+                        i { color: #666; font-size: 11px; }
+                        .text-slate-400 { color: #888; }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <h1>${titulo}</h1>
+                        <p style="font-size: 11px; color: #666; margin: 0;">Gerado em: ${new Date().toLocaleString('pt-BR')} | <strong>Planilha de Integrações</strong></p>
+                    </div>
+                    <ul>
+                        ${listaHTML}
+                    </ul>
+                    <script>
+                        window.onload = function() { 
+                            setTimeout(function() {
+                                window.print(); 
+                                window.close();
+                            }, 500);
+                        };
+                    <\/script>
+                </body>
+                </html>
+            `);
+            janelaImpressao.document.close();
+        };
+
+        window.imprimirCadastroCompleto = function() {
+            if (window.appState.clientes.length === 0) {
+                alert('Nenhum cliente cadastrado para imprimir.');
+                return;
+            }
+
+            let listaOrdenada = [...window.appState.clientes].sort((a, b) => a.razao.localeCompare(b.razao));
+
+            let trClientes = listaOrdenada.map((cli, index) => {
+                return `<tr>
+                    <td style="padding: 6px; border: 1px solid #ccc; text-align: center;">${index + 1}</td>
+                    <td style="padding: 6px; border: 1px solid #ccc; font-weight: bold;">${cli.razao}</td>
+                    <td style="padding: 6px; border: 1px solid #ccc; text-align: center; font-family: monospace;">${cli.cnpj}</td>
+                    <td style="padding: 6px; border: 1px solid #ccc;">${cli.contato || '-'}</td>
+                    <td style="padding: 6px; border: 1px solid #ccc; text-align: center;">${cli.atividade || '-'}</td>
+                    <td style="padding: 6px; border: 1px solid #ccc; text-align: center;">${cli.regime || '-'}</td>
+                </tr>`;
+            }).join('');
+
+            let htmlConteudo = `
+                <table style="width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 11px;">
+                    <thead>
+                        <tr style="background-color: #f1f5f9; text-align: left;">
+                            <th style="padding: 6px; border: 1px solid #ccc; text-align: center;">Nº</th>
+                            <th style="padding: 6px; border: 1px solid #ccc;">Razão Social</th>
+                            <th style="padding: 6px; border: 1px solid #ccc; text-align: center;">CNPJ</th>
+                            <th style="padding: 6px; border: 1px solid #ccc;">Contato</th>
+                            <th style="padding: 6px; border: 1px solid #ccc; text-align: center;">Atividade</th>
+                            <th style="padding: 6px; border: 1px solid #ccc; text-align: center;">Regime</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${trClientes}
+                    </tbody>
+                </table>
+            `;
+
+            const janelaImpressao = window.open('', '_blank');
+            janelaImpressao.document.write(`
+                <html>
+                <head>
+                    <title>Relatório de Cadastro de Clientes</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; padding: 20px; }
+                        h1 { font-size: 18px; color: #333; text-transform: uppercase; margin-bottom: 5px; }
+                        .header { border-bottom: 2px solid #ccc; padding-bottom: 10px; margin-bottom: 20px; }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <h1>Relatório de Cadastro de Clientes</h1>
+                        <p style="font-size: 11px; color: #666; margin: 0;">Total Registrado: ${listaOrdenada.length} | Gerado em: ${new Date().toLocaleString('pt-BR')} | <strong>Planilha de Integrações</strong></p>
+                    </div>
+                    ${htmlConteudo}
+                    <script>
+                        window.onload = function() { 
+                            setTimeout(function() {
+                                window.print(); 
+                                window.close();
+                            }, 500);
+                        };
+                    <\/script>
+                </body>
+                </html>
+            `);
+            janelaImpressao.document.close();
+        };
 
         window.togglePresuncao = async function(id, isChecked) {
-            if (window.isVisitante) return alert("Modo Visitante: Acesso apenas para visualização.");
             let cli = window.appState.clientes.find(c => c.id === id);
             if(cli) {
                 cli.presuncao = isChecked;
                 window.appState.historicoGeral.push({
-                    tipo: 'edicao', data: new Date().toLocaleString('pt-BR'),
-                    usuario: window.appState.currentUser, mes: 'CADASTRO',
+                    tipo: 'edicao',
+                    data: new Date().toLocaleString('pt-BR'),
+                    usuario: window.appState.currentUser,
+                    mes: 'CADASTRO',
                     alteracoes: [`<span class="text-indigo-600 font-bold">PRESUNÇÃO:</span> <b>${cli.razao}</b> - ${isChecked ? 'Ativada (Valor de faturamento travado)' : 'Desativada'}.`]
                 });
-                
+                await window.saveState();
                 window.renderListaCadastro();
                 window.renderTable();
-                window.saveState();
+            }
+        };
+
+        window.atualizarAntecManual = async function(id, mes, el, old) {
+            let cli = window.appState.clientes.find(c => c.id === id);
+            let val = el.value.trim().toUpperCase();
+            
+            if (cli && val !== old) {
+                if (!cli.mensal[mes]) {
+                    cli.mensal[mes] = { antec: '-', lancado: '-', reinf: '-', dctfweb: false };
+                }
+
+                cli.mensal[mes].antec = val;
+                
+                window.appState.historicoGeral.push({
+                    tipo: 'edicao',
+                    data: new Date().toLocaleString('pt-BR'),
+                    usuario: window.appState.currentUser, mes: mes,
+                    alteracoes: [`<span class="text-blue-600 font-bold">EDIÇÃO ADMIN (ANT):</span> <b>${cli.razao}</b> - Valor alterado de '${old}' para '${val}'.`]
+                });
+                
+                await window.saveState(); 
+                window.renderHistorico();
+                window.renderClassificacao();
+                window.renderTable(); 
             }
         };
 
         // ==========================================
-        // CADASTRO DE CLIENTES
+        // CADASTRO DE CLIENTES (Inteligente e Editável com ID Único)
         // ==========================================
         window.adicionarClienteManual = async function() {
-            if (window.isVisitante) return alert("Modo Visitante: Acesso apenas para visualização.");
             window.appState.clientes.push({
-                id: window.generateId(), razao: 'NOVA EMPRESA', cnpj: 'S/ CNPJ', contato: '', atividade: '', regime: '',
+                id: window.generateId(),
+                razao: 'NOVA EMPRESA', cnpj: 'S/ CNPJ', contato: '', atividade: '', regime: '',
                 obs: '', whatsapp: '', dataCobranca: '', dataRecebimento: '', tipoCobranca: '', mensal: {}, presuncao: false
             });
             window.appState.historicoGeral.push({
-                tipo: 'edicao', data: new Date().toLocaleString('pt-BR'), usuario: window.appState.currentUser, mes: 'CADASTRO',
+                tipo: 'edicao',
+                data: new Date().toLocaleString('pt-BR'),
+                usuario: window.appState.currentUser,
+                mes: 'CADASTRO',
                 alteracoes: [`<span class="text-indigo-600 font-bold">NOVA EMPRESA:</span> Adicionada manualmente.`]
             });
-            
+            await window.saveState();
             window.renderListaCadastro();
-            window.saveState(); 
-            setTimeout(() => document.getElementById('listaCadastro').parentElement.scrollTop = 9999, 100);
+            const container = document.getElementById('listaCadastro').parentElement;
+            setTimeout(() => container.scrollTop = container.scrollHeight, 100);
         };
 
         window.adicionarSocio = async function(id) {
-            if (window.isVisitante) return alert("Modo Visitante: Acesso apenas para visualização.");
             let cliBase = window.appState.clientes.find(c => c.id === id);
             if (cliBase) {
                 window.appState.clientes.push({
-                    id: window.generateId(), razao: cliBase.razao, cnpj: cliBase.cnpj,
+                    id: window.generateId(),
+                    razao: cliBase.razao, cnpj: cliBase.cnpj,
                     contato: 'NOVO SÓCIO', regime: cliBase.regime, atividade: cliBase.atividade,
                     obs: cliBase.obs, whatsapp: cliBase.whatsapp, dataCobranca: cliBase.dataCobranca, dataRecebimento: cliBase.dataRecebimento, tipoCobranca: cliBase.tipoCobranca, mensal: {}, presuncao: cliBase.presuncao || false
                 });
                 window.appState.historicoGeral.push({
-                    tipo: 'edicao', data: new Date().toLocaleString('pt-BR'), usuario: window.appState.currentUser, mes: 'CADASTRO',
+                    tipo: 'edicao',
+                    data: new Date().toLocaleString('pt-BR'),
+                    usuario: window.appState.currentUser,
+                    mes: 'CADASTRO',
                     alteracoes: [`<span class="text-indigo-600 font-bold">NOVO SÓCIO ADICIONADO:</span> Para a empresa <b>${cliBase.razao}</b>`]
                 });
-                
+                await window.saveState();
                 window.renderListaCadastro();
                 window.renderTable();
-                window.saveState();
             }
         };
 
         window.editarClienteCadastro = async function(id, campo, el) {
-            if (window.isVisitante) return alert("Modo Visitante: Acesso apenas para visualização.");
             let cli = window.appState.clientes.find(c => c.id === id);
             if(cli) {
                 let valAntigo = cli[campo] || '';
                 let novoValor = el.value.trim();
-                if (campo === 'cnpj') novoValor = window.formatCNPJ(novoValor);
-                else if (['razao', 'contato', 'regime', 'atividade', 'obs'].includes(campo)) novoValor = novoValor.toUpperCase();
+                
+                if (campo === 'cnpj') {
+                    novoValor = window.formatCNPJ(novoValor);
+                } else if (['razao', 'contato', 'regime', 'atividade', 'obs'].includes(campo)) {
+                    novoValor = novoValor.toUpperCase();
+                }
 
                 if (valAntigo !== novoValor) {
                     cli[campo] = novoValor;
                     el.value = novoValor; 
+                    
                     window.appState.historicoGeral.push({
-                        tipo: 'edicao', data: new Date().toLocaleString('pt-BR'), usuario: window.appState.currentUser, mes: 'CADASTRO',
+                        tipo: 'edicao',
+                        data: new Date().toLocaleString('pt-BR'),
+                        usuario: window.appState.currentUser,
+                        mes: 'CADASTRO',
                         alteracoes: [`<span class="text-blue-600 font-bold">EDIÇÃO DE CADASTRO:</span> <b>${cli.razao}</b> - ${campo.toUpperCase()} alterado de '${valAntigo || '-'}' para '${novoValor || '-'}'`]
                     });
 
                     let cnpjNum = window.getNumbers(cli.cnpj);
                     if (['atividade', 'regime', 'razao', 'cnpj', 'obs'].includes(campo) && cnpjNum.length === 14) {
                          window.appState.clientes.forEach(otherCli => {
-                             if (otherCli.id !== cli.id && window.getNumbers(otherCli.cnpj) === cnpjNum) otherCli[campo] = novoValor;
+                             if (otherCli.id !== cli.id && window.getNumbers(otherCli.cnpj) === cnpjNum) {
+                                 otherCli[campo] = novoValor;
+                             }
                          });
                     }
                     
-                    window.renderTable();
-                    window.renderHistorico();
-                    window.renderClassificacao();
                     window.saveState();
+                    window.renderHistorico();
+                    window.renderTable();
+                    window.renderClassificacao();
                 }
             }
         };
 
         window.importarCadastro = async function() {
-            if (window.isVisitante) return alert("Modo Visitante: Acesso apenas para visualização.");
             const input = document.getElementById('rawDataCadastro').value;
             if (!input.trim()) return alert("Cole os dados para importar.");
 
             const linhas = input.trim().split('\n');
-            let novos = 0, atualizados = 0;
+            let novos = 0;
+            let atualizados = 0;
 
             linhas.forEach(linha => {
                 const colunas = linha.split('\t').map(c => c.trim());
@@ -1424,29 +1428,43 @@
                 let cnpj = window.formatCNPJ(cnpjRaw);
 
                 let nome = colunas[0].toUpperCase();
-                if(colunas[0] === cnpjRaw && colunas.length > 1) nome = colunas[1].toUpperCase();
+                if(colunas[0] === cnpjRaw && colunas.length > 1) {
+                    nome = colunas[1].toUpperCase();
+                }
 
                 if (['NOME', 'RAZÃO SOCIAL', 'RAZAO SOCIAL', 'CLIENTE', 'EMPRESA', 'NOME DA EMPRESA', 'TITULO', 'CNPJ'].includes(nome)) return;
 
                 let contato = colunas.length > 2 ? colunas[2].toUpperCase() : '';
                 let atividade = colunas.length > 3 ? colunas[3].toUpperCase() : '';
                 let regime = colunas.length > 4 ? colunas[4].toUpperCase() : '';
+                
                 let whatsapp = colunas.length > 6 ? colunas[6] : (colunas.length === 6 && !colunas[5].toUpperCase().includes('CONTA') ? colunas[5] : '');
 
                 let cliExistente = null;
 
                 if (cnpjNum.length === 14) {
                     let candidates = window.appState.clientes.filter(c => window.getNumbers(c.cnpj) === cnpjNum);
-                    if (candidates.length === 1) cliExistente = candidates[0];
-                    else if (candidates.length > 1) {
-                        cliExistente = candidates.find(c => (c.contato || '').toUpperCase() === contato) || candidates.find(c => window.normalizeStr(c.contato) === window.normalizeStr(contato)) || (contato === '' ? candidates.find(c => !c.contato || c.contato.trim() === '') : null) || candidates[0];
+                    if (candidates.length === 1) {
+                        cliExistente = candidates[0];
+                    } else if (candidates.length > 1) {
+                        cliExistente = candidates.find(c => (c.contato || '').toUpperCase() === contato);
+                        if (!cliExistente) {
+                            cliExistente = candidates.find(c => window.normalizeStr(c.contato) === window.normalizeStr(contato));
+                        }
+                        if (!cliExistente && contato === '') {
+                            cliExistente = candidates.find(c => !c.contato || c.contato.trim() === '') || candidates[0];
+                        }
+                        if (!cliExistente) cliExistente = candidates[0]; 
                     }
                 }
 
                 if (!cliExistente && nome) {
                     let candidates = window.appState.clientes.filter(c => window.isSameCompanyByName(c.razao, nome));
-                    if (candidates.length === 1) cliExistente = candidates[0];
-                    else if (candidates.length > 1) cliExistente = candidates.find(c => (c.contato || '').toUpperCase() === contato) || candidates[0];
+                    if (candidates.length === 1) {
+                        cliExistente = candidates[0];
+                    } else if (candidates.length > 1) {
+                        cliExistente = candidates.find(c => (c.contato || '').toUpperCase() === contato) || candidates[0];
+                    }
                 }
 
                 if (cliExistente) {
@@ -1465,28 +1483,31 @@
                             }
                         });
                     }
+
                     atualizados++;
                 } else {
                     window.appState.clientes.push({
-                        id: window.generateId(), razao: nome, cnpj: cnpj, contato: contato, atividade: atividade, regime: regime,
-                        obs: '', whatsapp: whatsapp, dataCobranca: '', dataRecebimento: '', tipoCobranca: '', mensal: {}, presuncao: false
+                        id: window.generateId(),
+                        razao: nome, cnpj: cnpj, contato: contato, atividade: atividade, regime: regime,
+                        obs: '', whatsapp: whatsapp, dataCobranca: '', dataRecebimento: '', tipoCobranca: '', mensal: {}, presuncao: false 
                     });
                     novos++;
                 }
             });
 
             window.appState.historicoGeral.push({
-                tipo: 'importacao_resumo', data: new Date().toLocaleString('pt-BR'), usuario: window.appState.currentUser, mes: 'CADASTRO',
+                tipo: 'importacao_resumo',
+                data: new Date().toLocaleString('pt-BR'),
+                usuario: window.appState.currentUser,
+                mes: 'CADASTRO',
                 alteracoes: [`<span class="text-indigo-600 font-bold">CADASTRO DE CLIENTES:</span> ${novos} novos, ${atualizados} atualizados.`]
             });
 
+            await window.saveState();
             document.getElementById('rawDataCadastro').value = '';
-            
             window.renderListaCadastro();
             window.renderTable();
             window.renderHistorico();
-            window.saveState();
-
             alert(`Importação de Cadastro concluída!\nNovos: ${novos}\nAtualizados: ${atualizados}`);
         };
 
@@ -1502,10 +1523,6 @@
                 return;
             }
 
-            const isReadonly = window.isVisitante ? 'readonly' : '';
-            const isDisabled = window.isVisitante ? 'disabled' : '';
-            const isHiddenClass = window.isVisitante ? 'hidden' : '';
-
             container.innerHTML = list.map(cli => {
                 const valRazao = (cli.razao || '').replace(/"/g, '&quot;');
                 const valCnpj = (cli.cnpj || '').replace(/"/g, '&quot;');
@@ -1517,87 +1534,89 @@
                 return `
                 <div class="bg-white p-2.5 rounded border border-slate-200 shadow-sm flex flex-col gap-2 relative group hover:border-indigo-300 transition-colors">
                     <div class="flex justify-between items-start gap-2">
-                        <input type="text" value="${valRazao}" ${isReadonly} class="text-[10px] font-black text-slate-800 uppercase leading-tight flex-grow bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none w-full" placeholder="RAZÃO SOCIAL" title="Razão Social" onchange="window.editarClienteCadastro('${cli.id}', 'razao', this)">
-                        <div class="flex items-center gap-1 flex-shrink-0 ${isHiddenClass}">
+                        <input type="text" value="${valRazao}" class="text-[10px] font-black text-slate-800 uppercase leading-tight flex-grow bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none w-full" placeholder="RAZÃO SOCIAL" title="Razão Social" onchange="window.editarClienteCadastro('${cli.id}', 'razao', this)">
+                        <div class="flex items-center gap-1 flex-shrink-0">
                             <button onclick="window.adicionarSocio('${cli.id}')" class="text-indigo-400 hover:text-indigo-700 text-[9px] font-bold leading-none transition-colors border border-indigo-200 px-1 py-0.5 rounded" title="Adicionar Novo Sócio para esta Empresa">➕ SÓCIO</button>
                             <button onclick="window.excluirCliente('${cli.id}')" class="text-red-400 hover:text-red-700 text-lg leading-none transition-colors" title="Excluir Cliente">&times;</button>
                         </div>
                     </div>
                     <div class="flex gap-2 w-full">
-                        <input type="text" value="${valCnpj}" ${isReadonly} class="text-[9px] font-mono text-indigo-600 font-bold bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none w-1/3" placeholder="CNPJ" title="CNPJ" onchange="window.editarClienteCadastro('${cli.id}', 'cnpj', this)">
-                        <input type="text" value="${valContato}" ${isReadonly} class="text-[9px] text-slate-500 bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none w-2/3" placeholder="Sócio / Contato" title="Contato" onchange="window.editarClienteCadastro('${cli.id}', 'contato', this)">
+                        <input type="text" value="${valCnpj}" class="text-[9px] font-mono text-indigo-600 font-bold bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none w-1/3" placeholder="CNPJ" title="CNPJ" onchange="window.editarClienteCadastro('${cli.id}', 'cnpj', this)">
+                        <input type="text" value="${valContato}" class="text-[9px] text-slate-500 bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none w-2/3" placeholder="Sócio / Contato" title="Contato" onchange="window.editarClienteCadastro('${cli.id}', 'contato', this)">
                     </div>
                     <div class="flex w-full mt-1 border-t border-slate-50 pt-1.5 gap-2 items-center">
-                        <input type="text" value="${valAtividade}" ${isReadonly} class="text-[8px] text-slate-400 bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none w-1/3 uppercase font-bold" placeholder="ATIVIDADE" title="Atividade" onchange="window.editarClienteCadastro('${cli.id}', 'atividade', this)">
-                        <input type="text" value="${valRegime}" ${isReadonly} class="text-[8px] text-slate-400 bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none w-1/3 uppercase font-bold" placeholder="REGIME" title="Regime" onchange="window.editarClienteCadastro('${cli.id}', 'regime', this)">
+                        <input type="text" value="${valAtividade}" class="text-[8px] text-slate-400 bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none w-1/3 uppercase font-bold" placeholder="ATIVIDADE" title="Atividade" onchange="window.editarClienteCadastro('${cli.id}', 'atividade', this)">
+                        <input type="text" value="${valRegime}" class="text-[8px] text-slate-400 bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none w-1/3 uppercase font-bold" placeholder="REGIME" title="Regime" onchange="window.editarClienteCadastro('${cli.id}', 'regime', this)">
                         <label class="flex items-center gap-1 cursor-pointer hover:bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200 ml-auto flex-shrink-0" title="Não sobrescrever valor na importação">
-                            <input type="checkbox" ${cli.presuncao ? 'checked' : ''} ${isDisabled} onchange="window.togglePresuncao('${cli.id}', this.checked)" class="w-3 h-3 accent-indigo-600">
+                            <input type="checkbox" ${cli.presuncao ? 'checked' : ''} onchange="window.togglePresuncao('${cli.id}', this.checked)" class="w-3 h-3 accent-indigo-600">
                             <span class="text-[8px] font-black ${cli.presuncao ? 'text-indigo-700' : 'text-slate-500'} uppercase tracking-tight">PRESUNÇÃO 🔒</span>
                         </label>
                     </div>
                     <div class="flex w-full mt-1 border-t border-slate-50 pt-1.5 gap-2">
-                        <input type="text" value="${valWhatsapp}" ${isReadonly} class="text-[9px] text-slate-500 bg-transparent border-b border-transparent hover:border-slate-300 focus:border-emerald-500 outline-none w-1/2" placeholder="Link/Telefone WhatsApp" title="WhatsApp" onchange="window.editarClienteCadastro('${cli.id}', 'whatsapp', this)">
-                        <input type="text" value="${(cli.obs || '').replace(/"/g, '&quot;')}" ${isReadonly} class="text-[9px] text-slate-500 bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none w-1/2 uppercase" placeholder="Observações (ex: Inativa)" title="Observações Gerais" onchange="window.editarClienteCadastro('${cli.id}', 'obs', this)">
+                        <input type="text" value="${valWhatsapp}" class="text-[9px] text-slate-500 bg-transparent border-b border-transparent hover:border-slate-300 focus:border-emerald-500 outline-none w-1/2" placeholder="Link/Telefone WhatsApp" title="WhatsApp" onchange="window.editarClienteCadastro('${cli.id}', 'whatsapp', this)">
+                        <input type="text" value="${(cli.obs || '').replace(/"/g, '&quot;')}" class="text-[9px] text-slate-500 bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none w-1/2 uppercase" placeholder="Observações (ex: Inativa)" title="Observações Gerais" onchange="window.editarClienteCadastro('${cli.id}', 'obs', this)">
                     </div>
                 </div>
             `}).join('');
         };
 
         window.excluirCliente = async function(id) {
-            if(!window.isAdmin) return alert("Ação restrita! Ative o Modo Admin no topo da tela (🔐 Admin) para excluir clientes.");
             let cli = window.appState.clientes.find(c => c.id === id);
             if(!cli) return;
-            if(!confirm(`Tem certeza que deseja remover ${cli.razao} de toda a planilha? Todos os dados dos meses também serão perdidos.`)) return;
+            if(!confirm(`Tem certeza que deseja remover ${cli.razao} de toda a planilha? Todos os dados dos meses também serão perdidos para ele.`)) return;
             
             let idx = window.appState.clientes.findIndex(c => c.id === id);
             window.appState.clientes.splice(idx, 1);
             
             window.appState.historicoGeral.push({
-                tipo: 'edicao', data: new Date().toLocaleString('pt-BR'), usuario: window.appState.currentUser, mes: 'CADASTRO',
-                alteracoes: [`<span class="text-red-600 font-bold">CLIENTE EXCLUÍDO (ADMIN):</span> ${cli.razao}`]
+                tipo: 'edicao',
+                data: new Date().toLocaleString('pt-BR'),
+                usuario: window.appState.currentUser,
+                mes: 'CADASTRO',
+                alteracoes: [`<span class="text-red-600 font-bold">CLIENTE EXCLUÍDO:</span> ${cli.razao}`]
             });
 
+            await window.saveState();
             window.renderListaCadastro();
             window.renderTable();
             window.renderHistorico();
             window.renderClassificacao();
-            window.saveState();
         };
 
         window.limparCadastro = async function() {
-            if(!window.isAdmin) return alert("Ação restrita! Ative o Modo Admin no topo da tela.");
-            if(!confirm("CUIDADO: Isto apagará TODOS os clientes. Tem certeza absoluta?")) return;
+            if(!confirm("CUIDADO: Isto apagará TODOS os clientes e TODOS os dados de antecipação registados. Tem certeza absoluta?")) return;
             window.appState.clientes = [];
-            window.appState.historicoGeral.push({
-                tipo: 'edicao', data: new Date().toLocaleString('pt-BR'), usuario: window.appState.currentUser, mes: 'CADASTRO',
-                alteracoes: [`<span class="text-red-600 font-bold">BASE DE CLIENTES ZERADA TOTALMENTE (ADMIN)</span>`]
-            });
             
+            window.appState.historicoGeral.push({
+                tipo: 'edicao',
+                data: new Date().toLocaleString('pt-BR'),
+                usuario: window.appState.currentUser,
+                mes: 'CADASTRO',
+                alteracoes: [`<span class="text-red-600 font-bold">BASE DE CLIENTES ZERADA TOTALMENTE</span>`]
+            });
+
+            await window.saveState();
             window.renderListaCadastro();
             window.renderTable();
             window.renderHistorico();
             window.renderClassificacao();
-            window.saveState();
         };
 
+
         // ==========================================
-        // SISTEMA DE LOGS E CLASSIFICAÇÃO REINF 
+        // SISTEMA DE LOGS E PLANILHAS SALVAS
         // ==========================================
         window.currentLogTab = 'importacao';
 
         window.setLogTab = function(tab) {
             window.currentLogTab = tab;
-            const tabs = ['importacao', 'modificacoes', 'faltantes', 'novos', 'planilhas', 'extratos', 'impressoes'];
+            const tabs = ['importacao', 'modificacoes', 'faltantes', 'novos', 'planilhas', 'extratos'];
             tabs.forEach(t => {
                 const el = document.getElementById('tabLog' + t.charAt(0).toUpperCase() + t.slice(1));
-                if (el) {
-                    if (t === tab) {
-                        if (t === 'impressoes') el.className = "w-full py-2.5 text-purple-600 border-b-2 border-purple-600 bg-purple-50 transition-colors tracking-widest font-black";
-                        else el.className = "w-1/3 py-2.5 text-blue-600 border-b-2 border-blue-600 bg-blue-50 transition-colors";
-                    } else {
-                        if (t === 'impressoes') el.className = "w-full py-2.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 border-b-2 border-transparent transition-colors bg-slate-50 tracking-widest";
-                        else el.className = "w-1/3 py-2.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 border-b-2 border-transparent transition-colors";
-                    }
+                if(t === tab) {
+                    el.className = "w-1/3 py-2.5 text-blue-600 border-b-2 border-blue-600 bg-blue-50 transition-colors";
+                } else {
+                    el.className = "w-1/3 py-2.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 border-b-2 border-transparent transition-colors";
                 }
             });
             window.renderHistorico();
@@ -1607,15 +1626,71 @@
             const container = document.getElementById('conteudoHistorico');
             document.getElementById('badgeHistorico').innerText = window.appState.historicoGeral.length;
             
-            if(window.currentLogTab === 'planilhas') { /* Mantido */ return; }
-            if(window.currentLogTab === 'extratos') { /* Mantido */ return; }
+            if(window.currentLogTab === 'planilhas') {
+                if (!window.appState.historicoPlanilhas || window.appState.historicoPlanilhas.length === 0) {
+                    container.innerHTML = `<p class="text-[9px] text-slate-400 text-center mt-10 uppercase font-bold tracking-widest">Nenhuma planilha armazenada</p>`;
+                    return;
+                }
+                container.innerHTML = [...window.appState.historicoPlanilhas].reverse().map((p, indexRev) => {
+                    let realIdx = window.appState.historicoPlanilhas.length - 1 - indexRev;
+                    return `
+                        <div class="mb-3 bg-white p-2.5 rounded-lg border border-slate-200 shadow-sm flex justify-between items-center transition-all hover:border-blue-300">
+                            <div>
+                                <span class="text-blue-600 font-black uppercase tracking-tight text-xs">MÊS: ${p.mes}</span><br>
+                                <span class="text-slate-500 font-bold block text-[9px] mt-0.5">Imp: ${p.data}</span>
+                                <span class="text-slate-400 font-medium block text-[9px]">Por: ${p.usuario}</span>
+                            </div>
+                            <button onclick="window.visualizarPlanilhaSalva(${realIdx})" class="text-xl p-2 bg-slate-50 hover:bg-blue-100 rounded-full transition-transform hover:scale-110 shadow-sm border border-slate-200" title="Visualizar Planilha">
+                                👁️
+                            </button>
+                        </div>
+                    `;
+                }).join('');
+                return;
+            }
+
+            if(window.currentLogTab === 'extratos') {
+                let cnpjsVistos = new Set();
+                let listaExtratos = [...window.appState.clientes].filter(cli => {
+                    let num = window.getNumbers(cli.cnpj);
+                    if(num.length === 14) {
+                        if(cnpjsVistos.has(num)) return false;
+                        cnpjsVistos.add(num);
+                    }
+                    return true;
+                }).sort((a, b) => {
+                    const groupA = (a.dataCobranca && !a.dataRecebimento) ? 1 : (a.dataRecebimento ? 2 : 3);
+                    const groupB = (b.dataCobranca && !b.dataRecebimento) ? 1 : (b.dataRecebimento ? 2 : 3);
+                    if (groupA !== groupB) return groupA - groupB;
+                    return a.razao.localeCompare(b.razao);
+                });
+
+                if (listaExtratos.length === 0) {
+                    container.innerHTML = `<p class="text-[9px] text-slate-400 text-center mt-10 uppercase font-bold tracking-widest">Nenhum cliente cadastrado</p>`;
+                    return;
+                }
+
+                let htmlExtratos = listaExtratos.map(cli => {
+                    return `
+                        <div class="mb-2 bg-white p-2 rounded border border-slate-200 shadow-sm flex flex-col gap-1 text-[9px]">
+                            <span class="font-black text-slate-800 uppercase tracking-tight">${cli.razao}</span>
+                            <div class="flex justify-between items-center text-slate-500 mt-1 pt-1 border-t border-slate-50">
+                                <span>📱 Cobrado: <b class="${cli.dataCobranca ? 'text-amber-600' : 'text-slate-400'}">${cli.dataCobranca || '-'}</b></span>
+                                <span>✅ Recebido: <b class="${cli.dataRecebimento ? 'text-emerald-600' : 'text-slate-400'}">${cli.dataRecebimento || '-'}</b></span>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                container.innerHTML = `<div class="mb-3 flex justify-between items-center"><h3 class="text-[10px] font-black text-slate-700 uppercase">Controle de Extratos</h3><button onclick="window.imprimirControleExtratos()" class="bg-white text-indigo-700 px-2 py-1 rounded border border-indigo-200 hover:bg-indigo-50 flex items-center gap-1 shadow-sm font-bold tracking-widest text-[8px] transition-colors" title="Imprimir Relatório">🖨️ IMPRIMIR</button></div>` + htmlExtratos;
+                return;
+            }
 
             const logsFiltrados = window.appState.historicoGeral.filter(reg => {
                 if (window.currentLogTab === 'importacao') return reg.tipo === 'importacao_resumo';
                 if (window.currentLogTab === 'modificacoes') return reg.tipo === 'modificacao' || reg.tipo === 'edicao';
                 if (window.currentLogTab === 'faltantes') return reg.tipo === 'faltante';
                 if (window.currentLogTab === 'novos') return reg.tipo === 'novo_cliente';
-                if (window.currentLogTab === 'impressoes') return reg.tipo === 'impressao';
                 return false;
             });
 
@@ -1625,14 +1700,18 @@
             }
             
             window.currentDisplayedLogs = [...logsFiltrados].reverse();
+
             container.innerHTML = window.currentDisplayedLogs.map((reg, idx) => `
                 <div class="mb-3 bg-white p-2.5 rounded-lg border border-slate-200 text-[10px] shadow-sm flex flex-col">
                     <div class="flex justify-between items-start border-b border-slate-100 mb-2 pb-1.5 gap-2">
                         <div class="flex flex-col gap-0.5">
-                            <span class="${reg.tipo === 'impressao' ? 'text-purple-600' : 'text-blue-600'} font-black uppercase tracking-tight">${reg.usuario}</span>
+                            <span class="text-blue-600 font-black uppercase tracking-tight">${reg.usuario}</span>
                             <span class="text-slate-400 font-bold leading-none block">${reg.mes}</span>
                             <span class="text-slate-300 text-[8px] leading-none block">${reg.data}</span>
                         </div>
+                        <button onclick="window.imprimirLogHistorico(${idx})" class="bg-white text-slate-500 hover:text-blue-600 border border-slate-200 hover:bg-blue-50 px-1.5 py-1 rounded shadow-sm flex items-center gap-1 font-bold tracking-widest text-[8px] transition-colors flex-shrink-0 h-fit" title="Imprimir este Log">
+                            🖨️ IMPRIMIR
+                        </button>
                     </div>
                     <div class="max-h-60 overflow-y-auto pr-1">
                         ${reg.alteracoes.map(a => `<div class="text-slate-700 py-0.5 leading-tight">• ${a}</div>`).join('')}
@@ -1641,13 +1720,72 @@
             `).join('');
         };
 
+        window.visualizarPlanilhaSalva = function(idx) {
+            const p = window.appState.historicoPlanilhas[idx];
+            if(!p) return;
+            
+            document.getElementById('tituloVisualizarPlanilha').innerText = `VISUALIZAÇÃO DA IMPORTAÇÃO: ${p.mes} (Salva em ${p.data})`;
+            
+            let tempCli = [];
+            const linhas = p.raw.trim().split('\n');
+            linhas.forEach(linha => {
+                if (linha.toUpperCase().includes('INTEGRAÇOES')) return;
+                const cols = linha.split('\t');
+                if (cols.length < 5) return;
+                let offset = cols[2] && /^\d{4}$/.test(cols[2].trim()) ? 1 : 0;
+                let cnpj = cols[offset+3]?.trim();
+                let razao = cols[offset+2]?.trim().toUpperCase();
+                if (!cnpj && !razao) return;
+
+                if (['RAZÃO SOCIAL', 'RAZAO SOCIAL', 'NOME', 'CLIENTE', 'EMPRESA', 'NOME DA EMPRESA', 'CNPJ'].includes(razao)) return;
+                
+                tempCli.push({
+                    razao: razao, cnpj: cnpj || 'S/ CNPJ',
+                    contato: cols[offset+4]?.trim(), regime: cols[offset+5]?.trim(),
+                    antec: cols[offset+11]?.trim() || '-'
+                });
+            });
+
+            document.getElementById('tabelaVisualizacaoHead').innerHTML = `
+                <tr>
+                    <th class="col-fixed-razao text-slate-500 py-3">RAZÃO SOCIAL</th>
+                    <th class="col-fixed-cnpj text-slate-500 py-3">CNPJ</th>
+                    <th class="col-fixed-contato text-slate-500 py-3">CONTATO</th>
+                    <th class="col-fixed-regime text-slate-500 py-3">REG.</th>
+                    <th class="bg-blue-100 text-blue-900 font-black py-3">ANTECIPAÇÃO LANÇADA (${p.mes})</th>
+                </tr>
+            `;
+
+            let tbody = tempCli.map(cli => `
+                <tr class="hover:bg-blue-50 border-b border-slate-100 transition-colors">
+                    <td class="col-fixed-razao font-black text-slate-800 uppercase" title="${cli.razao}">${cli.razao}</td>
+                    <td class="col-fixed-cnpj font-mono text-blue-700">${cli.cnpj}</td>
+                    <td class="col-fixed-contato text-slate-500 uppercase" title="${cli.contato}">${cli.contato}</td>
+                    <td class="col-fixed-regime font-black text-slate-600 uppercase">${cli.regime}</td>
+                    <td class="bg-blue-50/20 font-black text-slate-900 align-middle">${cli.antec}</td>
+                </tr>
+            `).join('');
+
+            if(tempCli.length === 0) tbody = `<tr><td colspan="5" class="text-center py-20 text-slate-400 font-black tracking-widest uppercase">Nenhum dado válido processado</td></tr>`;
+
+            document.getElementById('tabelaVisualizacaoCorpo').innerHTML = tbody;
+            document.getElementById('modalVisualizarPlanilha').classList.remove('hidden');
+        };
+
+        // ==========================================
+        // CÁLCULO DE IR E CLASSIFICAÇÃO MULTI-MÊS COM IMPRESSÃO (TABELA DINÂMICA)
+        // ==========================================
         window.currentReinfTab = 'previsao';
+
         window.setReinfTab = function(tab) {
             window.currentReinfTab = tab;
             ['previsao', 'entregas'].forEach(t => {
                 const el = document.getElementById('tabReinf' + t.charAt(0).toUpperCase() + t.slice(1));
-                if(t === tab) el.className = "w-1/2 py-2.5 text-blue-600 border-b-2 border-blue-600 bg-blue-50 transition-colors";
-                else el.className = "w-1/2 py-2.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 border-b-2 border-transparent transition-colors";
+                if(t === tab) {
+                    el.className = "w-1/2 py-2.5 text-blue-600 border-b-2 border-blue-600 bg-blue-50 transition-colors";
+                } else {
+                    el.className = "w-1/2 py-2.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 border-b-2 border-transparent transition-colors";
+                }
             });
             window.renderClassificacao();
         };
@@ -1656,8 +1794,9 @@
             const container = document.getElementById('containerMesesReinf');
             if(!container) return;
             let checkedValues = Array.from(container.querySelectorAll('input:checked')).map(cb => cb.value);
+            
             container.innerHTML = window.appState.meses.map(m => `
-                <label class="flex items-center gap-1.5 bg-white border border-slate-200 px-2.5 py-1.5 rounded-md shadow-sm cursor-pointer hover:bg-slate-50">
+                <label class="flex items-center gap-1.5 bg-white border border-slate-200 px-2.5 py-1.5 rounded-md shadow-sm cursor-pointer hover:bg-slate-50 transition-colors hover:border-blue-300">
                     <input type="checkbox" value="${m}" class="mes-checkbox w-3.5 h-3.5 accent-blue-600 cursor-pointer" ${checkedValues.includes(m) ? 'checked' : ''} onchange="window.renderClassificacao()">
                     <span class="text-[10px] font-bold text-slate-700">${m}</span>
                 </label>
@@ -1670,23 +1809,483 @@
             window.renderClassificacao();
         };
 
-        window.renderClassificacao = function() { /* Mantido original do usuário para relatório (omitido do bloco para não exceder limites gigantescos, funciona perfeitamente fora das alterações Core de salvamento) */ };
+        window.renderClassificacao = function() {
+            const container = document.getElementById('conteudoClassificacao');
+            const containerCheckboxes = document.getElementById('containerMesesReinf');
+            
+            let mesesSelecionados = Array.from(containerCheckboxes.querySelectorAll('input:checked')).map(cb => cb.value);
+
+            if (mesesSelecionados.length === 0) {
+                container.innerHTML = `<p class="text-[9px] text-slate-400 text-center mt-10 uppercase italic font-bold">Nenhum mês selecionado para análise.</p>`;
+                return;
+            }
+
+            if (window.currentReinfTab === 'previsao') {
+                let dadosAgrupadosMensal = {};
+                let dadosAgrupadosTrimestral = {};
+                let mesesMensal = new Set();
+                let mesesTrimestral = new Set();
+                let contMensal = 0;
+                let contTrimestral = 0;
+
+                window.appState.clientes.forEach(cli => {
+                    let chave = cli.id;
+                    
+                    mesesSelecionados.forEach(mes => {
+                        if (cli.mensal[mes]) {
+                            let vlr = window.parseCurrency(cli.mensal[mes].antec);
+                            
+                            // Lógica Mensal (> 50k)
+                            if (vlr > 50000) {
+                                if (!dadosAgrupadosMensal[chave]) dadosAgrupadosMensal[chave] = { razao: cli.razao, contato: cli.contato, meses: {} };
+                                let ir = vlr * 0.10;
+                                dadosAgrupadosMensal[chave].meses[mes] = {
+                                    antec: cli.mensal[mes].antec,
+                                    ir: ir.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'})
+                                };
+                                mesesMensal.add(mes);
+                                contMensal++;
+                            } 
+                            // Lógica Trimestral (até 50k)
+                            else if (vlr > 0 || cli.mensal[mes].antec === 'S/M') {
+                                if (!dadosAgrupadosTrimestral[chave]) dadosAgrupadosTrimestral[chave] = { razao: cli.razao, contato: cli.contato, meses: {} };
+                                dadosAgrupadosTrimestral[chave].meses[mes] = {
+                                    antec: cli.mensal[mes].antec
+                                };
+                                mesesTrimestral.add(mes);
+                                contTrimestral++;
+                            }
+                        }
+                    });
+                });
+
+                let listaEmpresasMensal = Object.values(dadosAgrupadosMensal).sort((a, b) => a.razao.localeCompare(b.razao));
+                let listaEmpresasTrimestral = Object.values(dadosAgrupadosTrimestral).sort((a, b) => a.razao.localeCompare(b.razao));
+                
+                let sortedMesesMensal = Array.from(mesesMensal).sort((a, b) => {
+                    let [ma, ya] = a.split('/'); let [mb, yb] = b.split('/');
+                    return new Date(ya, ma-1) - new Date(yb, mb-1);
+                });
+                let sortedMesesTrimestral = Array.from(mesesTrimestral).sort((a, b) => {
+                    let [ma, ya] = a.split('/'); let [mb, yb] = b.split('/');
+                    return new Date(ya, ma-1) - new Date(yb, mb-1);
+                });
+
+                container.innerHTML = `
+                    <div class="mb-6">
+                        <div class="bg-red-600 text-white text-[10px] font-black p-2 rounded shadow-md uppercase mb-2 flex justify-between items-center">
+                            <span>Envio Mensal (>50k): ${contMensal} ocorrências</span>
+                            <button onclick="window.imprimirClassificacao('mensal')" class="bg-white text-red-600 px-2 py-0.5 rounded hover:bg-red-50 flex items-center gap-1 shadow-sm font-bold tracking-widest text-[9px] transition-colors" title="Imprimir Relatório Mensal">
+                                🖨️ IMPRIMIR
+                            </button>
+                        </div>
+                        <div class="overflow-x-auto bg-white rounded shadow-sm border border-red-100">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="bg-red-50 text-red-900 text-[9px] uppercase border-b border-red-200">
+                                        <th class="p-2 border-r border-red-100">Razão Social</th>
+                                        <th class="p-2 border-r border-red-100">Contato</th>
+                                        ${sortedMesesMensal.map(m => `<th class="p-2 border-r border-red-100 text-center">${m}</th>`).join('')}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${listaEmpresasMensal.map(emp => `
+                                        <tr class="border-b border-slate-100 hover:bg-slate-50">
+                                            <td class="p-2 border-r border-slate-100 text-[9px] font-bold text-slate-800">${emp.razao}</td>
+                                            <td class="p-2 border-r border-slate-100 text-[9px] text-slate-500">${emp.contato || '-'}</td>
+                                            ${sortedMesesMensal.map(m => {
+                                                let d = emp.meses[m];
+                                                if(d) return `<td class="p-2 border-r border-slate-100 text-center align-top">
+                                                    <div class="font-bold text-slate-900 mb-0.5">${d.antec}</div>
+                                                    <div class="text-[8px] bg-red-100 text-red-800 font-bold px-1 rounded inline-block">IR: ${d.ir}</div>
+                                                </td>`;
+                                                return `<td class="p-2 border-r border-slate-100 text-center text-slate-300">-</td>`;
+                                            }).join('')}
+                                        </tr>
+                                    `).join('')}
+                                    ${listaEmpresasMensal.length === 0 ? `<tr><td colspan="10" class="p-4 text-center text-[9px] text-slate-400 italic">Nenhum dado mensal.</td></tr>` : ''}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="bg-emerald-600 text-white text-[10px] font-black p-2 rounded shadow-md uppercase mb-2 flex justify-between items-center">
+                            <span>Envio Trimestral (até 50k/SM): ${contTrimestral} ocorrências</span>
+                            <button onclick="window.imprimirClassificacao('trimestral')" class="bg-white text-emerald-700 px-2 py-0.5 rounded hover:bg-emerald-50 flex items-center gap-1 shadow-sm font-bold tracking-widest text-[9px] transition-colors" title="Imprimir Relatório Trimestral">
+                                🖨️ IMPRIMIR
+                            </button>
+                        </div>
+                        <div class="overflow-x-auto bg-white rounded shadow-sm border border-emerald-100">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="bg-emerald-50 text-emerald-900 text-[9px] uppercase border-b border-emerald-200">
+                                        <th class="p-2 border-r border-red-100">Razão Social</th>
+                                        <th class="p-2 border-r border-red-100">Contato</th>
+                                        ${sortedMesesTrimestral.map(m => `<th class="p-2 border-r border-red-100 text-center">${m}</th>`).join('')}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${listaEmpresasTrimestral.map(emp => `
+                                        <tr class="border-b border-slate-100 hover:bg-slate-50">
+                                            <td class="p-2 border-r border-slate-100 text-[9px] font-bold text-slate-800">${emp.razao}</td>
+                                            <td class="p-2 border-r border-slate-100 text-[9px] text-slate-500">${emp.contato || '-'}</td>
+                                            ${sortedMesesTrimestral.map(m => {
+                                                let d = emp.meses[m];
+                                                if(d) return `<td class="p-2 border-r border-slate-100 text-center font-bold text-emerald-800 align-middle">${d.antec}</td>`;
+                                                return `<td class="p-2 border-r border-slate-100 text-center text-slate-300">-</td>`;
+                                            }).join('')}
+                                        </tr>
+                                    `).join('')}
+                                    ${listaEmpresasTrimestral.length === 0 ? `<tr><td colspan="10" class="p-4 text-center text-[9px] text-slate-400 italic">Nenhum dado trimestral.</td></tr>` : ''}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            } else if (window.currentReinfTab === 'entregas') {
+                let listaTodos = [...window.appState.clientes].sort((a, b) => a.razao.localeCompare(b.razao));
+                
+                let sortedMeses = [...mesesSelecionados].sort((a, b) => {
+                    let [ma, ya] = a.split('/'); let [mb, yb] = b.split('/');
+                    return new Date(ya, ma-1) - new Date(yb, mb-1);
+                });
+
+                let htmlEntregas = `
+                    <div class="mb-6">
+                        <div class="bg-indigo-600 text-white text-[10px] font-black p-2 rounded shadow-md uppercase mb-2 flex justify-between items-center">
+                            <span>Status Geral de Entregas (REINF e DCTF-Web)</span>
+                            <button onclick="window.imprimirRelatorioEntregas()" class="bg-white text-indigo-600 px-2 py-0.5 rounded hover:bg-indigo-50 flex items-center gap-1 shadow-sm font-bold tracking-widest text-[9px] transition-colors" title="Imprimir Relatório de Entregas">
+                                🖨️ IMPRIMIR
+                            </button>
+                        </div>
+                        <div class="overflow-x-auto bg-white rounded shadow-sm border border-indigo-100">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="bg-indigo-50 text-indigo-900 text-[9px] uppercase border-b border-indigo-200">
+                                        <th class="p-2 border-r border-indigo-100 min-w-[150px]">Razão Social</th>
+                                        ${sortedMeses.map(m => `<th class="p-2 border-r border-indigo-100 text-center min-w-[80px]">${m}</th>`).join('')}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${listaTodos.map(emp => {
+                                        let tdMeses = sortedMeses.map(m => {
+                                            let d = emp.mensal[m];
+                                            if (!d) {
+                                                return `<td class="p-2 border-r border-slate-100 text-center align-middle text-slate-300">-</td>`;
+                                            }
+
+                                            let reinfChecked = d.reinf.toUpperCase().includes('OK');
+                                            let dctfChecked = !!d.dctfweb;
+
+                                            let bgClass = (reinfChecked && dctfChecked) ? "bg-emerald-100/50" : (reinfChecked || dctfChecked ? "bg-emerald-50/30" : "bg-white");
+
+                                            return `
+                                                <td class="p-2 border-r border-slate-100 text-center align-middle ${bgClass}">
+                                                    <div class="flex flex-col gap-1 items-center justify-center">
+                                                        <label class="flex items-center gap-1 cursor-pointer hover:bg-black/5 px-1 rounded w-full justify-center" onclick="event.stopPropagation()">
+                                                            <input type="checkbox" ${reinfChecked ? 'checked' : ''} onchange="window.toggleReinf('${emp.id}', '${m}', this.checked)" class="w-2.5 h-2.5 accent-emerald-600">
+                                                            <span class="text-[8px] font-black ${reinfChecked ? 'text-emerald-700' : 'text-slate-400'}">REINF</span>
+                                                        </label>
+                                                        <label class="flex items-center gap-1 cursor-pointer hover:bg-black/5 px-1 rounded w-full justify-center" onclick="event.stopPropagation()">
+                                                            <input type="checkbox" ${dctfChecked ? 'checked' : ''} onchange="window.toggleDctfWeb('${emp.id}', '${m}', this.checked)" class="w-2.5 h-2.5 accent-indigo-600">
+                                                            <span class="text-[8px] font-black ${dctfChecked ? 'text-indigo-700' : 'text-slate-400'}">DCTF</span>
+                                                        </label>
+                                                    </div>
+                                                </td>
+                                            `;
+                                        }).join('');
+
+                                        return `
+                                            <tr class="border-b border-slate-100 hover:bg-slate-50">
+                                                <td class="p-2 border-r border-slate-100 text-[9px] font-black text-slate-800 uppercase" title="${emp.razao}">${emp.razao}</td>
+                                                ${tdMeses}
+                                            </tr>
+                                        `;
+                                    }).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+                container.innerHTML = htmlEntregas;
+            }
+        };
+
+        window.imprimirRelatorioEntregas = function() {
+            const containerCheckboxes = document.getElementById('containerMesesReinf');
+            let mesesSelecionados = Array.from(containerCheckboxes.querySelectorAll('input:checked')).map(cb => cb.value);
+
+            if (mesesSelecionados.length === 0) {
+                alert('Nenhum mês selecionado para impressão.');
+                return;
+            }
+
+            let listaTodos = [...window.appState.clientes].sort((a, b) => a.razao.localeCompare(b.razao));
+            
+            let sortedMeses = [...mesesSelecionados].sort((a, b) => {
+                let [ma, ya] = a.split('/'); let [mb, yb] = b.split('/');
+                return new Date(ya, ma-1) - new Date(yb, mb-1);
+            });
+
+            let thMeses = sortedMeses.map(m => `<th style="padding: 6px; border: 1px solid #c7d2fe; text-align: center; width: 100px;">${m}</th>`).join('');
+            
+            let trEmpresas = listaTodos.map(emp => {
+                let tdMeses = sortedMeses.map(m => {
+                    let d = emp.mensal[m];
+                    if (!d) return `<td style="padding: 6px; border: 1px solid #c7d2fe; text-align: center; color: #ccc;">-</td>`;
+                    
+                    let reinfChecked = d.reinf.toUpperCase().includes('OK');
+                    let dctfChecked = !!d.dctfweb;
+
+                    let dctfHtml = `<div style="font-size: 9px; font-weight: bold; color: ${dctfChecked ? '#4f46e5' : '#888'};">
+                        ${dctfChecked ? '☑ DCTF-Web' : '☐ DCTF-Web'}
+                    </div>`;
+                    
+                    let reinfHtml = `<div style="font-size: 9px; font-weight: bold; color: ${reinfChecked ? '#059669' : '#888'}; margin-bottom: 2px;">
+                        ${reinfChecked ? '☑ REINF' : '☐ REINF'}
+                    </div>`;
+
+                    let bgTd = (reinfChecked && dctfChecked) ? '#ecfdf5' : (reinfChecked || dctfChecked ? '#f0fdf4' : '#fff');
+
+                    return `<td style="padding: 6px; border: 1px solid #c7d2fe; text-align: left; padding-left: 10px; background-color: ${bgTd};">
+                        ${reinfHtml}
+                        ${dctfHtml}
+                    </td>`;
+                }).join('');
+
+                return `<tr>
+                    <td style="padding: 6px; border: 1px solid #c7d2fe; font-weight: bold; font-size: 11px; color: #333;">${emp.razao}</td>
+                    ${tdMeses}
+                </tr>`;
+            }).join('');
+
+            let htmlConteudo = `
+                <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+                    <thead>
+                        <tr style="background-color: #e0e7ff; color: #3730a3; text-align: left;">
+                            <th style="padding: 6px; border: 1px solid #c7d2fe;">Razão Social</th>
+                            ${thMeses}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${trEmpresas}
+                    </tbody>
+                </table>
+            `;
+
+            let mesesStr = sortedMeses.join(', ');
+
+            const janelaImpressao = window.open('', '_blank');
+            janelaImpressao.document.write(`
+                <html>
+                <head>
+                    <title>Relatório de Entregas REINF e DCTF</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; padding: 20px; }
+                        h1 { font-size: 18px; color: #333; text-transform: uppercase; margin-bottom: 5px; }
+                        .header { border-bottom: 2px solid #ccc; padding-bottom: 10px; margin-bottom: 20px; }
+                        td, th { font-size: 11px; }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <h1>Status Geral de Entregas (REINF e DCTF-Web)</h1>
+                        <p style="font-size: 11px; color: #666; margin: 0;">Meses Analisados: <b>${mesesStr}</b> | Gerado em: ${new Date().toLocaleString('pt-BR')} | <strong>Planilha de Integrações</strong></p>
+                    </div>
+                    ${htmlConteudo}
+                    <script>
+                        window.onload = function() { 
+                            setTimeout(function() {
+                                window.print(); 
+                                window.close();
+                            }, 500);
+                        };
+                    <\/script>
+                </body>
+                </html>
+            `);
+            janelaImpressao.document.close();
+        }
+
+        window.imprimirClassificacao = function(tipo) {
+            const containerCheckboxes = document.getElementById('containerMesesReinf');
+            let mesesSelecionados = Array.from(containerCheckboxes.querySelectorAll('input:checked')).map(cb => cb.value);
+
+            if (mesesSelecionados.length === 0) {
+                alert('Nenhum mês selecionado para impressão.');
+                return;
+            }
+
+            let dadosAgrupados = {};
+            let mesesPresentes = new Set();
+
+            window.appState.clientes.forEach(cli => {
+                let chave = cli.id;
+                
+                mesesSelecionados.forEach(mes => {
+                    if (cli.mensal[mes]) {
+                        let vlr = window.parseCurrency(cli.mensal[mes].antec);
+                        
+                        if (tipo === 'mensal' && vlr > 50000) {
+                            if (!dadosAgrupados[chave]) dadosAgrupados[chave] = { razao: cli.razao, contato: cli.contato, meses: {} };
+                            let ir = vlr * 0.10;
+                            dadosAgrupados[chave].meses[mes] = {
+                                antec: cli.mensal[mes].antec,
+                                ir: ir.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'})
+                            };
+                            mesesPresentes.add(mes);
+                        } 
+                        else if (tipo === 'trimestral' && (vlr > 0 || cli.mensal[mes].antec === 'S/M') && vlr <= 50000) {
+                            if (!dadosAgrupados[chave]) dadosAgrupados[chave] = { razao: cli.razao, contato: cli.contato, meses: {} };
+                            dadosAgrupados[chave].meses[mes] = {
+                                antec: cli.mensal[mes].antec
+                            };
+                            mesesPresentes.add(mes);
+                        }
+                    }
+                });
+            });
+
+            let listaEmpresas = Object.values(dadosAgrupados).sort((a, b) => a.razao.localeCompare(b.razao));
+            let sortedMeses = Array.from(mesesPresentes).sort((a, b) => {
+                let [ma, ya] = a.split('/'); let [mb, yb] = b.split('/');
+                return new Date(ya, ma-1) - new Date(yb, mb-1);
+            });
+
+            let titulo = '';
+            let htmlConteudo = '';
+
+            if (tipo === 'mensal') {
+                if (listaEmpresas.length === 0) return alert('Nenhum dado mensal para imprimir nos meses selecionados.');
+                titulo = 'Relatório de Envio Mensal (> 50k)';
+                
+                let thMeses = sortedMeses.map(m => `<th style="padding: 8px; border: 1px solid #fca5a5; text-align: center; width: 120px;">${m}</th>`).join('');
+                
+                let trEmpresas = listaEmpresas.map(emp => {
+                    let tdMeses = sortedMeses.map(m => {
+                        let dado = emp.meses[m];
+                        if (dado) {
+                            return `<td style="padding: 8px; border: 1px solid #fca5a5; text-align: center; vertical-align: top; background-color: #fff;">
+                                        <div style="color: #111; font-weight: bold; font-size: 14px; margin-bottom: 6px;">${dado.antec}</div>
+                                        <div style="color: #b91c1c; font-size: 11px; font-weight: bold; background-color: #fee2e2; padding: 3px; border-radius: 4px;">IR (10%): ${dado.ir}</div>
+                                    </td>`;
+                        } else {
+                            return `<td style="padding: 8px; border: 1px solid #fca5a5; text-align: center; color: #ccc;">-</td>`;
+                        }
+                    }).join('');
+                    
+                    return `<tr>
+                        <td style="padding: 8px; border: 1px solid #fca5a5; font-weight: bold; font-size: 13px;">${emp.razao}</td>
+                        <td style="padding: 8px; border: 1px solid #fca5a5; font-size: 11px; color: #444;">${emp.contato || '-'}</td>
+                        ${tdMeses}
+                    </tr>`;
+                }).join('');
+
+                htmlConteudo = `
+                    <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+                        <thead>
+                            <tr style="background-color: #fee2e2; color: #991b1b; text-align: left;">
+                                <th style="padding: 8px; border: 1px solid #fca5a5;">Razão Social</th>
+                                <th style="padding: 8px; border: 1px solid #fca5a5;">Contato</th>
+                                ${thMeses}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${trEmpresas}
+                        </tbody>
+                    </table>
+                `;
+            } else {
+                if (listaEmpresas.length === 0) return alert('Nenhum dado trimestral para imprimir nos meses selecionados.');
+                titulo = 'Relatório de Envio Trimestral (até 50k/SM)';
+                
+                let thMeses = sortedMeses.map(m => `<th style="padding: 8px; border: 1px solid #6ee7b7; text-align: center; width: 100px;">${m}</th>`).join('');
+                
+                let trEmpresas = listaEmpresas.map(emp => {
+                    let tdMeses = sortedMeses.map(m => {
+                        let dado = emp.meses[m];
+                        if (dado) {
+                            return `<td style="padding: 8px; border: 1px solid #6ee7b7; text-align: center; font-weight: bold; font-size: 13px; color: #064e3b; background-color: #fff;">${dado.antec}</td>`;
+                        } else {
+                            return `<td style="padding: 8px; border: 1px solid #6ee7b7; text-align: center; color: #ccc;">-</td>`;
+                        }
+                    }).join('');
+                    
+                    return `<tr>
+                        <td style="padding: 8px; border: 1px solid #6ee7b7; font-weight: bold; font-size: 13px;">${emp.razao}</td>
+                        <td style="padding: 8px; border: 1px solid #6ee7b7; font-size: 11px; color: #444;">${emp.contato || '-'}</td>
+                        ${tdMeses}
+                    </tr>`;
+                }).join('');
+
+                htmlConteudo = `
+                    <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+                        <thead>
+                            <tr style="background-color: #d1fae5; color: #166534; text-align: left;">
+                                <th style="padding: 8px; border: 1px solid #6ee7b7;">Razão Social</th>
+                                <th style="padding: 8px; border: 1px solid #6ee7b7;">Contato</th>
+                                ${thMeses}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${trEmpresas}
+                        </tbody>
+                    </table>
+                `;
+            }
+
+            let mesesStr = sortedMeses.join(', ');
+
+            const janelaImpressao = window.open('', '_blank');
+            janelaImpressao.document.write(`
+                <html>
+                <head>
+                    <title>${titulo}</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; padding: 20px; }
+                        h1 { font-size: 18px; color: #333; text-transform: uppercase; margin-bottom: 5px; }
+                        .header { border-bottom: 2px solid #ccc; padding-bottom: 10px; margin-bottom: 20px; }
+                        td, th { font-size: 12px; }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <h1>${titulo}</h1>
+                        <p style="font-size: 11px; color: #666; margin: 0;">Meses Analisados: <b>${mesesStr}</b> | Gerado em: ${new Date().toLocaleString('pt-BR')} | <strong>Planilha de Integrações REINF</strong></p>
+                    </div>
+                    ${htmlConteudo}
+                    <script>
+                        window.onload = function() { 
+                            setTimeout(function() {
+                                window.print(); 
+                                window.close();
+                            }, 500);
+                        };
+                    <\/script>
+                </body>
+                </html>
+            `);
+            janelaImpressao.document.close();
+        };
 
         window.limparHistorico = async function() { 
-            if(!window.isAdmin) return alert("Ação restrita! Ative o Modo Admin no topo da tela (🔐 Admin) para zerar o log do sistema.");
-            if(confirm("Zerar log? As planilhas salvas e as cópias de relatórios de impressão também serão apagadas!")) { 
+            if(confirm("Zerar log? As planilhas salvas também serão apagadas!")) { 
                 window.appState.historicoGeral = []; 
                 window.appState.historicoPlanilhas = [];
+                await window.saveState(); 
                 window.renderHistorico(); 
-                window.saveState(); 
             } 
         };
 
+        // ==========================================
+        // RENDERIZAÇÃO DA TABELA PRINCIPAL E AÇÕES
+        // ==========================================
         window.setFiltro = async function(mes, campo, status) {
             if (!window.appState.filtros[mes]) window.appState.filtros[mes] = {};
             window.appState.filtros[mes][campo] = status;
+            await window.saveState(); 
             window.renderTable();
-            window.saveState(); 
         };
 
         window.getUniqueValues = function(mes, campo) {
@@ -1695,7 +2294,6 @@
                 let v = c.mensal[mes] ? c.mensal[mes][campo] : '-';
                 if (v && v !== '-') vals.add(v.trim());
             });
-            if (campo === 'lancado') return ['OK'];
             return Array.from(vals).sort();
         };
 
@@ -1763,6 +2361,7 @@
             }
             thead.innerHTML = tr1 + tr2;
 
+            // MOSTRA TODOS OS CLIENTES DO CADASTRO
             let list = [...window.appState.clientes].sort((a, b) => {
                 let cmp = a.razao.localeCompare(b.razao);
                 if (cmp === 0) return (a.contato || '').localeCompare(b.contato || '');
@@ -1782,9 +2381,6 @@
                 }
             });
 
-            const isReadOnlyAttr = window.isVisitante ? 'readonly' : '';
-            const isDisabledAttr = window.isVisitante ? 'disabled' : '';
-
             tbody.innerHTML = list.length === 0 ? `<tr><td colspan="100" class="text-center py-20 text-slate-300 uppercase font-black italic tracking-widest">Nenhum dado</td></tr>` : 
             list.map(cli => {
                 let hasVisibleMonths = false;
@@ -1793,20 +2389,31 @@
                 window.appState.meses.forEach(m => {
                     if (window.appState.mesesConfig[m]?.visible) {
                         hasVisibleMonths = true;
-                        if (cli.mensal[m]) isImported = true;
+                        let d = cli.mensal[m];
+                        if (d) {
+                            isImported = true;
+                        }
                     }
                 });
 
                 let trBgClass = 'bg-white hover:bg-slate-50';
-                if (hasVisibleMonths && !isImported) trBgClass = 'bg-gray-50 text-gray-400 opacity-60 hover:opacity-100 hover:bg-gray-100'; 
-                if (cli.id === window.selectedRowId) trBgClass += ' linha-selecionada';
+                
+                if (hasVisibleMonths && !isImported) {
+                    trBgClass = 'bg-gray-50 text-gray-400 opacity-60 hover:opacity-100 hover:bg-gray-100'; 
+                }
+
+                if (cli.id === window.selectedRowId) {
+                    trBgClass += ' linha-selecionada';
+                }
 
                 let isManual = cli.tipoCobranca === 'manual';
                 let isWhats = cli.tipoCobranca === 'whatsapp';
                 let isRec = !!cli.dataRecebimento;
 
                 let classManual = isManual ? 'bg-amber-100 text-amber-600 shadow-sm border-amber-300' : 'bg-slate-100 text-slate-400 grayscale opacity-50 hover:grayscale-0 hover:opacity-100 hover:text-amber-500 hover:border-amber-300 border-slate-200';
+                
                 let classWhats = isWhats ? 'bg-emerald-100 text-emerald-600 shadow-sm border-emerald-300' : 'bg-slate-100 text-slate-400 grayscale opacity-50 hover:grayscale-0 hover:opacity-100 hover:text-emerald-500 hover:border-emerald-300 border-slate-200';
+                
                 let classRec = isRec ? 'bg-emerald-100 text-emerald-600 shadow-sm border-emerald-300' : 'bg-slate-100 text-slate-400 grayscale opacity-50 hover:grayscale-0 hover:opacity-100 hover:text-emerald-500 hover:border-emerald-300 border-slate-200';
 
                 let iconePresuncao = cli.presuncao ? ' <span class="text-[9px] text-amber-500" title="Cálculo por Presunção (Valor Travado)">🔒</span>' : '';
@@ -1820,33 +2427,48 @@
                     <td class="col-fixed-regime font-black uppercase">${cli.regime || ''}</td>
                     <td class="col-fixed-extratos align-middle">
                         <div class="flex items-center justify-center h-full gap-1.5">
-                            <button onclick="window.cobrarManual('${cli.id}'); event.stopPropagation();" ${isDisabledAttr} class="transition-all text-[10px] rounded p-1 flex-shrink-0 border ${classManual} disabled:cursor-not-allowed" title="${cli.dataCobranca && isManual ? 'Cobrado Manualmente em ' + cli.dataCobranca + ' (Clique para editar)' : 'Informar data de cobrança manual'}">📅</button>
-                            <button onclick="window.cobrarWhatsApp('${cli.id}'); event.stopPropagation();" ${isDisabledAttr} class="transition-all text-[10px] rounded p-1 flex-shrink-0 border ${classWhats} disabled:cursor-not-allowed" title="${cli.dataCobranca && isWhats ? 'Mensagem Whatsapp gerada em ' + cli.dataCobranca : 'Cobrar Extratos via WhatsApp (Atualiza data para hoje)'}">
+                            <button onclick="window.cobrarManual('${cli.id}'); event.stopPropagation();" class="transition-all text-[10px] rounded p-1 flex-shrink-0 border ${classManual}" title="${cli.dataCobranca && isManual ? 'Cobrado Manualmente em ' + cli.dataCobranca + ' (Clique para editar)' : 'Informar data de cobrança manual'}">📅</button>
+                            
+                            <button onclick="window.cobrarWhatsApp('${cli.id}'); event.stopPropagation();" class="transition-all text-[10px] rounded p-1 flex-shrink-0 border ${classWhats}" title="${cli.dataCobranca && isWhats ? 'Mensagem Whatsapp gerada em ' + cli.dataCobranca : 'Cobrar Extratos via WhatsApp (Atualiza data para hoje)'}">
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" class="w-3 h-3 fill-current"><path d="M380.9 97.1C339 55.1 283.2 32 223.9 32c-122.4 0-222 99.6-222 222 0 39.1 10.2 77.3 29.6 111L0 480l117.7-30.9c32.4 17.7 68.9 27 106.1 27h.1c122.3 0 224.1-99.6 224.1-222 0-59.3-23.2-115-65.1-157zM223.9 414.8c-33.2 0-65.8-8.9-94-25.7l-6.7-4-69.8 18.3L72 334.2l-4.4-7c-18.5-29.4-28.2-63.3-28.2-98.2 0-101.7 82.8-184.5 184.6-184.5 49.3 0 95.6 19.2 130.4 54.1 34.8 34.9 56.2 81.2 56.1 130.5 0 101.8-84.9 184.6-186.6 184.6zm101.2-138.2c-5.5-2.8-32.8-16.2-37.9-18-5.1-1.9-8.8-2.8-12.5 2.8-3.7 5.6-14.3 18-17.6 21.8-3.2 3.7-6.5 4.2-12 1.4-32.6-16.3-54-29.1-75.5-66-5.7-9.8 5.7-9.1 16.3-30.3 1.8-3.7 .9-6.9-.5-9.7-1.4-2.8-12.5-30.1-17.1-41.2-4.5-10.8-9.1-9.3-12.5-9.5-3.2-.2-6.9-.2-10.6-.2-3.7 0-9.7 1.4-14.8 6.9-5.1 5.6-19.4 19-19.4 46.3 0 27.3 19.9 53.7 22.6 57.4 2.8 3.7 39.1 59.7 94.8 83.8 35.2 15.2 49 16.5 66.6 13.9 10.7-1.6 32.8-13.4 37.4-26.4 4.6-13 4.6-24.1 3.2-26.4-1.3-2.5-5-3.9-10.5-6.6z"/></svg>
                             </button>
-                            <button onclick="window.marcarExtratoRecebido('${cli.id}'); event.stopPropagation();" ${isDisabledAttr} class="transition-all text-[10px] rounded p-1 flex-shrink-0 border ${classRec} disabled:cursor-not-allowed" title="${cli.dataRecebimento ? 'Recebido em ' + cli.dataRecebimento + ' (Clique para desmarcar)' : 'Marcar como Recebido'}">✅</button>
+                            
+                            <button onclick="window.marcarExtratoRecebido('${cli.id}'); event.stopPropagation();" class="transition-all text-[10px] rounded p-1 flex-shrink-0 border ${classRec}" title="${cli.dataRecebimento ? 'Recebido em ' + cli.dataRecebimento + ' (Clique para desmarcar)' : 'Marcar como Recebido'}">✅</button>
                         </div>
                     </td>`;
                 
                 window.appState.meses.forEach(m => {
                     if (window.appState.mesesConfig[m]?.visible) {
                         let d = cli.mensal[m] || { antec: '-', lancado: '-', reinf: '-', dctfweb: false };
+                        let cLancado = d.lancado.toUpperCase() === 'OK' ? 'text-blue-600 font-black' : (d.lancado.toUpperCase() === 'NT' ? 'text-emerald-600 font-black' : 'text-slate-400');
                         
+                        // --- DECLARAÇÕES (REINF e DCTF) NA TELA PRINCIPAL ---
                         let reinfVal = (d.reinf || '-').toUpperCase();
                         let reinfChecked = reinfVal.includes('OK');
                         let dctfChecked = !!d.dctfweb;
 
                         let vlr = window.parseCurrency(d.antec);
                         let bgAntec = "bg-transparent";
+                        let bgFolha = "bg-transparent";
+                        let bgDeclTd = "bg-transparent";
                         let fontAntec = "text-slate-900";
                         let badgeHtml = "";
+                        
                         let antecText = (d.antec || '').trim().toUpperCase();
 
                         if (reinfChecked) {
-                            bgAntec = "bg-emerald-100"; fontAntec = "text-emerald-800";
-                            if (vlr > 50000) badgeHtml = `<div class="text-[8px] bg-emerald-600 text-white rounded px-1.5 mt-0.5 inline-block font-black tracking-widest leading-tight shadow-sm">MENSAL >50k</div>`;
-                            else if (vlr > 0 || antecText === 'S/M' || (antecText !== '-' && antecText !== '')) badgeHtml = `<div class="text-[8px] bg-emerald-500 text-white rounded px-1.5 mt-0.5 inline-block font-black tracking-widest leading-tight shadow-sm">TRIMESTRAL</div>`;
+                            bgAntec = "bg-emerald-100";
+                            bgFolha = "bg-emerald-100";
+                            bgDeclTd = dctfChecked ? "bg-emerald-200" : "bg-emerald-100";
+                            fontAntec = "text-emerald-800";
+                            if (vlr > 50000) {
+                                badgeHtml = `<div class="text-[8px] bg-emerald-600 text-white rounded px-1.5 mt-0.5 inline-block font-black tracking-widest leading-tight shadow-sm">MENSAL >50k</div>`;
+                            } else if (vlr > 0 || antecText === 'S/M' || (antecText !== '-' && antecText !== '')) {
+                                badgeHtml = `<div class="text-[8px] bg-emerald-500 text-white rounded px-1.5 mt-0.5 inline-block font-black tracking-widest leading-tight shadow-sm">TRIMESTRAL</div>`;
+                            }
                         } else {
+                            if (dctfChecked) bgDeclTd = "bg-indigo-50";
+
                             if (vlr > 50000) {
                                 bgAntec = "bg-red-50"; fontAntec = "text-red-700";
                                 badgeHtml = `<div class="text-[8px] bg-red-600 text-white rounded px-1.5 mt-0.5 inline-block font-black tracking-widest leading-tight shadow-sm">MENSAL >50k</div>`;
@@ -1856,35 +2478,33 @@
                             }
                         }
 
-                        let bgDeclTd = (reinfChecked && dctfChecked) ? "bg-emerald-100" : (reinfChecked || dctfChecked ? "bg-emerald-50" : "bg-transparent");
-
                         let htmlDeclaracoes = `
                             <div class="flex flex-col gap-1 items-start justify-center text-left mx-auto w-fit py-0.5">
                                 <label class="flex items-center gap-1 cursor-pointer hover:bg-slate-100 px-1 rounded" onclick="event.stopPropagation()">
-                                    <input type="checkbox" ${reinfChecked ? 'checked' : ''} ${isDisabledAttr} onchange="window.toggleReinf('${cli.id}', '${m}', this.checked)" class="w-3 h-3 accent-emerald-600 cursor-pointer">
+                                    <input type="checkbox" ${reinfChecked ? 'checked' : ''} onchange="window.toggleReinf('${cli.id}', '${m}', this.checked)" class="w-3 h-3 accent-emerald-600 cursor-pointer">
                                     <span class="text-[8px] font-black ${reinfChecked ? 'text-emerald-700' : 'text-slate-400'} uppercase tracking-tight">REINF</span>
                                 </label>
                                 <label class="flex items-center gap-1 cursor-pointer hover:bg-slate-100 px-1 rounded" onclick="event.stopPropagation()">
-                                    <input type="checkbox" ${dctfChecked ? 'checked' : ''} ${isDisabledAttr} onchange="window.toggleDctfWeb('${cli.id}', '${m}', this.checked)" class="w-3 h-3 accent-indigo-600 cursor-pointer">
+                                    <input type="checkbox" ${dctfChecked ? 'checked' : ''} onchange="window.toggleDctfWeb('${cli.id}', '${m}', this.checked)" class="w-3 h-3 accent-indigo-600 cursor-pointer">
                                     <span class="text-[8px] font-black ${dctfChecked ? 'text-indigo-700' : 'text-slate-400'} uppercase tracking-tight">DCTF</span>
                                 </label>
                             </div>
                         `;
 
-                        let contentAntec = window.isAdmin ? 
-                            `<input type="text" class="w-full bg-transparent text-center font-black ${fontAntec} outline-none focus:bg-white focus:ring-1 focus:ring-blue-500 rounded p-0.5 cell-input" value="${d.antec}" onchange="window.atualizarAntecManual('${cli.id}', '${m}', this, '${d.antec}')" onclick="event.stopPropagation()">` : 
-                            `<div>${d.antec}</div>`;
+                        let antecValDisplay = '';
+                        if (window.isAdmin) {
+                            antecValDisplay = `<input type="text" class="cell-input ${fontAntec} bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500" value="${d.antec}" onchange="window.atualizarAntecManual('${cli.id}', '${m}', this, '${d.antec}')" onclick="event.stopPropagation()">`;
+                        } else {
+                            antecValDisplay = `<div>${d.antec}</div>`;
+                        }
 
                         row += `
-                            <td class="${bgAntec} align-middle transition-colors">
-                                ${contentAntec}
+                            <td class="${bgAntec} font-black ${fontAntec} align-middle transition-colors">
+                                ${antecValDisplay}
                                 ${badgeHtml}
                             </td>
-                            <td class="bg-transparent align-middle transition-colors cursor-pointer hover:bg-black/5" onclick="window.toggleLancado('${cli.id}', '${m}', ${d.lancado !== 'OK'}); event.stopPropagation();">
-                                <div class="flex items-center justify-center gap-1 w-full h-full p-1 cursor-pointer" onclick="event.stopPropagation()">
-                                    <input type="checkbox" ${d.lancado === 'OK' ? 'checked' : ''} ${isDisabledAttr} onclick="event.stopPropagation()" onchange="window.toggleLancado('${cli.id}', '${m}', this.checked)" class="w-3.5 h-3.5 accent-blue-600 cursor-pointer">
-                                    <span class="text-[9px] font-black ${d.lancado === 'OK' ? 'text-blue-600' : 'text-slate-300'}">${d.lancado === 'OK' ? 'OK' : '-'}</span>
-                                </div>
+                            <td class="${bgFolha} align-middle transition-colors">
+                                <input type="text" class="cell-input ${cLancado}" value="${d.lancado}" onchange="window.atualizarCelulaManual('${cli.id}', '${m}', 'lancado', this, '${d.lancado}')" onclick="event.stopPropagation()">
                             </td>
                             <td class="${bgDeclTd} align-middle transition-colors relative" style="min-width: 80px;">
                                 ${htmlDeclaracoes}
@@ -1906,8 +2526,14 @@
                 barra.classList.remove('hidden');
                 barra.classList.add('flex');
                 lista.innerHTML = ocultos.map(m => {
-                    let hasAntec = window.appState.clientes.some(c => (/\d/.test(c.mensal[m]?.antec || '')) || (c.mensal[m]?.antec || '').toUpperCase().includes('S/M'));
-                    let hasFolha = window.appState.clientes.some(c => c.mensal[m]?.lancado?.toUpperCase() === 'OK');
+                    let hasAntec = window.appState.clientes.some(c => {
+                        let val = c.mensal[m]?.antec || '';
+                        return (/\d/.test(val)) || val.toUpperCase().includes('S/M');
+                    });
+                    let hasFolha = window.appState.clientes.some(c => {
+                        let val = c.mensal[m]?.lancado?.toUpperCase() || '';
+                        return val === 'OK' || val === 'NT';
+                    });
                     let tics = hasAntec && hasFolha ? " ✓✓" : (hasAntec ? " ✓" : "");
                     return `<button onclick="window.toggleMes('${m}')" class="bg-white border-2 border-blue-200 text-[10px] font-black px-3 py-1 rounded-md shadow-sm hover:border-blue-600 hover:bg-blue-50 transition-all uppercase tracking-tighter text-slate-700">
                         Restaurar ${m}<span class="text-emerald-500 font-black ml-1">${tics}</span>
@@ -1921,36 +2547,69 @@
 
         window.toggleMes = async function(m) { 
             window.appState.mesesConfig[m].visible = !window.appState.mesesConfig[m].visible; 
-            window.renderTable();
-            window.saveState(); 
+            await window.saveState(); 
+            window.renderTable(); 
+        };
+
+        window.atualizarCelulaManual = async function(id, mes, campo, el, old) {
+            let cli = window.appState.clientes.find(c => c.id === id);
+            let val = el.value.trim().toUpperCase();
+            
+            if (cli && val !== old) {
+                // Assegura que o objeto do mês exista
+                if (!cli.mensal[mes]) {
+                    cli.mensal[mes] = { antec: '-', lancado: '-', reinf: '-', dctfweb: false };
+                }
+
+                cli.mensal[mes][campo] = val;
+                el.value = val;
+                
+                if (campo === 'lancado') {
+                    el.className = `cell-input ${val === 'OK' ? 'text-blue-600 font-black' : (val === 'NT' ? 'text-emerald-600 font-black' : 'text-slate-400')}`;
+                }
+                
+                el.setAttribute('onchange', `window.atualizarCelulaManual('${id}', '${mes}', '${campo}', this, '${val}')`);
+
+                window.appState.historicoGeral.push({
+                    tipo: 'edicao',
+                    data: new Date().toLocaleString('pt-BR'),
+                    usuario: window.appState.currentUser, mes: mes,
+                    alteracoes: [`<span class="text-blue-600 font-bold">EDIÇÃO MANUAL:</span> <b>${cli.razao} (${cli.contato})</b> - ${campo.toUpperCase()} mudou para '${val || 'Vazio'}'`]
+                });
+                
+                window.saveState(); 
+                window.renderHistorico();
+                window.renderTable(); 
+            }
         };
 
         window.excluirLinhaMainTable = async function(id) {
             let cli = window.appState.clientes.find(c => c.id === id);
             if(!cli) return;
-            if(!window.isAdmin) return alert("Ação restrita! Ative o Modo Admin no topo da tela para excluir linhas.");
             if(!confirm(`⚠️ MODO ADMIN: Excluir DEFINITIVAMENTE a empresa "${cli.razao}" e todo o seu histórico financeiro desta planilha?`)) return;
 
             let idx = window.appState.clientes.findIndex(c => c.id === id);
             window.appState.clientes.splice(idx, 1);
 
             window.appState.historicoGeral.push({
-                tipo: 'edicao', data: new Date().toLocaleString('pt-BR'), usuario: window.appState.currentUser, mes: 'ADMIN',
+                tipo: 'edicao',
+                data: new Date().toLocaleString('pt-BR'),
+                usuario: window.appState.currentUser,
+                mes: 'ADMIN',
                 alteracoes: [`<span class="text-red-600 font-bold">EXCLUSÃO ADMIN:</span> Empresa <b>${cli.razao}</b> removida da base.`]
             });
 
+            await window.saveState();
             window.renderTable();
             window.renderListaCadastro();
             window.renderHistorico();
             window.renderClassificacao();
-            window.saveState();
         };
 
         // ==========================================
-        // IMPORTAÇÃO DE DADOS (Mantém o estado anterior de campos que não vem da planilha)
+        // IMPORTAÇÃO DE DADOS & GERAÇÃO DE POPUP (COM VERIFICAÇÃO DE FALTANTES)
         // ==========================================
         window.adicionarDados = async function() {
-            if (window.isVisitante) return alert("Modo Visitante: Acesso apenas para visualização.");
             const input = document.getElementById('rawData').value;
             let mesRef = document.getElementById('mesRefInput').value.trim();
             
@@ -1974,11 +2633,23 @@
             });
 
             const linhas = input.trim().split('\n');
-            let qtdImportadas = 0, htmlAlteracoesPopup = '', htmlAlertas50kPopup = '', htmlNovosPopup = '', htmlFaltantesPopup = '';
-            let logAlteracoesValores = [], logNovosClientes = [], logFaltantes = [];
+            let qtdImportadas = 0;
+            
+            let htmlAlteracoesPopup = '';
+            let htmlAlertas50kPopup = '';
+            let htmlNovosPopup = '';
+            let htmlFaltantesPopup = '';
+            
+            let logAlteracoesValores = [];
+            let logNovosClientes = [];
+            let logFaltantes = [];
+            
             let chavesImportadasNoMes = new Set();
+
+            // DETEÇÃO DINÂMICA DE COLUNA (ANTECIPAÇÃO)
             let colIndexAntec = -1;
             
+            // Varre as primeiras linhas para achar os nomes corretos das colunas
             for(let i=0; i<Math.min(30, linhas.length); i++) {
                 let colunas = linhas[i].toUpperCase().split('\t');
                 let foundA = colunas.findIndex(c => c.includes('ANTEC'));
@@ -2005,22 +2676,28 @@
                 qtdImportadas++;
 
                 let cli = null;
+                // Busca por CNPJ ou Nome (Nova lógica reforçada)
                 if (cnpjNum.length === 14) {
                     let candidates = window.appState.clientes.filter(c => window.getNumbers(c.cnpj) === cnpjNum);
-                    if (candidates.length === 1) cli = candidates[0];
-                    else if (candidates.length > 1) {
+                    if (candidates.length === 1) {
+                        cli = candidates[0]; // Ignora pequenas diferenças no nome se o CNPJ é o mesmo e só tem 1
+                    } else if (candidates.length > 1) {
                         cli = candidates.find(c => (c.contato || '').toUpperCase() === contato);
                         if (!cli) cli = candidates.find(c => window.normalizeStr(c.contato) === window.normalizeStr(contato));
                         if (!cli && contato === '') cli = candidates.find(c => !c.contato || c.contato.trim() === '') || candidates[0];
-                        if (!cli) cli = candidates[0]; 
+                        if (!cli) cli = candidates[0]; // Evita duplicar se der erro
                     }
                 }
                 if (!cli && razao) {
                     let candidates = window.appState.clientes.filter(c => window.isSameCompanyByName(c.razao, razao));
-                    if (candidates.length === 1) cli = candidates[0];
-                    else if (candidates.length > 1) cli = candidates.find(c => (c.contato || '').toUpperCase() === contato) || candidates[0];
+                    if (candidates.length === 1) {
+                        cli = candidates[0];
+                    } else if (candidates.length > 1) {
+                        cli = candidates.find(c => (c.contato || '').toUpperCase() === contato) || candidates[0];
+                    }
                 }
 
+                // Cria novo se não achar na base
                 if (!cli) {
                     cli = { 
                         id: window.generateId(), razao: razao, cnpj: cnpj || "S/ CNPJ", contato: contato, 
@@ -2033,25 +2710,38 @@
                 
                 chavesImportadasNoMes.add(cli.id);
 
+                // --- COLETA DE VALORES ---
                 let ant = '-';
-                if (colIndexAntec !== -1) ant = cols[colIndexAntec]?.trim() || '-';
-                else ant = cols[offset + 11]?.trim() || '-';
+
+                // Busca Antecipação pelo índice dinâmico ou fixo (fallback)
+                if (colIndexAntec !== -1) {
+                    ant = cols[colIndexAntec]?.trim() || '-';
+                } else {
+                    ant = cols[offset + 11]?.trim() || '-';
+                }
 
                 let old = cli.mensal[mesRef];
                 let oldAntec = old?.antec || '-';
-                let oldLancado = old?.lancado || '-'; 
+                let oldLancado = old?.lancado || '-'; // Mantém o que já está preenchido no sistema
 
-                if (cli.presuncao) ant = oldAntec; 
+                // TRAVAR VALOR SE FOR PRESUNÇÃO
+                if (cli.presuncao) {
+                    ant = oldAntec; // Sempre ignora Excel e mantém o que tá na memória (seja manual ou vazio)
+                }
 
+                // Alertas de 50k
                 if (window.parseCurrency(ant) > 50000 && !cli.presuncao) {
                     htmlAlertas50kPopup += `<li><b>${cli.razao}</b> - R$ ${ant}</li>`;
                 }
 
+                // Logs de alteração de valor de antecipação
                 if (old && oldAntec !== '-' && oldAntec !== ant && ant !== '-' && !cli.presuncao) {
                     htmlAlteracoesPopup += `<li><b>${cli.razao}</b>: R$ ${oldAntec} ➔ R$ ${ant}</li>`;
                     logAlteracoesValores.push(`<span class="text-amber-500 font-bold">VALOR:</span> <b>${cli.razao}</b> | R$ ${oldAntec} ➔ R$ ${ant}`);
                 }
 
+                // --- SALVAMENTO DOS DADOS NO MÊS ---
+                // Importamos apenas a Antecipação. A coluna Lançado na Folha (FOLHA) e REINF ficam como estão.
                 cli.mensal[mesRef] = { 
                     antec: ant, 
                     lancado: oldLancado, 
@@ -2060,6 +2750,7 @@
                 };
             });
             
+            // Faltantes
             let countFaltantes = 0;
             window.appState.clientes.forEach(cli => {
                 if (!chavesImportadasNoMes.has(cli.id)) {
@@ -2069,6 +2760,7 @@
                 }
             });
 
+            // Registrar Logs
             if (logAlteracoesValores.length > 0) window.appState.historicoGeral.push({ tipo: 'modificacao', data: dataAtual, usuario: window.appState.currentUser, mes: mesRef, alteracoes: logAlteracoesValores });
             if (logNovosClientes.length > 0) window.appState.historicoGeral.push({ tipo: 'novo_cliente', data: dataAtual, usuario: window.appState.currentUser, mes: mesRef, alteracoes: logNovosClientes });
             if (logFaltantes.length > 0) window.appState.historicoGeral.push({ tipo: 'faltante', data: dataAtual, usuario: window.appState.currentUser, mes: mesRef, alteracoes: logFaltantes });
@@ -2078,12 +2770,13 @@
                 alteracoes: [`<span class="text-blue-600 font-bold">RESUMO:</span> ${qtdImportadas} linhas importadas.`] 
             });
             
+            await window.saveState(); 
+
             document.getElementById('rawData').value = '';
-            
             window.renderTable();
             window.renderHistorico();
-            window.saveState(); 
 
+            // Abrir Modal de Relatório
             const blocoAlt = document.getElementById('blocoAlteracoesModal');
             const bloco50k = document.getElementById('blocoAlertas50kModal');
             const blocoNovos = document.getElementById('blocoNovosModal');
@@ -2105,16 +2798,13 @@
         };
 
         window.limparTabela = async function() { 
-            if(!window.isAdmin) return alert("Ação restrita! Ative o Modo Admin no topo da tela (🔐 Admin) para limpar a tabela.");
             if(confirm("Apagar tudo desta visão? (Cadastros e Logs serão mantidos)")) { 
                 window.appState.meses = []; 
                 window.appState.clientes.forEach(c => c.mensal = {}); 
                 window.appState.historicoGeral = []; 
                 window.appState.mesesConfig = {}; window.appState.filtros = {}; 
-                window.renderTable(); 
-                window.renderHistorico(); 
-                window.renderFiltroReinf();
-                window.saveState(); 
+                await window.saveState(); 
+                window.renderTable(); window.renderHistorico(); window.renderFiltroReinf();
             } 
         };
     </script>
