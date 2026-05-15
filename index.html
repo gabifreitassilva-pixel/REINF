@@ -443,13 +443,7 @@
                 
                 onSnapshot(docRef, async (docSnap) => {
                     if (docSnap.exists()) {
-                        // Quando vem da nuvem, nós NUNCA sobrescrevemos o usuário logado localmente!
-                        let currentUserBackup = window.appState.currentUser;
                         window.aplicarDados(docSnap.data());
-                        if (currentUserBackup && currentUserBackup.trim() !== '') {
-                            window.appState.currentUser = currentUserBackup;
-                        }
-                        window.syncUI();
                     } else {
                         window.syncUI();
                     }
@@ -489,10 +483,11 @@
             }
         };
 
-        // Força a tela de Login ao apertar F5
+        // Força a tela de Login IMEDIATAMENTE ao carregar
         window.onload = function() {
-            window.appState.currentUser = ''; // Apaga usuário para forçar o login na tela inicial
-            window.initFirebase();
+            window.appState.currentUser = ''; 
+            window.syncUI(); // Trava a tela de imediato
+            window.initFirebase(); // Conecta no banco em segundo plano
         };
     </script>
 
@@ -703,14 +698,9 @@
                 });
                 const tx = dbLocal.transaction("store", "readonly");
                 const req = tx.objectStore("store").get("estado_geral");
-                req.onsuccess = () => {
+                req.onsuction = () => {
                     if(req.result) {
-                        let currentUserBackup = window.appState.currentUser;
                         window.aplicarDados(req.result);
-                        if (currentUserBackup && currentUserBackup.trim() !== '') {
-                            window.appState.currentUser = currentUserBackup;
-                            window.syncUI();
-                        }
                     } else {
                         window.syncUI();
                     }
@@ -723,14 +713,13 @@
 
         window.aplicarDados = function(data) {
             if (data) {
-                // Guarda o usuário logado para ele não perder a sessão quando o Firebase atualizar
+                // Guarda o usuário logado para ele NÃO perder a sessão quando o Firebase atualizar em tempo real
                 let currentUserBackup = window.appState.currentUser;
                 
                 window.appState = Object.assign(window.appState, data);
                 
-                if (currentUserBackup && currentUserBackup.trim() !== '') {
-                    window.appState.currentUser = currentUserBackup;
-                }
+                // Força o retorno do usuário local, ignorando quem salvou o Firebase
+                window.appState.currentUser = currentUserBackup;
                 
                 if(!window.appState.historicoPlanilhas) window.appState.historicoPlanilhas = [];
                 
@@ -820,8 +809,6 @@
             document.getElementById('modalUser').classList.remove('hidden');
             document.getElementById('userNameInput').value = '';
             document.getElementById('userPasswordInput').value = '';
-            document.getElementById('userNameInput').classList.remove('hidden');
-            document.getElementById('userPasswordInput').classList.remove('hidden');
             document.getElementById('userNameInput').focus();
         };
 
@@ -880,8 +867,43 @@
             }
             
             window.appState.currentUser = usernameInput;
-            if(typeof window.saveState === 'function') await window.saveState();
-            window.syncUI();
+            window.syncUI(); // Apenas atualiza a tela sem forçar save imediato
+        };
+
+        // BOTÃO DE RESGATE DO BANCO DE DADOS
+        window.abrirModalDatabase = function() {
+            if (window.isVisitante) return alert("Modo Visitante: Acesso negado.");
+            if (!window.isAdmin) return alert("Ação restrita! Ative o Modo Admin (🔐 Admin) primeiro para poder gerenciar o Banco de Dados.");
+            document.getElementById('modalDatabase').classList.remove('hidden');
+        };
+
+        window.injetarBackup = async function() {
+            if (!window.isAdmin) return alert("Apenas Administradores podem restaurar o banco de dados.");
+            let txt = document.getElementById('jsonBackupInput').value.trim();
+            if (!txt) return alert("Cole o código do backup primeiro na caixa de texto.");
+            
+            try {
+                let data = JSON.parse(txt);
+                
+                // Validação super básica para garantir que o texto não é um JSON qualquer
+                if (!data.clientes || !data.meses) {
+                    throw new Error("O código colado não parece ser um backup válido da Planilha.");
+                }
+                
+                if(!confirm(`Tem certeza absoluta? Isso vai substituir TODOS os dados do Firebase atual pelos dados deste backup que você está colando. (Isso afeta a equipe inteira)`)) return;
+
+                window.aplicarDados(data);
+                
+                // Força o envio direto pro Firebase contornando o tempo de espera do debounce
+                if(typeof window.saveState === 'function') await window.saveState();
+                
+                document.getElementById('modalDatabase').classList.add('hidden');
+                document.getElementById('jsonBackupInput').value = '';
+                alert("✅ BACKUP RESTAURADO COM SUCESSO!\n\nOs dados foram injetados no Firebase e toda a equipe já está vendo as informações atualizadas.");
+                
+            } catch(e) {
+                alert("Erro ao ler o backup.\nVerifique se você copiou todo o textão do Console corretamente.\n\nDetalhe técnico: " + e.message);
+            }
         };
 
         document.getElementById('userNameInput').addEventListener('keypress', function(e){
@@ -1089,7 +1111,7 @@
             });
 
             if(alteradosTrim) {
-                alert(`Regra do Trimestre (DCTF-Web) aplicada: Os meses ${targets.join(', ')} também foram marcados como entregues!`);
+                alert(`Regra do Trimestre (DCTF-Web) aplicada: Os meses ${targets.join(', ')} também foram marcado como entregues!`);
             }
 
             await window.saveState();
