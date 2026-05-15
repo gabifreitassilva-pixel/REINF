@@ -130,6 +130,21 @@
         </div>
     </div>
 
+    <!-- Modal de Backup e Banco de Dados -->
+    <div id="modalDatabase" class="fixed inset-0 bg-slate-900 bg-opacity-80 flex justify-center items-center z-[100] hidden px-4">
+        <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-lg text-center border-t-4 border-purple-600 relative">
+            <button onclick="document.getElementById('modalDatabase').classList.add('hidden')" class="absolute top-3 right-4 text-slate-400 hover:text-slate-700 text-xl font-bold">&times;</button>
+            <h2 class="text-xl font-black mb-1 text-slate-800 uppercase tracking-tight">Banco de Dados (Firebase)</h2>
+            <p class="text-xs text-slate-500 mb-4 font-medium px-2">Use esta ferramenta para restaurar um backup antigo. ATENÇÃO: Isso irá substituir completamente os dados atuais na nuvem.</p>
+            
+            <textarea id="jsonBackupInput" rows="6" class="w-full border-2 border-slate-200 p-2.5 rounded-lg text-[10px] focus:border-purple-500 outline-none font-mono mb-3" placeholder='Cole aqui o textão gerado pelo copy(JSON.stringify(window.appState))'></textarea>
+
+            <button onclick="window.injetarBackup()" class="bg-purple-600 hover:bg-purple-700 text-white font-black px-6 py-3 rounded-lg w-full shadow-lg transition-all uppercase tracking-widest">
+                Injetar Dados na Nuvem
+            </button>
+        </div>
+    </div>
+
     <!-- POPUP DE RESUMO DA IMPORTAÇÃO -->
     <div id="modalResumoImportacao" class="fixed inset-0 bg-slate-900 bg-opacity-80 flex justify-center items-center z-[110] hidden px-4">
         <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-3xl max-h-[85vh] flex flex-col border-t-4 border-amber-500 relative">
@@ -218,14 +233,14 @@
             </h1>
             <div class="flex items-center gap-2">
                 
-                <!-- PAINEL DE STATUS DO FIREBASE -->
-                <div id="btnStatusNuvem" class="bg-slate-100 text-slate-500 px-3 py-1.5 rounded-full text-[10px] font-black border border-slate-300 flex items-center gap-1 shadow-sm select-none">
+                <!-- PAINEL DE STATUS DO FIREBASE / ABRIR MODAL DE RESTAURAÇÃO -->
+                <button onclick="window.abrirModalDatabase()" id="btnStatusNuvem" class="bg-slate-100 text-slate-500 px-3 py-1.5 rounded-full text-[10px] font-black border border-slate-300 flex items-center gap-1 shadow-sm transition-colors hover:bg-slate-200 cursor-pointer">
                     <span id="iconeNuvem">⏳</span> <span id="textoNuvem">CONECTANDO...</span>
-                </div>
+                </button>
 
                 <div class="text-[10px] bg-white px-3 py-1.5 rounded-full border border-slate-200 shadow-sm font-bold flex items-center gap-2">
                     <span class="text-slate-400">USUÁRIO:</span> <span id="displayUserName" class="text-blue-600 uppercase flex items-center gap-1"></span>
-                    <button onclick="window.abrirLogin()" class="text-slate-300 hover:text-red-500 transition-colors" title="Alterar Usuário">
+                    <button onclick="window.forcarLogin()" class="text-slate-300 hover:text-red-500 transition-colors" title="Alterar Usuário">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
                     </button>
                     <!-- BOTAO ADMIN -->
@@ -369,11 +384,11 @@
 
         let db = null;
         let auth = null;
-        let appId = 'planilha-reinf-app';
+        let appIdStr = typeof __app_id !== 'undefined' ? __app_id : 'planilha-reinf-app';
 
         window.initFirebase = async function() {
             try {
-                // SUA CONFIGURAÇÃO DO FIREBASE
+                // SUA CONFIGURAÇÃO OFICIAL DO FIREBASE
                 const firebaseConfig = {
                   apiKey: "AIzaSyDyIVNwu2K_eBiU0wIgy0JF3kDG5jdRbYs",
                   authDomain: "reinf-86cf8.firebaseapp.com",
@@ -388,7 +403,7 @@
                 auth = getAuth(app);
                 db = getFirestore(app);
 
-                // TRATAMENTO INTELIGENTE DE ERRO DO AUTH (Causa: configuração incompleta no console do Firebase)
+                // TRATAMENTO DE ERRO DO AUTH (MODO LOCAL)
                 try {
                     await signInAnonymously(auth);
                 } catch (authErr) {
@@ -403,56 +418,23 @@
                         window.atualizarBotaoNuvem(false, "ERRO DE AUTENTICAÇÃO");
                     }
                     
-                    // Força carregar os dados offline do navegador para que a tela continue funcionando
                     await window.carregarDadosLocais();
-                    return; // Interrompe o processo de tempo real
+                    return; 
                 }
 
-                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'planilhaReinf', 'estado_geral');
+                // Usando a regra exata de caminhos do banco de dados
+                const docRef = doc(db, 'artifacts', appIdStr, 'public', 'data', 'planilhaReinf', 'estado_geral');
                 
                 onSnapshot(docRef, async (docSnap) => {
                     if (docSnap.exists()) {
+                        // Quando vem da nuvem, nós NUNCA sobrescrevemos o usuário logado localmente!
                         let currentUserBackup = window.appState.currentUser;
                         window.aplicarDados(docSnap.data());
                         if (currentUserBackup && currentUserBackup.trim() !== '') {
                             window.appState.currentUser = currentUserBackup;
-                            window.syncUI();
                         }
+                        window.syncUI();
                     } else {
-                        // FIREBASE ESTÁ VAZIO - TENTATIVA DE MIGRAÇÃO DO GIST ANTIGO
-                        // Forçando a chave enviada pelo usuário caso o localStorage tenha sido limpo
-                        const oldToken = "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";
-                        const oldId = "aa265bcc39069a01c8f0a3bcbebd09d1";
-                        
-                        if (oldToken && oldId && !window.migracaoRealizada) {
-                            window.migracaoRealizada = true; // Evita loop infinito
-                            window.atualizarBotaoNuvem(true, "MIGRANDO DADOS DO GIST...");
-                            try {
-                                const response = await fetch(`https://api.github.com/gists/${oldId}`, {
-                                    headers: { 'Authorization': `Bearer ${oldToken}` }
-                                });
-                                if (response.ok) {
-                                    const data = await response.json();
-                                    const files = data.files;
-                                    const firstFileName = Object.keys(files)[0];
-                                    if (firstFileName && files[firstFileName].content && files[firstFileName].content !== "{}") {
-                                        const nuvemState = JSON.parse(files[firstFileName].content);
-                                        
-                                        // Mescla o estado antigo
-                                        Object.assign(window.appState, nuvemState);
-                                        
-                                        // Força salvar no Firebase (migração real)
-                                        await setDoc(docRef, window.appState);
-                                        
-                                        alert("🚀 MIGRAÇÃO CONCLUÍDA!\n\nTodos os seus dados antigos foram resgatados do GitHub e transferidos para o Firebase com sucesso!");
-                                    }
-                                } else {
-                                    console.warn("Erro ao buscar dados do Gist: ", response.status);
-                                }
-                            } catch(err) {
-                                console.error("Erro durante a migração do Gist:", err);
-                            }
-                        }
                         window.syncUI();
                     }
                     window.atualizarBotaoNuvem(true, "TEMPO REAL ATIVO");
@@ -468,7 +450,6 @@
             }
         };
 
-        // Redefine a função saveState para usar Firebase com debounce local instantâneo
         window.saveState = async function() {
             if (window.isVisitante) return;
             
@@ -481,19 +462,22 @@
                 clearTimeout(window.firebaseSyncTimeout);
                 window.firebaseSyncTimeout = setTimeout(async () => {
                     try {
-                        const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'planilhaReinf', 'estado_geral');
+                        const docRef = doc(db, 'artifacts', appIdStr, 'public', 'data', 'planilhaReinf', 'estado_geral');
                         await setDoc(docRef, dadosParaSalvar);
                         window.atualizarBotaoNuvem(true, "TEMPO REAL ATIVO");
                     } catch(e) {
                         console.error("Erro ao salvar no Firebase:", e);
                         window.atualizarBotaoNuvem(false, "ERRO AO SALVAR");
                     }
-                }, 500); // Envia para o banco após 500ms de inatividade
+                }, 500); 
             }
         };
 
-        // Chama a inicialização
-        window.initFirebase();
+        // Força a tela de Login ao apertar F5
+        window.onload = function() {
+            window.appState.currentUser = ''; // Apaga usuário para forçar o login na tela inicial
+            window.initFirebase();
+        };
     </script>
 
     <script>
@@ -631,7 +615,12 @@
                 const req = tx.objectStore("store").get("estado_geral");
                 req.onsuccess = () => {
                     if(req.result) {
+                        let currentUserBackup = window.appState.currentUser;
                         window.aplicarDados(req.result);
+                        if (currentUserBackup && currentUserBackup.trim() !== '') {
+                            window.appState.currentUser = currentUserBackup;
+                            window.syncUI();
+                        }
                     } else {
                         window.syncUI();
                     }
@@ -644,8 +633,11 @@
 
         window.aplicarDados = function(data) {
             if (data) {
+                // Guarda o usuário logado para ele não perder a sessão quando o Firebase atualizar
                 let currentUserBackup = window.appState.currentUser;
+                
                 window.appState = Object.assign(window.appState, data);
+                
                 if (currentUserBackup && currentUserBackup.trim() !== '') {
                     window.appState.currentUser = currentUserBackup;
                 }
@@ -682,7 +674,6 @@
                     });
                 }
             }
-            window.syncUI();
         };
 
         window.atualizarBotaoNuvem = function(conectado, textoPersonalizado = null) {
@@ -690,19 +681,19 @@
             const icone = document.getElementById('iconeNuvem');
             const texto = document.getElementById('textoNuvem');
             if (conectado) {
-                btn.className = "bg-emerald-100 text-emerald-800 px-3 py-1.5 rounded-full text-[10px] font-black border border-emerald-300 flex items-center gap-1 shadow-sm select-none";
-                icone.innerText = textoPersonalizado === "SALVANDO..." || textoPersonalizado === "AGUARDANDO..." || textoPersonalizado === "MIGRANDO DADOS DO GIST..." ? "⏳" : "☁️";
+                btn.className = "bg-emerald-100 text-emerald-800 px-3 py-1.5 rounded-full text-[10px] font-black border border-emerald-300 flex items-center gap-1 shadow-sm select-none cursor-pointer hover:bg-emerald-200 transition-colors";
+                icone.innerText = textoPersonalizado === "SALVANDO..." || textoPersonalizado === "AGUARDANDO..." ? "⏳" : "☁️";
                 texto.innerText = textoPersonalizado || "NUVEM CONECTADA";
             } else {
-                btn.className = "bg-slate-100 text-slate-500 px-3 py-1.5 rounded-full text-[10px] font-black border border-slate-300 flex items-center gap-1 shadow-sm select-none";
-                icone.innerText = "⚠️"; texto.innerText = textoPersonalizado || "SEM NUVEM";
+                btn.className = "bg-red-100 text-red-700 px-3 py-1.5 rounded-full text-[10px] font-black border border-red-300 flex items-center gap-1 shadow-sm select-none cursor-pointer hover:bg-red-200 transition-colors";
+                icone.innerText = "⚠️"; texto.innerText = textoPersonalizado || "ERRO NA NUVEM";
             }
         }
 
         window.syncUI = function() {
             window.isVisitante = window.appState.currentUser && window.appState.currentUser.startsWith('VISITANTE');
             
-            if (!window.appState.currentUser) {
+            if (!window.appState.currentUser || window.appState.currentUser.trim() === '') {
                 window.abrirLogin();
             } else {
                 let badgeVisitante = window.isVisitante ? ' <span class="bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded text-[8px] font-black ml-1 tracking-widest">SOMENTE LEITURA</span>' : '';
@@ -795,8 +786,43 @@
             }
             
             window.appState.currentUser = n;
-            if(typeof window.saveState === 'function') await window.saveState();
-            window.syncUI();
+            window.syncUI(); // Apenas atualiza a tela sem forçar save imediato
+        };
+
+        // BOTÃO DE RESGATE DO BANCO DE DADOS
+        window.abrirModalDatabase = function() {
+            if (window.isVisitante) return alert("Modo Visitante: Acesso negado.");
+            if (!window.isAdmin) return alert("Ação restrita! Ative o Modo Admin (🔐 Admin) primeiro para poder gerenciar o Banco de Dados.");
+            document.getElementById('modalDatabase').classList.remove('hidden');
+        };
+
+        window.injetarBackup = async function() {
+            if (!window.isAdmin) return alert("Apenas Administradores podem restaurar o banco de dados.");
+            let txt = document.getElementById('jsonBackupInput').value.trim();
+            if (!txt) return alert("Cole o código do backup primeiro na caixa de texto.");
+            
+            try {
+                let data = JSON.parse(txt);
+                
+                // Validação super básica para garantir que o texto não é um JSON qualquer
+                if (!data.clientes || !data.meses) {
+                    throw new Error("O código colado não parece ser um backup válido da Planilha.");
+                }
+                
+                if(!confirm(`Tem certeza absoluta? Isso vai substituir TODOS os dados do Firebase atual pelos dados deste backup que você está colando. (Isso afeta a equipe inteira)`)) return;
+
+                window.aplicarDados(data);
+                
+                // Força o envio direto pro Firebase contornando o tempo de espera do debounce
+                if(typeof window.saveState === 'function') await window.saveState();
+                
+                document.getElementById('modalDatabase').classList.add('hidden');
+                document.getElementById('jsonBackupInput').value = '';
+                alert("✅ BACKUP RESTAURADO COM SUCESSO!\n\nOs dados foram injetados no Firebase e toda a equipe já está vendo as informações atualizadas.");
+                
+            } catch(e) {
+                alert("Erro ao ler o backup.\nVerifique se você copiou todo o textão do Console corretamente.\n\nDetalhe técnico: " + e.message);
+            }
         };
 
         document.getElementById('userNameInput').addEventListener('keypress', function(e){
@@ -810,6 +836,11 @@
             let val = e.target.value.replace(/\D/g, '');
             if (val.length === 6) { e.target.value = val.substring(0,2) + '/' + val.substring(2); }
         });
+
+        window.forcarLogin = function() {
+            window.appState.currentUser = '';
+            window.abrirLogin();
+        };
 
         window.togglePainel = function(id) { 
             ['painelHistorico', 'painelClassificacao', 'painelCadastro'].forEach(p => {
@@ -2270,8 +2301,6 @@
             let thMeses = sortedMeses.map(m => `<th style="padding: 8px; border: 1px solid #c7d2fe; text-align: center; width: 100px;">${m}</th>`).join('');
             
             let trEmpresas = listaTodos.map(emp => {
-                let hasDataInAnyMonth = false;
-                
                 let tdMeses = sortedMeses.map(m => {
                     let d = emp.mensal[m];
                     if (!d) return `<td style="padding: 8px; border: 1px solid #c7d2fe; text-align: center; color: #ccc;">-</td>`;
