@@ -410,7 +410,7 @@
 
                 const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'planilhaReinf', 'estado_geral');
                 
-                onSnapshot(docRef, (docSnap) => {
+                onSnapshot(docRef, async (docSnap) => {
                     if (docSnap.exists()) {
                         let currentUserBackup = window.appState.currentUser;
                         window.aplicarDados(docSnap.data());
@@ -419,6 +419,41 @@
                             window.syncUI();
                         }
                     } else {
+                        // FIREBASE ESTÁ VAZIO - TENTATIVA DE MIGRAÇÃO DO GIST ANTIGO
+                        const oldToken = window.gistConfig?.token || localStorage.getItem('reinfGistToken');
+                        const oldId = window.gistConfig?.id || localStorage.getItem('reinfGistId');
+                        
+                        if (oldToken && oldId && !window.migracaoRealizada) {
+                            window.migracaoRealizada = true; // Evita loop infinito
+                            window.atualizarBotaoNuvem(true, "MIGRANDO DO GIST...");
+                            try {
+                                const response = await fetch(`https://api.github.com/gists/${oldId}`, {
+                                    headers: { 'Authorization': `Bearer ${oldToken}` }
+                                });
+                                if (response.ok) {
+                                    const data = await response.json();
+                                    const files = data.files;
+                                    const firstFileName = Object.keys(files)[0];
+                                    if (firstFileName && files[firstFileName].content && files[firstFileName].content !== "{}") {
+                                        const nuvemState = JSON.parse(files[firstFileName].content);
+                                        
+                                        // Mescla o estado antigo
+                                        Object.assign(window.appState, nuvemState);
+                                        
+                                        // Força salvar no Firebase (migração real)
+                                        await setDoc(docRef, window.appState);
+                                        
+                                        alert("🚀 MIGRAÇÃO CONCLUÍDA!\n\nTodos os seus dados antigos foram resgatados do GitHub e transferidos para o Firebase com sucesso!");
+                                        
+                                        // Remove credenciais velhas para limpar
+                                        localStorage.removeItem('reinfGistToken');
+                                        localStorage.removeItem('reinfGistId');
+                                    }
+                                }
+                            } catch(err) {
+                                console.error("Erro durante a migração do Gist:", err);
+                            }
+                        }
                         window.syncUI();
                     }
                     window.atualizarBotaoNuvem(true, "TEMPO REAL ATIVO");
@@ -657,7 +692,7 @@
             const texto = document.getElementById('textoNuvem');
             if (conectado) {
                 btn.className = "bg-emerald-100 text-emerald-800 px-3 py-1.5 rounded-full text-[10px] font-black border border-emerald-300 flex items-center gap-1 shadow-sm select-none";
-                icone.innerText = textoPersonalizado === "SALVANDO..." || textoPersonalizado === "AGUARDANDO..." ? "⏳" : "☁️";
+                icone.innerText = textoPersonalizado === "SALVANDO..." || textoPersonalizado === "AGUARDANDO..." || textoPersonalizado === "MIGRANDO DO GIST..." ? "⏳" : "☁️";
                 texto.innerText = textoPersonalizado || "NUVEM CONECTADA";
             } else {
                 btn.className = "bg-slate-100 text-slate-500 px-3 py-1.5 rounded-full text-[10px] font-black border border-slate-300 flex items-center gap-1 shadow-sm select-none";
