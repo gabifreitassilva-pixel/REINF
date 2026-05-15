@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Planilha de Integrações</title>
+    <title>Planilha de Integrações Multi-Usuário</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         /* Ajuste total à tela sem rolagem horizontal desnecessária */
@@ -130,30 +130,6 @@
         </div>
     </div>
 
-    <!-- Modal de Configuração do Gist -->
-    <div id="modalGist" class="fixed inset-0 bg-slate-900 bg-opacity-80 flex justify-center items-center z-[100] hidden px-4">
-        <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-md text-center border-t-4 border-emerald-600 relative">
-            <button onclick="window.fecharModalGist()" class="absolute top-3 right-4 text-slate-400 hover:text-slate-700 text-xl font-bold">&times;</button>
-            <h2 class="text-xl font-black mb-1 text-slate-800 uppercase tracking-tight">Conexão em Nuvem (Gist)</h2>
-            <p class="text-xs text-slate-500 mb-4 font-medium px-2">Use seu GitHub Gist para sincronizar a planilha entre computadores. Suas chaves ficam salvas apenas no seu navegador.</p>
-            
-            <div class="text-left mb-3">
-                <label class="text-[10px] font-black text-slate-600 uppercase ml-1">GitHub Token (com permissão 'gist'):</label>
-                <input type="password" id="gistTokenInput" class="w-full border-2 border-slate-200 p-2.5 rounded-lg text-sm focus:border-emerald-500 outline-none font-mono" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
-            </div>
-            
-            <div class="text-left mb-5">
-                <label class="text-[10px] font-black text-slate-600 uppercase ml-1">ID do Gist (final do URL):</label>
-                <input type="text" id="gistIdInput" class="w-full border-2 border-slate-200 p-2.5 rounded-lg text-sm focus:border-emerald-500 outline-none font-mono" placeholder="ex: e42228fc4a5...">
-            </div>
-
-            <button onclick="window.salvarConfigGist()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-black px-6 py-3 rounded-lg w-full shadow-lg transition-all uppercase tracking-widest flex justify-center items-center gap-2">
-                <span id="gistBtnText">Conectar e Sincronizar</span>
-            </button>
-            <button onclick="window.desconectarGist()" id="btnDesconectarGist" class="mt-3 text-red-500 hover:text-red-700 text-[10px] font-black uppercase hidden tracking-widest">Desconectar Nuvem</button>
-        </div>
-    </div>
-
     <!-- POPUP DE RESUMO DA IMPORTAÇÃO -->
     <div id="modalResumoImportacao" class="fixed inset-0 bg-slate-900 bg-opacity-80 flex justify-center items-center z-[110] hidden px-4">
         <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-3xl max-h-[85vh] flex flex-col border-t-4 border-amber-500 relative">
@@ -242,9 +218,10 @@
             </h1>
             <div class="flex items-center gap-2">
                 
-                <button onclick="window.abrirModalGist()" id="btnStatusNuvem" class="bg-slate-100 hover:bg-slate-200 text-slate-500 px-3 py-1.5 rounded-full text-[10px] font-black border border-slate-300 transition-all leading-none flex items-center gap-1 shadow-sm">
-                    <span id="iconeNuvem">☁️</span> <span id="textoNuvem">CONFIGURAR NUVEM</span>
-                </button>
+                <!-- PAINEL DE STATUS DO FIREBASE (NÃO É MAIS BOTÃO CLICÁVEL DE GIST) -->
+                <div id="btnStatusNuvem" class="bg-slate-100 text-slate-500 px-3 py-1.5 rounded-full text-[10px] font-black border border-slate-300 flex items-center gap-1 shadow-sm select-none">
+                    <span id="iconeNuvem">⏳</span> <span id="textoNuvem">CONECTANDO...</span>
+                </div>
 
                 <div class="text-[10px] bg-white px-3 py-1.5 rounded-full border border-slate-200 shadow-sm font-bold flex items-center gap-2">
                     <span class="text-slate-400">USUÁRIO:</span> <span id="displayUserName" class="text-blue-600 uppercase flex items-center gap-1"></span>
@@ -384,6 +361,92 @@
         </div>
     </div>
 
+    <!-- MÓDULOS DO FIREBASE -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        let db = null;
+        let auth = null;
+        let appId = null;
+
+        window.initFirebase = async function() {
+            try {
+                const configString = typeof __firebase_config !== 'undefined' ? __firebase_config : null;
+                if (!configString) {
+                    console.warn("Nenhuma configuração do Firebase fornecida. Trabalhando apenas offline.");
+                    window.atualizarBotaoNuvem(false, "MODO LOCAL (SEM NUVEM)");
+                    await window.carregarDadosLocais();
+                    return;
+                }
+                
+                const firebaseConfig = JSON.parse(configString);
+                const app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+                appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+
+                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'planilhaReinf', 'estado_geral');
+                
+                onSnapshot(docRef, (docSnap) => {
+                    if (docSnap.exists()) {
+                        let currentUserBackup = window.appState.currentUser;
+                        window.aplicarDados(docSnap.data());
+                        if (currentUserBackup && currentUserBackup.trim() !== '') {
+                            window.appState.currentUser = currentUserBackup;
+                            window.syncUI();
+                        }
+                    } else {
+                        window.syncUI();
+                    }
+                    window.atualizarBotaoNuvem(true, "TEMPO REAL ATIVO");
+                }, (error) => {
+                    console.error("Erro na conexão em tempo real Firebase:", error);
+                    window.atualizarBotaoNuvem(false, "ERRO DE CONEXÃO");
+                });
+
+            } catch(e) {
+                console.error("Erro ao inicializar Firebase", e);
+                window.atualizarBotaoNuvem(false, "ERRO NA NUVEM");
+                await window.carregarDadosLocais();
+            }
+        };
+
+        // Redefine a função saveState para usar Firebase com debounce local instantâneo
+        window.saveState = async function() {
+            if (window.isVisitante) return;
+            
+            const dadosParaSalvar = window.appState;
+            await window.salvarDadosLocais(dadosParaSalvar); 
+            
+            if (db && auth && auth.currentUser) {
+                window.atualizarBotaoNuvem(true, "SALVANDO...");
+                
+                clearTimeout(window.firebaseSyncTimeout);
+                window.firebaseSyncTimeout = setTimeout(async () => {
+                    try {
+                        const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'planilhaReinf', 'estado_geral');
+                        await setDoc(docRef, dadosParaSalvar);
+                        window.atualizarBotaoNuvem(true, "TEMPO REAL ATIVO");
+                    } catch(e) {
+                        console.error("Erro ao salvar no Firebase:", e);
+                        window.atualizarBotaoNuvem(false, "ERRO AO SALVAR");
+                    }
+                }, 500); // Envia para o banco após 500ms de inatividade
+            }
+        };
+
+        // Chama a inicialização
+        window.initFirebase();
+    </script>
+
     <script>
         // ==========================================
         // FUNÇÕES GLOBAIS DE LIMPEZA E IDENTIFICAÇÃO ÚNICA
@@ -450,7 +513,7 @@
             historicoPlanilhas: [], 
             filtros: {},
             currentUser: '',
-            passwords: {} // Guarda senhas do sistema
+            passwords: {} 
         };
 
         window.isAdmin = false;
@@ -491,15 +554,8 @@
         });
 
         // ==========================================
-        // GITHUB GIST E PERSISTÊNCIA LOCAL (MOTOR DE SINCRONIZAÇÃO TURBO)
+        // BACKUP LOCAL SE O FIREBASE FALHAR
         // ==========================================
-        window.gistConfig = {
-            token: localStorage.getItem('reinfGistToken') || '',
-            id: localStorage.getItem('reinfGistId') || ''
-        };
-        
-        window.gistFileName = "planilha_reinf.json"; // NOME FIXO OU CACHEADO PARA EVITAR REQUISIÇÃO DUPLA GET+PATCH
-        window.gistSyncTimeout = null; // TIMER DO DEBOUNCE
 
         window.salvarDadosLocais = async function(dados) {
             try {
@@ -539,7 +595,12 @@
 
         window.aplicarDados = function(data) {
             if (data) {
+                let currentUserBackup = window.appState.currentUser;
                 window.appState = Object.assign(window.appState, data);
+                if (currentUserBackup && currentUserBackup.trim() !== '') {
+                    window.appState.currentUser = currentUserBackup;
+                }
+                
                 if(!window.appState.historicoPlanilhas) window.appState.historicoPlanilhas = [];
                 if(!window.appState.passwords) window.appState.passwords = {};
                 
@@ -571,154 +632,21 @@
                         }
                     });
                 }
-                
-                // AMNÉSIA PROPOSITAL: Toda vez que os dados são carregados (ao atualizar a página), nós apagamos o usuário para forçar login
-                window.appState.currentUser = '';
             }
             window.syncUI();
         };
-
-        // Carrega inicial da Nuvem (Faz o GET apenas 1 vez na vida, ao carregar a página)
-        window.sincronizarDoGist = async function() {
-            if (!window.gistConfig.token || !window.gistConfig.id) return false;
-            try {
-                window.atualizarBotaoNuvem(true, "BAIXANDO DADOS...");
-                const response = await fetch(`https://api.github.com/gists/${window.gistConfig.id}`, {
-                    headers: { 'Authorization': `Bearer ${window.gistConfig.token}` }
-                });
-                if (!response.ok) throw new Error("Erro de autorização ou ID não encontrado.");
-                const data = await response.json();
-                const files = data.files;
-                const firstFileName = Object.keys(files)[0];
-                if (firstFileName) {
-                    window.gistFileName = firstFileName; // Cache do nome do arquivo pra usar no PATCH!
-                    if (files[firstFileName].content && files[firstFileName].content !== "{}") {
-                        const nuvemState = JSON.parse(files[firstFileName].content);
-                        window.aplicarDados(nuvemState);
-                        await window.salvarDadosLocais(nuvemState); 
-                    }
-                }
-                window.atualizarBotaoNuvem(true, "NUVEM CONECTADA");
-                return true;
-            } catch(e) {
-                console.error("Erro ao ler do Gist:", e);
-                window.atualizarBotaoNuvem(false);
-                return false;
-            }
-        };
-
-        // Salvamento na Nuvem TURBO: não faz mais GET, vai direto no PATCH usando o nome do arquivo cacheado
-        window.salvarNoGist = async function(dados) {
-            if (!window.gistConfig.token || !window.gistConfig.id) return;
-            try {
-                window.atualizarBotaoNuvem(true, "SINCRONIZANDO...");
-                
-                const payload = { files: { [window.gistFileName]: { content: JSON.stringify(dados) } } };
-
-                await fetch(`https://api.github.com/gists/${window.gistConfig.id}`, {
-                    method: 'PATCH',
-                    headers: { 
-                        'Authorization': `Bearer ${window.gistConfig.token}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(payload)
-                });
-                
-                window.atualizarBotaoNuvem(true, "NUVEM CONECTADA");
-            } catch(e) {
-                console.error("Erro ao salvar no Gist:", e);
-                window.atualizarBotaoNuvem(false);
-            }
-        };
-
-        // O SEGREDO DA VELOCIDADE: DEBOUNCE (Espera o usuário parar de digitar/clicar)
-        window.saveState = async function() {
-            if (window.isVisitante) return; // Visitante nunca salva estado na nuvem/local
-            
-            const dadosParaSalvar = window.appState;
-            
-            // 1. Salva no computador instantaneamente (isso é rápido e garante que não se perca nada)
-            await window.salvarDadosLocais(dadosParaSalvar);
-            
-            // 2. Salva no GitHub só depois de 2 segundos de inatividade
-            if (window.gistConfig.token && window.gistConfig.id) {
-                window.atualizarBotaoNuvem(true, "AGUARDANDO...");
-                
-                clearTimeout(window.gistSyncTimeout); // Cancela o envio anterior se o usuário continuou clicando
-                
-                window.gistSyncTimeout = setTimeout(() => {
-                    window.salvarNoGist(dadosParaSalvar); // Dispara pra valer a requisição pesada
-                }, 2000);
-            }
-        };
-
-        // ==========================================
-        // INICIALIZAÇÃO E AUTENTICAÇÃO
-        // ==========================================
-        window.onload = async () => {
-            if (window.gistConfig.token && window.gistConfig.id) {
-                const sucessoNuvem = await window.sincronizarDoGist();
-                if (!sucessoNuvem) await window.carregarDadosLocais();
-            } else {
-                window.atualizarBotaoNuvem(false);
-                await window.carregarDadosLocais();
-            }
-        };
-
-        window.abrirModalGist = function() {
-            if (window.isVisitante) return alert("Modo Visitante: Apenas para visualização.");
-            document.getElementById('modalGist').classList.remove('hidden');
-            document.getElementById('gistTokenInput').value = window.gistConfig.token;
-            document.getElementById('gistIdInput').value = window.gistConfig.id;
-            if (window.gistConfig.token && window.gistConfig.id) document.getElementById('btnDesconectarGist').classList.remove('hidden');
-            else document.getElementById('btnDesconectarGist').classList.add('hidden');
-        };
-
-        window.fecharModalGist = function() { document.getElementById('modalGist').classList.add('hidden'); };
-
-        window.salvarConfigGist = async function() {
-            if (window.isVisitante) return alert("Modo Visitante: Acesso negado.");
-            const token = document.getElementById('gistTokenInput').value.trim();
-            const id = document.getElementById('gistIdInput').value.trim();
-            if (!token || !id) return alert("Preencha ambos os campos.");
-            document.getElementById('gistBtnText').innerText = "Testando...";
-            window.gistConfig = { token, id };
-            const sucesso = await window.sincronizarDoGist();
-            
-            if (sucesso) {
-                localStorage.setItem('reinfGistToken', token);
-                localStorage.setItem('reinfGistId', id);
-                window.fecharModalGist();
-                alert("Conectado com sucesso! Os seus dados estão sincronizados.");
-            } else {
-                alert("Erro na conexão. Verifique o Token e o ID.");
-                window.gistConfig = { token: localStorage.getItem('reinfGistToken') || '', id: localStorage.getItem('reinfGistId') || '' };
-            }
-            document.getElementById('gistBtnText').innerText = "Conectar e Sincronizar";
-        };
-
-        window.desconectarGist = function() {
-            if (window.isVisitante) return alert("Modo Visitante: Acesso negado.");
-            if(confirm("Parar de sincronizar com a nuvem neste navegador?")) {
-                localStorage.removeItem('reinfGistToken');
-                localStorage.removeItem('reinfGistId');
-                window.gistConfig = { token: '', id: '' };
-                window.atualizarBotaoNuvem(false);
-                window.fecharModalGist();
-            }
-        }
 
         window.atualizarBotaoNuvem = function(conectado, textoPersonalizado = null) {
             const btn = document.getElementById('btnStatusNuvem');
             const icone = document.getElementById('iconeNuvem');
             const texto = document.getElementById('textoNuvem');
             if (conectado) {
-                btn.className = "bg-emerald-100 hover:bg-emerald-200 text-emerald-800 px-3 py-1.5 rounded-full text-[10px] font-black border border-emerald-300 transition-all leading-none flex items-center gap-1 shadow-sm";
-                icone.innerText = textoPersonalizado === "SINCRONIZANDO..." || textoPersonalizado === "AGUARDANDO..." ? "⏳" : "☁️";
+                btn.className = "bg-emerald-100 text-emerald-800 px-3 py-1.5 rounded-full text-[10px] font-black border border-emerald-300 flex items-center gap-1 shadow-sm select-none";
+                icone.innerText = textoPersonalizado === "SALVANDO..." || textoPersonalizado === "AGUARDANDO..." ? "⏳" : "☁️";
                 texto.innerText = textoPersonalizado || "NUVEM CONECTADA";
             } else {
-                btn.className = "bg-slate-100 hover:bg-slate-200 text-slate-500 px-3 py-1.5 rounded-full text-[10px] font-black border border-slate-300 transition-all leading-none flex items-center gap-1 shadow-sm";
-                icone.innerText = "⚠️"; texto.innerText = "CONFIGURAR NUVEM";
+                btn.className = "bg-slate-100 text-slate-500 px-3 py-1.5 rounded-full text-[10px] font-black border border-slate-300 flex items-center gap-1 shadow-sm select-none";
+                icone.innerText = "⚠️"; texto.innerText = textoPersonalizado || "SEM NUVEM";
             }
         }
 
@@ -806,8 +734,7 @@
                         let conf = confirm(`Bem-vindo, Amauri! Você ainda não tem uma senha cadastrada no sistema.\n\nDeseja registrar a senha que você acabou de digitar ("${pass}") como sua senha permanente a partir de hoje?`);
                         if (conf) {
                             window.appState.passwords['AMAURI'] = pass;
-                            await window.salvarDadosLocais(window.appState);
-                            if (window.gistConfig.token && window.gistConfig.id) await window.salvarNoGist(window.appState);
+                            if(typeof window.saveState === 'function') await window.saveState();
                             alert("Senha cadastrada com sucesso! Bem-vindo.");
                         } else {
                             return;
@@ -819,7 +746,7 @@
             }
             
             window.appState.currentUser = n;
-            await window.saveState();
+            if(typeof window.saveState === 'function') await window.saveState();
             window.syncUI();
         };
 
@@ -2344,7 +2271,7 @@
                     <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
                         <thead>
                             <tr style="background-color: #e0e7ff; color: #3730a3; text-align: left;">
-                                <th style="padding: 6px; border: 1px solid #c7d2fe;">Razão Social</th>
+                                <th style="padding: 8px; border: 1px solid #c7d2fe;">Razão Social</th>
                                 ${thMeses}
                             </tr>
                         </thead>
