@@ -420,12 +420,13 @@
                         }
                     } else {
                         // FIREBASE ESTÁ VAZIO - TENTATIVA DE MIGRAÇÃO DO GIST ANTIGO
-                        const oldToken = window.gistConfig?.token || localStorage.getItem('reinfGistToken');
-                        const oldId = window.gistConfig?.id || localStorage.getItem('reinfGistId');
+                        // Forçando a chave enviada pelo usuário caso o localStorage tenha sido limpo
+                        const oldToken = "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";
+                        const oldId = "aa265bcc39069a01c8f0a3bcbebd09d1";
                         
                         if (oldToken && oldId && !window.migracaoRealizada) {
                             window.migracaoRealizada = true; // Evita loop infinito
-                            window.atualizarBotaoNuvem(true, "MIGRANDO DO GIST...");
+                            window.atualizarBotaoNuvem(true, "MIGRANDO DADOS DO GIST...");
                             try {
                                 const response = await fetch(`https://api.github.com/gists/${oldId}`, {
                                     headers: { 'Authorization': `Bearer ${oldToken}` }
@@ -444,11 +445,9 @@
                                         await setDoc(docRef, window.appState);
                                         
                                         alert("🚀 MIGRAÇÃO CONCLUÍDA!\n\nTodos os seus dados antigos foram resgatados do GitHub e transferidos para o Firebase com sucesso!");
-                                        
-                                        // Remove credenciais velhas para limpar
-                                        localStorage.removeItem('reinfGistToken');
-                                        localStorage.removeItem('reinfGistId');
                                     }
+                                } else {
+                                    console.warn("Erro ao buscar dados do Gist: ", response.status);
                                 }
                             } catch(err) {
                                 console.error("Erro durante a migração do Gist:", err);
@@ -692,7 +691,7 @@
             const texto = document.getElementById('textoNuvem');
             if (conectado) {
                 btn.className = "bg-emerald-100 text-emerald-800 px-3 py-1.5 rounded-full text-[10px] font-black border border-emerald-300 flex items-center gap-1 shadow-sm select-none";
-                icone.innerText = textoPersonalizado === "SALVANDO..." || textoPersonalizado === "AGUARDANDO..." || textoPersonalizado === "MIGRANDO DO GIST..." ? "⏳" : "☁️";
+                icone.innerText = textoPersonalizado === "SALVANDO..." || textoPersonalizado === "AGUARDANDO..." || textoPersonalizado === "MIGRANDO DADOS DO GIST..." ? "⏳" : "☁️";
                 texto.innerText = textoPersonalizado || "NUVEM CONECTADA";
             } else {
                 btn.className = "bg-slate-100 text-slate-500 px-3 py-1.5 rounded-full text-[10px] font-black border border-slate-300 flex items-center gap-1 shadow-sm select-none";
@@ -2208,8 +2207,6 @@
                                 </thead>
                                 <tbody>
                                     ${listaTodos.map(emp => {
-                                        let hasDataInAnyMonth = false;
-                                        
                                         let tdMeses = sortedMeses.map(m => {
                                             let d = emp.mensal[m];
                                             if (!d) {
