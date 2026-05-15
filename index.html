@@ -218,7 +218,7 @@
             </h1>
             <div class="flex items-center gap-2">
                 
-                <!-- PAINEL DE STATUS DO FIREBASE (NÃO É MAIS BOTÃO CLICÁVEL DE GIST) -->
+                <!-- PAINEL DE STATUS DO FIREBASE -->
                 <div id="btnStatusNuvem" class="bg-slate-100 text-slate-500 px-3 py-1.5 rounded-full text-[10px] font-black border border-slate-300 flex items-center gap-1 shadow-sm select-none">
                     <span id="iconeNuvem">⏳</span> <span id="textoNuvem">CONECTANDO...</span>
                 </div>
@@ -364,33 +364,48 @@
     <!-- MÓDULOS DO FIREBASE -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         let db = null;
         let auth = null;
-        let appId = null;
+        let appId = 'planilha-reinf-app';
 
         window.initFirebase = async function() {
             try {
-                const configString = typeof __firebase_config !== 'undefined' ? __firebase_config : null;
-                if (!configString) {
-                    console.warn("Nenhuma configuração do Firebase fornecida. Trabalhando apenas offline.");
-                    window.atualizarBotaoNuvem(false, "MODO LOCAL (SEM NUVEM)");
-                    await window.carregarDadosLocais();
-                    return;
-                }
+                // SUA CONFIGURAÇÃO DO FIREBASE
+                const firebaseConfig = {
+                  apiKey: "AIzaSyDyIVNwu2K_eBiU0wIgy0JF3kDG5jdRbYs",
+                  authDomain: "reinf-86cf8.firebaseapp.com",
+                  projectId: "reinf-86cf8",
+                  storageBucket: "reinf-86cf8.firebasestorage.app",
+                  messagingSenderId: "895824314708",
+                  appId: "1:895824314708:web:4f39cb9aed7f5ed64608c1",
+                  measurementId: "G-6BPZ3JE5YM"
+                };
                 
-                const firebaseConfig = JSON.parse(configString);
                 const app = initializeApp(firebaseConfig);
                 auth = getAuth(app);
                 db = getFirestore(app);
-                appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
+                // TRATAMENTO INTELIGENTE DE ERRO DO AUTH (Causa: configuração incompleta no console do Firebase)
+                try {
                     await signInAnonymously(auth);
+                } catch (authErr) {
+                    console.error("ERRO FIREBASE AUTH:", authErr);
+                    
+                    if (authErr.code === 'auth/configuration-not-found' || authErr.code === 'auth/operation-not-allowed') {
+                        window.atualizarBotaoNuvem(false, "ATIVE O LOGIN ANÔNIMO NO FIREBASE");
+                        console.warn("A Autenticação Anônima não está ativada no painel do Firebase. A planilha funcionará apenas localmente por enquanto.");
+                    } else if (authErr.code === 'auth/unauthorized-domain') {
+                        window.atualizarBotaoNuvem(false, "DOMÍNIO NÃO AUTORIZADO (TESTE LOCAL)");
+                    } else {
+                        window.atualizarBotaoNuvem(false, "ERRO DE AUTENTICAÇÃO");
+                    }
+                    
+                    // Força carregar os dados offline do navegador para que a tela continue funcionando
+                    await window.carregarDadosLocais();
+                    return; // Interrompe o processo de tempo real
                 }
 
                 const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'planilhaReinf', 'estado_geral');
@@ -2158,6 +2173,8 @@
                                 </thead>
                                 <tbody>
                                     ${listaTodos.map(emp => {
+                                        let hasDataInAnyMonth = false;
+                                        
                                         let tdMeses = sortedMeses.map(m => {
                                             let d = emp.mensal[m];
                                             if (!d) {
@@ -2218,12 +2235,14 @@
                 return new Date(ya, ma-1) - new Date(yb, mb-1);
             });
 
-            let thMeses = sortedMeses.map(m => `<th style="padding: 6px; border: 1px solid #c7d2fe; text-align: center; width: 100px;">${m}</th>`).join('');
+            let thMeses = sortedMeses.map(m => `<th style="padding: 8px; border: 1px solid #c7d2fe; text-align: center; width: 100px;">${m}</th>`).join('');
             
             let trEmpresas = listaTodos.map(emp => {
+                let hasDataInAnyMonth = false;
+                
                 let tdMeses = sortedMeses.map(m => {
                     let d = emp.mensal[m];
-                    if (!d) return `<td style="padding: 6px; border: 1px solid #c7d2fe; text-align: center; color: #ccc;">-</td>`;
+                    if (!d) return `<td style="padding: 8px; border: 1px solid #c7d2fe; text-align: center; color: #ccc;">-</td>`;
                     
                     let reinfChecked = d.reinf.toUpperCase().includes('OK');
                     let dctfChecked = !!d.dctfweb;
@@ -2238,14 +2257,14 @@
 
                     let bgTd = (reinfChecked && dctfChecked) ? '#ecfdf5' : (reinfChecked || dctfChecked ? '#f0fdf4' : '#fff');
 
-                    return `<td style="padding: 6px; border: 1px solid #c7d2fe; text-align: left; padding-left: 10px; background-color: ${bgTd};">
+                    return `<td style="padding: 8px; border: 1px solid #c7d2fe; text-align: left; padding-left: 10px; background-color: ${bgTd};">
                         ${reinfHtml}
                         ${dctfHtml}
                     </td>`;
                 }).join('');
 
                 return `<tr>
-                    <td style="padding: 6px; border: 1px solid #c7d2fe; font-weight: bold; font-size: 11px; color: #333;">${emp.razao}</td>
+                    <td style="padding: 8px; border: 1px solid #c7d2fe; font-weight: bold; font-size: 11px; color: #333;">${emp.razao}</td>
                     ${tdMeses}
                 </tr>`;
             }).join('');
